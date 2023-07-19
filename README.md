@@ -5,6 +5,9 @@ or providing a string to be parsed. Objects contain PyLD-equivalent methods to p
 
 ## Implementation Status:
 
+## Activity Vocabulary
+*In Progress*
+
 ### Base Methods
 - [ ] Produce dictionary
 - [ ] Produce compressed json-ld string (default)
@@ -75,3 +78,7 @@ or providing a string to be parsed. Objects contain PyLD-equivalent methods to p
 - [ ] IsFollowedBy
 - [ ] IsContact
 - [ ] IsMember
+
+## Activity Streams
+
+**Not started**
