@@ -430,6 +430,34 @@ class Question(IntransitiveActivity):
 #       processes that might be performing Actions on Objects
 #
 #  ==//==//==//==// ==//==//==//==// ==//==//==//==// ==//==//==//==//
+class Application(Object):
+    """
+    Describes a software application.
+    """
+
+
+class Group(Object):
+    """
+    Represents a formal or informal collective of Actors.
+    """
+
+
+class Organization(Object):
+    """
+    Represents an organization.
+    """
+
+
+class Person(Object):
+    """
+    Represents an individual person.
+    """
+
+
+class Service(Object):
+    """
+    Represents a service of any kind.
+    """
 
 
 # ==//==//==//==// ==//==//==//==// ==//==//==//==// ==//==//==//==//
