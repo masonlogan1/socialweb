@@ -14,34 +14,17 @@ or providing a string to be parsed. Objects contain PyLD-equivalent methods to p
 - [ ] Produce expanded json-ld string
 
 ### Classes
-- [ ] Activity
-- [ ] Application
-- [ ] Article
-- [ ] Audio
-- [ ] Collection
-- [ ] CollectionPage
-- [ ] Relationship
-- [ ] Document
-- [ ] Event
-- [ ] Group
-- [ ] Image
-- [ ] IntransitiveActivity
-- [ ] Note
+#### Base Types
 - [ ] Object
+- [ ] Link
+- [ ] Activity
+- [ ] IntransitiveActivity
+- [ ] Collection
 - [ ] OrderedCollection
+- [ ] CollectionPage
 - [ ] OrderedCollectionPage
-- [ ] Organization
-- [ ] Page
-- [ ] Person
-- [ ] Place
-- [ ] Profile
-- [ ] Question
-- [ ] Service
-- [ ] Tombstone
-- [ ] Video
 
-### Activities
-
+#### Activity Types
 - [ ] Accept
 - [ ] Add
 - [ ] Announce
@@ -50,8 +33,8 @@ or providing a string to be parsed. Objects contain PyLD-equivalent methods to p
 - [ ] Create
 - [ ] Delete
 - [ ] Dislike
-- [ ] Follow
 - [ ] Flag
+- [ ] Follow
 - [ ] Ignore
 - [ ] Invite
 - [ ] Join
@@ -60,24 +43,38 @@ or providing a string to be parsed. Objects contain PyLD-equivalent methods to p
 - [ ] Listen
 - [ ] Move
 - [ ] Offer
-- [ ] Read
+- [ ] Question
 - [ ] Reject
+- [ ] Read
 - [ ] Remove
-- [ ] TentativeAccept
 - [ ] TentativeReject
+- [ ] TentativeAccept
 - [ ] Travel
 - [ ] Undo
 - [ ] Update
 - [ ] View
 
-### Links and Relationships
+#### Actor Types
+- [ ] Application
+- [ ] Group
+- [ ] Organization
+- [ ] Person
+- [ ] Service
 
-- [ ] Link
+#### Object and Link Types
+- [ ] Article
+- [ ] Audio
+- [ ] Document
+- [ ] Event
+- [ ] Image
+- [ ] Note
+- [ ] Page
+- [ ] Place
+- [ ] Profile
+- [ ] Relationship
+- [ ] Tombstone
+- [ ] Video
 - [ ] Mention
-- [ ] IsFollowing
-- [ ] IsFollowedBy
-- [ ] IsContact
-- [ ] IsMember
 
 ## Activity Streams
 
