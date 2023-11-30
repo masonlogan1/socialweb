@@ -1424,31 +1424,31 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
     IntransitiveActivity, Collection and OrderedCollection.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None,
-                 content=None, context=None, name=None, end_time=None,
-                 generator=None, icon=None, image=None, in_reply_to=None,
+                 content=None, context=None, name=None, endTime=None,
+                 generator=None, icon=None, image=None, inReplyTo=None,
                  location=None, preview=None, published=None, replies=None,
-                 start_time=None, summary=None, tag=None, updated=None,
+                 startTime=None, summary=None, tag=None, updated=None,
                  url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None):
+                 mediaType=None, duration=None):
         self.id = id
         self.attachment = attachment
-        self.attributed_to = attributed_to
+        self.attributedTo = attributedTo
         self.audience = audience
         self.content = content
         self.context = context
         self.name = name
-        self.end_time = end_time
+        self.endTime = endTime
         self.generator = generator
         self.icon = icon
         self.image = image
-        self.in_reply_to = in_reply_to
+        self.inReplyTo = inReplyTo
         self.location = location
         self.preview = preview
         self.published = published
         self.replies = replies
-        self.start_time = start_time
+        self.startTime = startTime
         self.summary = summary
         self.tag = tag
         self.updated = updated
@@ -1457,7 +1457,7 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
         self.bto = bto
         self.cc = cc
         self.bcc = bcc
-        self.media_type = media_type
+        self.mediaType = mediaType
         self.duration = duration
 
 
@@ -1474,11 +1474,11 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
     the reference as opposed to properties of the resource
     """
 
-    def __init__(self, href=None, rel=None, media_type=None, name=None,
+    def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None):
         self.href = href
         self.rel = rel
-        self.media_type = media_type
+        self.mediaType = mediaType
         self.name = name
         self.hreflang = hreflang
         self.height = height
@@ -1498,27 +1498,27 @@ class ActivityModel(ObjectModel,
     :arg actor:
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, actor=None, object=None,
+                 mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None):
         # "this looks so bad" I KNOW, but it's the only way to make all the
         # params show up in tooltips! Yes it looks bad! But it makes it easier
         # to work with!!
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration)
         self.actor = actor
         self.object = object
@@ -1535,24 +1535,24 @@ class IntransitiveActivityModel(ActivityModel):
     The object property is therefore inappropriate for these activities.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, actor=None, object=None,
+                 mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None):
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
                          instrument=instrument)
@@ -1571,24 +1571,24 @@ class CollectionModel(ObjectModel,
     description of the Collection type.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, total_items=None, current=None,
+                 mediaType=None, duration=None, total_items=None, current=None,
                  first=None, last=None, items=None):
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration)
         self.total_items = total_items
         self.current = current
@@ -1603,24 +1603,24 @@ class OrderedCollectionModel(CollectionModel):
     assumed to always be strictly ordered.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, total_items=None, current=None,
+                 mediaType=None, duration=None, total_items=None, current=None,
                  first=None, last=None, items=None):
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, total_items=total_items,
                          current=current, first=first, last=last, items=items)
 
@@ -1633,28 +1633,28 @@ class CollectionPageModel(CollectionModel,
     object.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, total_items=None, current=None,
-                 first=None, last=None, items=None, part_of=None, next=None,
+                 mediaType=None, duration=None, total_items=None, current=None,
+                 first=None, last=None, items=None, partOf=None, next=None,
                  prev=None, **kwargs):
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, total_items=total_items,
                          current=current, first=first, last=last, items=items)
-        self.part_of = part_of
+        self.partOf = partOf
         self.next = next
         self.prev = prev
 
@@ -1667,36 +1667,36 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
     OrderedCollectionPage object.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, total_items=None, current=None,
-                 first=None, last=None, items=None, part_of=None, next=None,
-                 prev=None, start_index=None):
+                 mediaType=None, duration=None, total_items=None, current=None,
+                 first=None, last=None, items=None, partOf=None, next=None,
+                 prev=None, startIndex=None):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
         CollectionPageModel.__init__(self, id=id, attachment=attachment,
-                                     attributed_to=attributed_to,
+                                     attributedTo=attributedTo,
                                      audience=audience,
                                      content=content, context=context,
                                      name=name,
-                                     end_time=end_time, generator=generator,
+                                     endTime=endTime, generator=generator,
                                      icon=icon,
-                                     image=image, in_reply_to=in_reply_to,
+                                     image=image, inReplyTo=inReplyTo,
                                      location=location, preview=preview,
                                      published=published, replies=replies,
-                                     start_time=start_time, summary=summary,
+                                     startTime=startTime, summary=summary,
                                      tag=tag, updated=updated, url=url, to=to,
                                      bto=bto,
-                                     cc=cc, bcc=bcc, media_type=media_type,
+                                     cc=cc, bcc=bcc, mediaType=mediaType,
                                      duration=duration, total_items=total_items,
                                      current=current, first=first, last=last,
                                      items=items,
-                                     part_of=part_of, next=next, prev=prev)
-        self.start_index = start_index
+                                     partOf=partOf, next=next, prev=prev)
+        self.startIndex = startIndex
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -1919,30 +1919,30 @@ class QuestionModel(IntransitiveActivityModel):
     answers, but a Question object MUST NOT have both properties.
     """
 
-    def __init__(self, id=None, attachment=None, attributed_to=None,
+    def __init__(self, id=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
-                 end_time=None, generator=None, icon=None, image=None,
-                 in_reply_to=None, location=None, preview=None, published=None,
-                 replies=None, start_time=None, summary=None, tag=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 media_type=None, duration=None, actor=None, object=None,
+                 mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
-                 one_of=None, any_of=None, closed=None):
+                 oneOf=None, anyOf=None, closed=None):
         super().__init__(id=id, attachment=attachment,
-                         attributed_to=attributed_to, audience=audience,
+                         attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
-                         end_time=end_time, generator=generator, icon=icon,
-                         image=image, in_reply_to=in_reply_to,
+                         endTime=endTime, generator=generator, icon=icon,
+                         image=image, inReplyTo=inReplyTo,
                          location=location, preview=preview,
                          published=published, replies=replies,
-                         start_time=start_time, summary=summary,
+                         startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, media_type=media_type,
+                         cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
                          instrument=instrument)
-        self.one_of = one_of
-        self.any_of = any_of
+        self.oneOf = oneOf
+        self.anyOf = anyOf
         self.closed = closed
 
 
