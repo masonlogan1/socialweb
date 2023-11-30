@@ -1,3 +1,5 @@
+from abc import ABC
+
 from models.models import ObjectModel, LinkModel, ActivityModel, \
     IntransitiveActivityModel, CollectionModel, OrderedCollectionModel, \
     CollectionPageModel, OrderedCollectionPageModel, AcceptModel, \
@@ -48,7 +50,6 @@ class Activity(Object, ActivityModel):
     Activity type itself serves as an abstract base type for all types of
     activities. It is important to note that the Activity type itself does
     not carry any specific semantics about the kind of action being taken.
-    :arg actor:
     """
 
 
@@ -324,6 +325,126 @@ class Question(IntransitiveActivity, QuestionModel):
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
+class Actor(ABC):
+    """
+    Abstract class that provides methods that allow an Actor to create, update,
+    and delete various objects. CANNOT BE INSTANTIATED! WILL RAISE AN EXCEPTION!
+    """
+
+    def create_relationship(self, id=None, attachment=None, attributedTo=None,
+                            audience=None, content=None, context=None,
+                            name=None, endTime=None, generator=None, icon=None,
+                            image=None, inReplyTo=None, location=None,
+                            preview=None, published=None, replies=None,
+                            startTime=None, summary=None, tag=None,
+                            updated=None, url=None, to=None, bto=None, cc=None,
+                            bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_article(self, id=None, attachment=None, attributedTo=None,
+                       audience=None, content=None, context=None, name=None,
+                       endTime=None, generator=None, icon=None, image=None,
+                       inReplyTo=None, location=None, preview=None,
+                       published=None, replies=None, startTime=None,
+                       summary=None, tag=None, updated=None, url=None, to=None,
+                       bto=None, cc=None, bcc=None, mediaType=None,
+                       duration=None):
+        pass
+
+    def create_document(self, id=None, attachment=None, attributedTo=None,
+                        audience=None, content=None, context=None, name=None,
+                        endTime=None, generator=None, icon=None, image=None,
+                        inReplyTo=None, location=None, preview=None,
+                        published=None, replies=None, startTime=None,
+                        summary=None, tag=None, updated=None, url=None, to=None,
+                        bto=None, cc=None, bcc=None, mediaType=None,
+                        duration=None):
+        pass
+
+    def create_audio(self, id=None, attachment=None, attributedTo=None,
+                     audience=None, content=None, context=None, name=None,
+                     endTime=None, generator=None, icon=None, image=None,
+                     inReplyTo=None, location=None, preview=None,
+                     published=None, replies=None, startTime=None, summary=None,
+                     tag=None, updated=None, url=None, to=None, bto=None,
+                     cc=None, bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_image(self, id=None, attachment=None, attributedTo=None,
+                     audience=None, content=None, context=None, name=None,
+                     endTime=None, generator=None, icon=None, image=None,
+                     inReplyTo=None, location=None, preview=None,
+                     published=None, replies=None, startTime=None, summary=None,
+                     tag=None, updated=None, url=None, to=None, bto=None,
+                     cc=None, bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_video(self, id=None, attachment=None, attributedTo=None,
+                     audience=None, content=None, context=None, name=None,
+                     endTime=None, generator=None, icon=None, image=None,
+                     inReplyTo=None, location=None, preview=None,
+                     published=None, replies=None, startTime=None, summary=None,
+                     tag=None, updated=None, url=None, to=None, bto=None,
+                     cc=None, bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_note(self, id=None, attachment=None, attributedTo=None,
+                    audience=None, content=None, context=None, name=None,
+                    endTime=None, generator=None, icon=None, image=None,
+                    inReplyTo=None, location=None, preview=None, published=None,
+                    replies=None, startTime=None, summary=None, tag=None,
+                    updated=None, url=None, to=None, bto=None, cc=None,
+                    bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_page(self, id=None, attachment=None, attributedTo=None,
+                    audience=None, content=None, context=None, name=None,
+                    endTime=None, generator=None, icon=None, image=None,
+                    inReplyTo=None, location=None, preview=None, published=None,
+                    replies=None, startTime=None, summary=None, tag=None,
+                    updated=None, url=None, to=None, bto=None, cc=None,
+                    bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_event(self, id=None, attachment=None, attributedTo=None,
+                     audience=None, content=None, context=None, name=None,
+                     endTime=None, generator=None, icon=None, image=None,
+                     inReplyTo=None, location=None, preview=None,
+                     published=None, replies=None, startTime=None, summary=None,
+                     tag=None, updated=None, url=None, to=None, bto=None,
+                     cc=None, bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_place(self, id=None, attachment=None, attributedTo=None,
+                     audience=None, content=None, context=None, name=None,
+                     endTime=None, generator=None, icon=None, image=None,
+                     inReplyTo=None, location=None, preview=None,
+                     published=None, replies=None, startTime=None, summary=None,
+                     tag=None, updated=None, url=None, to=None, bto=None,
+                     cc=None, bcc=None, mediaType=None, duration=None):
+        pass
+
+    def create_profile(self, id=None, attachment=None, attributedTo=None,
+                       audience=None, content=None, context=None, name=None,
+                       endTime=None, generator=None, icon=None, image=None,
+                       inReplyTo=None, location=None, preview=None,
+                       published=None, replies=None, startTime=None,
+                       summary=None, tag=None, updated=None, url=None, to=None,
+                       bto=None, cc=None, bcc=None, mediaType=None,
+                       duration=None):
+        pass
+
+    def create_tombstone(self, id=None, attachment=None, attributedTo=None,
+                         audience=None, content=None, context=None, name=None,
+                         endTime=None, generator=None, icon=None, image=None,
+                         inReplyTo=None, location=None, preview=None,
+                         published=None, replies=None, startTime=None,
+                         summary=None, tag=None, updated=None, url=None,
+                         to=None, bto=None, cc=None, bcc=None, mediaType=None,
+                         duration=None):
+        pass
+
+
 class Application(Object, ApplicationModel):
     """
     Describes a software application.
@@ -342,7 +463,7 @@ class Organization(Object, OrganizationModel):
     """
 
 
-class Person(Object, PersonModel):
+class Person(PersonModel, Actor, Object, ):
     """
     Represents an individual person.
     """
