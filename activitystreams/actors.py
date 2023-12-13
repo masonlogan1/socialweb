@@ -4,6 +4,8 @@ Actor types are Object types that are capable of performing activities.
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#actor-types"
 
 from abc import ABC
+from typing import List
+from datetime import datetime
 
 from activitystreams.models import ApplicationModel, GroupModel, \
     OrganizationModel, PersonModel, ServiceModel
@@ -14,10 +16,22 @@ from activitystreams.activity import Create
 
 class Actor(Object):
     """
-
+    Base class that defines standardized behavior for actor objects
     """
     type = "Actor"
     context = "https://www.w3.org/ns/activitystreams"
+
+    def _create(self, id, obj, summary: str = None, to: List = None,
+                **kwargs) -> Create:
+        """
+        Generic method for generating a Create object linked back to the actor
+        :param id: the id for the new Create
+        :param object: the object linked to the new Create
+        :return: Create
+        """
+        new = Create(id=id, object=obj, summary=summary, to=to,
+                     actor=self, published=datetime.now(), **kwargs)
+        return new
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -68,4 +82,3 @@ class Service(Actor, Object, ServiceModel):
     """
     type = "Service"
     context = "https://www.w3.org/ns/activitystreams#Service"
-

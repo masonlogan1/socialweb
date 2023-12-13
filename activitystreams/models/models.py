@@ -597,7 +597,7 @@ class ObjectProperty:
             raise ValueError(
                 f'Property "object" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
-        self.__object = object
+        self.__object = val
 
 
 class PrevProperty:

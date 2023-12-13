@@ -6,10 +6,23 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 import json
 from itertools import chain
+from collections.abc import Iterable
+from datetime import datetime
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
+
+
+def flatten(value):
+    """
+    Transforms certain values into json-serializable format
+    """
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    if isinstance(value, Object):
+        return value.serialize()
+    return value
 
 
 class Object(ObjectModel):
@@ -22,20 +35,36 @@ class Object(ObjectModel):
     type = "Object"
     context = "https://www.w3.org/ns/activitystreams#Object"
 
-    def data(self, include_context=False) -> dict:
+    def data(self, include_context: bool = False, include: Iterable = (),
+             exclude: Iterable = ('context',)) -> dict:
         """
-        Returns the object's properties as a dictionary
+        Returns the object's properties as a dictionary. Cannot include values
+        that are not already a property of the object
         :param include_context: includes "@context" if True, defaults False
-        :return:
+        :param include: properties to include, defaults to all
+        :param exclude: properties to exclude, defaults to none
+        :return: dictionary of properties
         """
+        exclude = exclude if not include_context else \
+            (item for item in exclude if item != 'context')
         data = {prop: getattr(self, prop) for prop in self.__properties__
-                if getattr(self, prop) is not None}
-        if not include_context:
-            data.pop('context')
+                # if the property is not None
+                if getattr(self, prop) is not None
+                # AND if including everything OR if specifically included
+                and (not include or prop in include)
+                # AND if excluding nothing OR if not specifically excluded
+                and not (exclude and prop in exclude)}
         return data
 
-    def json(self, include_context=False):
-        return json.dumps(self.data(include_context=include_context))
+    def json(self, include_context: bool = False, include: Iterable = None,
+             exclude: Iterable = ('context')):
+        data = self.data(include_context=include_context,
+                         include=include, exclude=exclude)
+        data = {key: flatten(value) for key, value in data.items()}
+        return json.dumps(data)
+
+    def serialize(self):
+        return self.id
 
     @classmethod
     def __get_properties__(cls) -> list:
