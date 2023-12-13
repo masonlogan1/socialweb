@@ -14,6 +14,9 @@ from activitystreams.models import OrderedCollectionModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
 
 
+KEYMAP = {'context': '@context'}
+
+
 def flatten(value):
     """
     Transforms certain values into json-serializable format
@@ -60,11 +63,14 @@ class Object(ObjectModel):
              exclude: Iterable = ('context')):
         data = self.data(include_context=include_context,
                          include=include, exclude=exclude)
-        data = {key: flatten(value) for key, value in data.items()}
+        data = {KEYMAP.get(key, key): flatten(value) for key, value in data.items()}
         return json.dumps(data)
 
     def serialize(self):
         return self.id
+
+    def __str__(self):
+        return self.json(include_context=True)
 
     @classmethod
     def __get_properties__(cls) -> list:

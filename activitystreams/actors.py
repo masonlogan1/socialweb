@@ -4,13 +4,13 @@ Actor types are Object types that are capable of performing activities.
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#actor-types"
 
 from abc import ABC
-from typing import List
+from typing import List, Union
 from datetime import datetime
 
 from activitystreams.models import ApplicationModel, GroupModel, \
     OrganizationModel, PersonModel, ServiceModel
-from activitystreams.core import Object
-from activitystreams.objects import Relationship
+from activitystreams.core import Object, Link, Collection
+from activitystreams.objects import Relationship, Note
 from activitystreams.activity import Create
 
 
@@ -21,7 +21,7 @@ class Actor(Object):
     type = "Actor"
     context = "https://www.w3.org/ns/activitystreams"
 
-    def _create(self, id, obj, summary: str = None, to: List = None,
+    def create(self, id, object, summary: str = None, to: List = None,
                 **kwargs) -> Create:
         """
         Generic method for generating a Create object linked back to the actor
@@ -29,9 +29,25 @@ class Actor(Object):
         :param object: the object linked to the new Create
         :return: Create
         """
-        new = Create(id=id, object=obj, summary=summary, to=to,
+        new = Create(id=id, object=object, to=to, summary=summary,
                      actor=self, published=datetime.now(), **kwargs)
         return new
+
+    def create_note(self, create_id: str, note_id: str, content: str, url: str,
+                    summary: str = None, inReplyTo: Object = None,
+                    name: str = None, to: List = None, cc: List = None,
+                    attachment: Union[Object, Link] = None,
+                    tag: List = None, replies: Collection = None) -> Create:
+        note = Note(id=note_id, url=url, content=content, summary=summary,
+                    inReplyTo=inReplyTo, to=to, cc=cc, attachment=attachment,
+                    tag=tag, replies=replies, attributedTo=self, name=name)
+        create_obj = self.create(id=create_id, object=note,
+                        summary=f"{self.name} created a note")
+        return create_obj
+
+    def serialize(self):
+        return self.data(include=('id', 'name', 'type'))
+
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -44,7 +60,7 @@ class Actor(Object):
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
 
-class Application(Actor, Object, ApplicationModel):
+class Application(Actor, ApplicationModel):
     """
     Describes a software application.
     """
@@ -52,7 +68,7 @@ class Application(Actor, Object, ApplicationModel):
     context = "https://www.w3.org/ns/activitystreams#Application"
 
 
-class Group(Actor, Object, GroupModel):
+class Group(Actor, GroupModel):
     """
     Represents a formal or informal collective of Actors.
     """
@@ -60,7 +76,7 @@ class Group(Actor, Object, GroupModel):
     context = "https://www.w3.org/ns/activitystreams#Group"
 
 
-class Organization(Actor, Object, OrganizationModel):
+class Organization(Actor, OrganizationModel):
     """
     Represents an organization.
     """
@@ -68,7 +84,7 @@ class Organization(Actor, Object, OrganizationModel):
     context = "https://www.w3.org/ns/activitystreams#Organization"
 
 
-class Person(Actor, Object, PersonModel):
+class Person(Actor, PersonModel):
     """
     Represents an individual person.
     """
@@ -76,7 +92,7 @@ class Person(Actor, Object, PersonModel):
     context = "https://www.w3.org/ns/activitystreams#Person"
 
 
-class Service(Actor, Object, ServiceModel):
+class Service(Actor, ServiceModel):
     """
     Represents a service of any kind.
     """

@@ -67,7 +67,7 @@ class Note(Object, NoteModel):
     length.
     """
     type = "Note"
-    context = "https://www.w3.org/ns/activitystreams#Note"
+    context = "https://www.w3.org/ns/activitystreams"
 
 
 class Page(Document, PageModel):
