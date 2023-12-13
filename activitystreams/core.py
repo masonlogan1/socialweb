@@ -4,6 +4,9 @@ vocabulary.
 """
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
+import json
+from itertools import chain
+
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
@@ -16,6 +19,43 @@ class Object(ObjectModel):
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
+    type = "Object"
+    context = "https://www.w3.org/ns/activitystreams#Object"
+
+    def data(self, include_context=False) -> dict:
+        """
+        Returns the object's properties as a dictionary
+        :param include_context: includes "@context" if True, defaults False
+        :return:
+        """
+        data = {prop: getattr(self, prop) for prop in self.__properties__
+                if getattr(self, prop) is not None}
+        if not include_context:
+            data.pop('context')
+        return data
+
+    def json(self, include_context=False):
+        return json.dumps(self.data(include_context=include_context))
+
+    @classmethod
+    def __get_properties__(cls) -> list:
+        """
+        Creates a list of all @property objects defined and inherited in
+        this class
+        """
+        cls.__properties__ = list(chain(key for kls in cls.mro()
+                                        for key, value in kls.__dict__.items()
+                                        if isinstance(value, property)))
+        return cls.__properties__
+
+    def __getattr__(self, key):
+        if key not in self.__dict__.keys():
+            if key != '__properties__':
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{key}'")
+            # if __properties__ does not exist, create it
+            self.__properties__ = self.__get_properties__()
+        return self.__dict__[key]
 
 
 class Link(LinkModel):
@@ -28,6 +68,8 @@ class Link(LinkModel):
     resource identified by the href. Properties of the Link are properties of
     the reference as opposed to properties of the resource
     """
+    type = "Link"
+    context = "https://www.w3.org/ns/activitystreams#Link"
 
 
 class Activity(Object, ActivityModel):
@@ -38,6 +80,8 @@ class Activity(Object, ActivityModel):
     activities. It is important to note that the Activity type itself does
     not carry any specific semantics about the kind of action being taken.
     """
+    context = "https://www.w3.org/ns/activitystreams#Activity"
+    type = "Activity"
 
 
 class IntransitiveActivity(Activity, IntransitiveActivityModel):
@@ -46,6 +90,8 @@ class IntransitiveActivity(Activity, IntransitiveActivityModel):
     intransitive actions (actions that do not require an object to make sense).
     The object property is therefore inappropriate for these activities.
     """
+    context = "https://www.w3.org/ns/activitystreams#IntransitiveActivity"
+    type = "IntransitiveActivity"
 
 
 class Collection(Object, CollectionModel):
@@ -56,6 +102,8 @@ class Collection(Object, CollectionModel):
     Refer to the Activity Streams 2.0 Core specification for a complete
     description of the Collection type.
     """
+    __context = "https://www.w3.org/ns/activitystreams#Collection"
+    __type = "Collection"
 
 
 class OrderedCollection(Collection, OrderedCollectionModel):
@@ -63,6 +111,8 @@ class OrderedCollection(Collection, OrderedCollectionModel):
     A subtype of Collection in which members of the logical collection are
     assumed to always be strictly ordered.
     """
+    context = "https://www.w3.org/ns/activitystreams#OrderedCollection"
+    type = "OrderedCollection"
 
 
 class CollectionPage(Collection, CollectionPageModel):
@@ -71,6 +121,8 @@ class CollectionPage(Collection, CollectionPageModel):
     Activity Streams 2.0 Core for a complete description of the CollectionPage
     object.
     """
+    context = "https://www.w3.org/ns/activitystreams#CollectionPage"
+    type = "CollectionPage"
 
 
 class OrderedCollectionPage(OrderedCollection, CollectionPage,
@@ -80,3 +132,5 @@ class OrderedCollectionPage(OrderedCollection, CollectionPage,
     Refer to the Activity Streams 2.0 Core for a complete description of the
     OrderedCollectionPage object.
     """
+    context = "https://www.w3.org/ns/activitystreams#OrderedCollectionPage"
+    type = "OrderedCollectionPage"

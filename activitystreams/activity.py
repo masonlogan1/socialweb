@@ -21,6 +21,8 @@ class Accept(Activity, AcceptModel):
     used in certain circumstances to indicate the context into which the
     object has been accepted.
     """
+    type = "Accept"
+    context = "https://www.w3.org/ns/activitystreams#Accept"
 
 
 class TentativeAccept(Accept, TentativeAcceptModel):
@@ -36,6 +38,8 @@ class Add(Activity, AddModel):
     determined implicitly by context. The origin can be used to identify the
     context from which the object originated.
     """
+    type = "Add"
+    context = "https://www.w3.org/ns/activitystreams#Add"
 
 
 class Arrive(IntransitiveActivity, ArriveModel):
@@ -44,12 +48,16 @@ class Arrive(IntransitiveActivity, ArriveModel):
     location. The origin can be used to identify the context from which the
     actor originated. The target typically has no defined meaning.
     """
+    type = "Arrive"
+    context = "https://www.w3.org/ns/activitystreams#Arrive"
 
 
 class Create(Activity, CreateModel):
     """
     Indicates that the actor has created the object.
     """
+    type = "Create"
+    context = "https://www.w3.org/ns/activitystreams#Create"
 
 
 class Delete(Activity, DeleteModel):
@@ -57,6 +65,8 @@ class Delete(Activity, DeleteModel):
     Indicates that the actor has deleted the object. If specified, the origin
     indicates the context from which the object was deleted.
     """
+    type = "Delete"
+    context = "https://www.w3.org/ns/activitystreams#Delete"
 
 
 class Follow(Activity, FollowModel):
@@ -66,6 +76,8 @@ class Follow(Activity, FollowModel):
     interested in any activity performed by or on the object. The target and
     origin typically have no defined meaning.
     """
+    type = "Follow"
+    context = "https://www.w3.org/ns/activitystreams#Follow"
 
 
 class Ignore(Activity, IgnoreModel):
@@ -73,6 +85,8 @@ class Ignore(Activity, IgnoreModel):
     Indicates that the actor is ignoring the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Ignore"
+    context = "https://www.w3.org/ns/activitystreams#Ignore"
 
 
 class Join(Activity, JoinModel):
@@ -80,6 +94,8 @@ class Join(Activity, JoinModel):
     Indicates that the actor has joined the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Join"
+    context = "https://www.w3.org/ns/activitystreams#Join"
 
 
 class Leave(Activity, LeaveModel):
@@ -87,6 +103,8 @@ class Leave(Activity, LeaveModel):
     Indicates that the actor has left the object. The target and origin
     typically have no meaning.
     """
+    type = "Leave"
+    context = "https://www.w3.org/ns/activitystreams#Leave"
 
 
 class Like(Activity, LikeModel):
@@ -94,6 +112,8 @@ class Like(Activity, LikeModel):
     Indicates that the actor likes, recommends or endorses the object. The
     target and origin typically have no defined meaning.
     """
+    type = "Like"
+    context = "https://www.w3.org/ns/activitystreams#Like"
 
 
 class Offer(Activity, OfferModel):
@@ -101,6 +121,8 @@ class Offer(Activity, OfferModel):
     Indicates that the actor is offering the object. If specified, the target
     indicates the entity to which the object is being offered.
     """
+    type = "Offer"
+    context = "https://www.w3.org/ns/activitystreams#Offer"
 
 
 class Invite(Offer, InviteModel):
@@ -108,6 +130,8 @@ class Invite(Offer, InviteModel):
     A specialization of Offer in which the actor is extending an invitation
     for the object to the target.
     """
+    type = "Invite"
+    context = "https://www.w3.org/ns/activitystreams#Invite"
 
 
 class Reject(Activity, RejectModel):
@@ -115,12 +139,16 @@ class Reject(Activity, RejectModel):
     Indicates that the actor is rejecting the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Reject"
+    context = "https://www.w3.org/ns/activitystreams#Reject"
 
 
 class TentativeReject(Reject, TentativeRejectModel):
     """
     A specialization of Reject in which the rejection is considered tentative.
     """
+    type = "TentativeReject"
+    context = "https://www.w3.org/ns/activitystreams#TentativeReject"
 
 
 class Remove(Activity, RemoveModel):
@@ -128,6 +156,8 @@ class Remove(Activity, RemoveModel):
     Indicates that the actor is removing the object. If specified,
     the origin indicates the context from which the object is being removed.
     """
+    type = "Remove"
+    context = "https://www.w3.org/ns/activitystreams#Remove"
 
 
 class Undo(Activity, UndoModel):
@@ -140,6 +170,8 @@ class Undo(Activity, UndoModel):
 
     The target and origin typically have no defined meaning.
     """
+    type = "Undo"
+    context = "https://www.w3.org/ns/activitystreams#Undo"
 
 
 class Update(Activity, UpdateModel):
@@ -150,24 +182,32 @@ class Update(Activity, UpdateModel):
 
     The target and origin typically have no defined meaning.
     """
+    type = "Update"
+    context = "https://www.w3.org/ns/activitystreams#Update"
 
 
 class View(Activity, ViewModel):
     """
     Indicates that the actor has viewed the object.
     """
+    type = "View"
+    context = "https://www.w3.org/ns/activitystreams#View"
 
 
 class Listen(Activity, ListenModel):
     """
     Indicates that the actor has listened to the object.
     """
+    type = "Listen"
+    context = "https://www.w3.org/ns/activitystreams#Listen"
 
 
 class Read(Activity, ReadModel):
     """
     Indicates that the actor has read the object.
     """
+    type = "Read"
+    context = "https://www.w3.org/ns/activitystreams#Read"
 
 
 class Move(Activity, MoveModel):
@@ -175,6 +215,8 @@ class Move(Activity, MoveModel):
     Indicates that the actor has moved object from origin to target. If the
     origin or target are not specified, either can be determined by context.
     """
+    type = "Move"
+    context = "https://www.w3.org/ns/activitystreams#Move"
 
 
 class Travel(IntransitiveActivity, TravelModel):
@@ -183,6 +225,8 @@ class Travel(IntransitiveActivity, TravelModel):
     IntransitiveObject whose actor specifies the direct object. If the target
     or origin are not specified, either can be determined by context.
     """
+    type = "Travel"
+    context = "https://www.w3.org/ns/activitystreams#Travel"
 
 
 class Announce(Activity, AnnounceModel):
@@ -191,6 +235,8 @@ class Announce(Activity, AnnounceModel):
 
     The origin typically has no defined meaning.
     """
+    type = "Announce"
+    context = "https://www.w3.org/ns/activitystreams#Announce"
 
 
 class Block(Ignore, BlockModel):
@@ -200,6 +246,8 @@ class Block(Ignore, BlockModel):
     one user to block activities or content of other users. The target and
     origin typically have no defined meaning.
     """
+    type = "Block"
+    context = "https://www.w3.org/ns/activitystreams#Block"
 
 
 class Flag(Activity, FlagModel):
@@ -208,12 +256,16 @@ class Flag(Activity, FlagModel):
     the sense common to many social platforms as reporting content as being
     inappropriate for any number of reasons.
     """
+    type = "Flag"
+    context = "https://www.w3.org/ns/activitystreams#Flag"
 
 
 class Dislike(Activity, DislikeModel):
     """
     Indicates that the actor dislikes the object.
     """
+    type = "Dislike"
+    context = "https://www.w3.org/ns/activitystreams#Dislike"
 
 
 class Question(IntransitiveActivity, QuestionModel):
@@ -226,3 +278,5 @@ class Question(IntransitiveActivity, QuestionModel):
     Either of the anyOf and oneOf properties MAY be used to express possible
     answers, but a Question object MUST NOT have both properties.
     """
+    type = "Question"
+    context = "https://www.w3.org/ns/activitystreams#Question"
