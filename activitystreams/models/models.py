@@ -23,6 +23,11 @@ logger.setLevel(logging.INFO)
 # circular imports. Abandon hope ye who enter! This is a godless nightmare
 
 
+# VALIDATOR TOOLS
+def object_or_link(val):
+    return isinstance(val, (ObjectModel, LinkModel, str))
+
+
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 # PROPERTIES
 #   REF: https://www.w3.org/TR/activitystreams-vocabulary/#properties
@@ -65,7 +70,7 @@ class TypeProperty:
 
     @type.setter
     def type(self, val):
-        if not isinstance(val, str):
+        if val is not None and not isinstance(val, str):
             raise ValueError(f'Property "type" must be of type "str"; ' +
                              f'got {val} ({type(val)})')
         self.__type = val
@@ -85,7 +90,7 @@ class ActorProperty:
 
     @actor.setter
     def actor(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "actor" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -106,7 +111,7 @@ class AttachmentProperty:
 
     @attachment.setter
     def attachment(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "attachment" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -128,7 +133,7 @@ class AttributedToProperty:
 
     @attributedTo.setter
     def attributedTo(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "attributedTo" must be of type "Object" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -149,7 +154,7 @@ class AudienceProperty:
 
     @audience.setter
     def audience(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "audience" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -170,7 +175,7 @@ class BccProperty:
 
     @bcc.setter
     def bcc(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "bcc" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -191,7 +196,7 @@ class BtoProperty:
 
     @bto.setter
     def bto(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "bto" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -212,7 +217,7 @@ class CcProperty:
 
     @cc.setter
     def cc(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "cc" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -238,7 +243,7 @@ class ContextProperty:
 
     @context.setter
     def context(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not isinstance(val, (str, ObjectModel, LinkModel)):
             raise ValueError(
                 f'Property "context" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -302,7 +307,7 @@ class GeneratorProperty:
 
     @generator.setter
     def generator(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "generator" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -324,7 +329,7 @@ class IconProperty:
 
     @icon.setter
     def icon(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "icon" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -367,7 +372,7 @@ class InReplyToProperty:
 
     @inReplyTo.setter
     def inReplyTo(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "inReplyTo" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -388,7 +393,7 @@ class InstrumentProperty:
 
     @instrument.setter
     def instrument(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "instrument" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -409,7 +414,7 @@ class LastProperty:
 
     @last.setter
     def last(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "last" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -430,7 +435,7 @@ class LocationProperty:
 
     @location.setter
     def location(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "location" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -474,7 +479,7 @@ class OneOfProperty:
 
     @oneOf.setter
     def oneOf(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "oneOf" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -496,7 +501,7 @@ class AnyOfProperty:
 
     @anyOf.setter
     def anyOf(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "anyOf" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -542,7 +547,7 @@ class OriginProperty:
 
     @origin.setter
     def origin(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "origin" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -588,7 +593,7 @@ class ObjectProperty:
 
     @object.setter
     def object(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "object" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -629,7 +634,7 @@ class PreviewProperty:
 
     @preview.setter
     def preview(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "preview" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -651,7 +656,7 @@ class ResultProperty:
 
     @result.setter
     def result(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "result" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -695,7 +700,7 @@ class TagProperty:
 
     @tag.setter
     def tag(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "tag" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -720,7 +725,7 @@ class TargetProperty:
 
     @target.setter
     def target(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "target" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -741,7 +746,7 @@ class ToProperty:
 
     @to.setter
     def to(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "to" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -1163,9 +1168,9 @@ class StartIndexProperty:
 
     @startIndex.setter
     def startIndex(self, val):
-        if val is not None and not isinstance(val, float):
+        if val is not None and not isinstance(val, int):
             raise ValueError(
-                f'Property "startIndex" must be of type "float"; ' +
+                f'Property "startIndex" must be of type "int"; ' +
                 f'got {val} ({type(val)})')
         if val < 0:
             raise ValueError(
@@ -1306,7 +1311,7 @@ class SubjectProperty:
 
     @subject.setter
     def subject(self, val):
-        if val is not None and not isinstance(val, (ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "subject" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -1409,7 +1414,7 @@ class DeletedProperty:
 # easier to manage the properties if we make them their own classes
 class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
                   AudienceProperty, ContentProperty, ContextProperty,
-                  NameProperty,
+                  NameProperty, TypeProperty,
                   EndTimeProperty, GeneratorProperty, IconProperty,
                   ImageProperty,
                   InReplyToProperty, LocationProperty, PreviewProperty,
@@ -1423,8 +1428,10 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
+    __type = "Object"
+    __context = "https://www.w3.org/ns/activitystreams#Object"
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None,
                  content=None, context=None, name=None, endTime=None,
                  generator=None, icon=None, image=None, inReplyTo=None,
@@ -1433,11 +1440,12 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
                  url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None):
         self.id = id
+        self.type = type if type else self.__type
         self.attachment = attachment
         self.attributedTo = attributedTo
         self.audience = audience
         self.content = content
-        self.context = context
+        self.context = context if context else self.__context
         self.name = name
         self.endTime = endTime
         self.generator = generator
@@ -1498,7 +1506,7 @@ class ActivityModel(ObjectModel,
     :arg actor:
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1509,7 +1517,7 @@ class ActivityModel(ObjectModel,
         # "this looks so bad" I KNOW, but it's the only way to make all the
         # params show up in tooltips! Yes it looks bad! But it makes it easier
         # to work with!!
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,
@@ -1535,7 +1543,7 @@ class IntransitiveActivityModel(ActivityModel):
     The object property is therefore inappropriate for these activities.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1543,7 +1551,7 @@ class IntransitiveActivityModel(ActivityModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None):
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,
@@ -1571,7 +1579,7 @@ class CollectionModel(ObjectModel,
     description of the Collection type.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1579,7 +1587,7 @@ class CollectionModel(ObjectModel,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, total_items=None, current=None,
                  first=None, last=None, items=None):
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,
@@ -1603,7 +1611,7 @@ class OrderedCollectionModel(CollectionModel):
     assumed to always be strictly ordered.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1611,7 +1619,7 @@ class OrderedCollectionModel(CollectionModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, total_items=None, current=None,
                  first=None, last=None, items=None):
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,
@@ -1633,7 +1641,7 @@ class CollectionPageModel(CollectionModel,
     object.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1642,7 +1650,7 @@ class CollectionPageModel(CollectionModel,
                  mediaType=None, duration=None, total_items=None, current=None,
                  first=None, last=None, items=None, partOf=None, next=None,
                  prev=None, **kwargs):
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,
@@ -1667,7 +1675,7 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
     OrderedCollectionPage object.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1678,7 +1686,8 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                  prev=None, startIndex=None):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
-        CollectionPageModel.__init__(self, id=id, attachment=attachment,
+        CollectionPageModel.__init__(self, id=id, type=type,
+                                     attachment=attachment,
                                      attributedTo=attributedTo,
                                      audience=audience,
                                      content=content, context=context,
@@ -1696,7 +1705,7 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                                      current=current, first=first, last=last,
                                      items=items,
                                      partOf=partOf, next=next, prev=prev)
-        self.startIndex = startIndex
+        self.startIndex = startIndex if startIndex else 0
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -1919,7 +1928,7 @@ class QuestionModel(IntransitiveActivityModel):
     answers, but a Question object MUST NOT have both properties.
     """
 
-    def __init__(self, id=None, attachment=None, attributedTo=None,
+    def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
                  inReplyTo=None, location=None, preview=None, published=None,
@@ -1928,7 +1937,7 @@ class QuestionModel(IntransitiveActivityModel):
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
                  oneOf=None, anyOf=None, closed=None):
-        super().__init__(id=id, attachment=attachment,
+        super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
                          endTime=endTime, generator=generator, icon=icon,

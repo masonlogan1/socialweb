@@ -3,8 +3,9 @@ Unimplemented models for use in the activitystreams framework; models contain
 the properties required to implement the objects but do not have any methods
 or tools that make them useful.
 """
-from models import AcceptModel, ActivityModel, AddModel, AnnounceModel, \
-    ApplicationModel, ArriveModel, ArticleModel, AudioModel, BlockModel, \
+from activitystreams.models.models import \
+    AcceptModel, ActivityModel, AddModel, AnnounceModel, ApplicationModel, \
+    ArriveModel, ArticleModel, AudioModel,BlockModel, \
     CollectionModel, CollectionPageModel, CreateModel, DeleteModel, \
     DislikeModel, DocumentModel, EventModel, FlagModel, FollowModel, \
     GroupModel, IgnoreModel, ImageModel, IntransitiveActivityModel, \
