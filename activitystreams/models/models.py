@@ -1428,9 +1428,6 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
-    __type = "Object"
-    __context = "https://www.w3.org/ns/activitystreams#Object"
-
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None,
                  content=None, context=None, name=None, endTime=None,
@@ -1440,12 +1437,12 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
                  url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None):
         self.id = id
-        self.type = type if type else self.__type
+        self.type = type or self.type
         self.attachment = attachment
         self.attributedTo = attributedTo
         self.audience = audience
         self.content = content
-        self.context = context if context else self.__context
+        self.context = context or self.context
         self.name = name
         self.endTime = endTime
         self.generator = generator
@@ -1471,7 +1468,7 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
 
 class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
                 HrefLangProperty, HeightProperty, WidthProperty,
-                PreviewProperty):
+                PreviewProperty, TypeProperty, ContextProperty):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
@@ -1483,7 +1480,8 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
     """
 
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
-                 hreflang=None, height=None, width=None, preview=None):
+                 hreflang=None, height=None, width=None, preview=None,
+                 context=None, type=None):
         self.href = href
         self.rel = rel
         self.mediaType = mediaType
@@ -1492,6 +1490,8 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
         self.height = height
         self.width = width
         self.preview = preview
+        self.context = context or self.__context
+        self.type = type or self.__type
 
 
 class ActivityModel(ObjectModel,
