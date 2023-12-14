@@ -14,7 +14,7 @@ from activitystreams.models import OrderedCollectionModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
 
 
-KEYMAP = {'context': '@context'}
+KEYMAP = {'acontext': '@context'}
 
 
 def flatten(value):
@@ -36,10 +36,9 @@ class Object(ObjectModel):
     IntransitiveActivity, Collection and OrderedCollection.
     """
     type = "Object"
-    context = "https://www.w3.org/ns/activitystreams#Object"
 
     def data(self, include_context: bool = False, include: Iterable = (),
-             exclude: Iterable = ('context',)) -> dict:
+             exclude: Iterable = ('acontext',)) -> dict:
         """
         Returns the object's properties as a dictionary. Cannot include values
         that are not already a property of the object
@@ -49,7 +48,7 @@ class Object(ObjectModel):
         :return: dictionary of properties
         """
         exclude = exclude if not include_context else \
-            (item for item in exclude if item != 'context')
+            (item for item in exclude if item != '@context')
         data = {prop: getattr(self, prop) for prop in self.__properties__
                 # if the property is not None
                 if getattr(self, prop) is not None
@@ -60,7 +59,7 @@ class Object(ObjectModel):
         return data
 
     def json(self, include_context: bool = False, include: Iterable = None,
-             exclude: Iterable = ('context')):
+             exclude: Iterable = ('acontext',)):
         data = self.data(include_context=include_context,
                          include=include, exclude=exclude)
         data = {KEYMAP.get(key, key): flatten(value) for key, value in data.items()}
@@ -104,7 +103,6 @@ class Link(LinkModel):
     the reference as opposed to properties of the resource
     """
     type = "Link"
-    context = "https://www.w3.org/ns/activitystreams#Link"
 
 
 class Activity(Object, ActivityModel):
@@ -115,7 +113,6 @@ class Activity(Object, ActivityModel):
     activities. It is important to note that the Activity type itself does
     not carry any specific semantics about the kind of action being taken.
     """
-    context = "https://www.w3.org/ns/activitystreams#Activity"
     type = "Activity"
 
 
@@ -125,7 +122,6 @@ class IntransitiveActivity(Activity, IntransitiveActivityModel):
     intransitive actions (actions that do not require an object to make sense).
     The object property is therefore inappropriate for these activities.
     """
-    context = "https://www.w3.org/ns/activitystreams#IntransitiveActivity"
     type = "IntransitiveActivity"
 
 
@@ -137,7 +133,6 @@ class Collection(Object, CollectionModel):
     Refer to the Activity Streams 2.0 Core specification for a complete
     description of the Collection type.
     """
-    __context = "https://www.w3.org/ns/activitystreams#Collection"
     __type = "Collection"
 
 
@@ -146,7 +141,6 @@ class OrderedCollection(Collection, OrderedCollectionModel):
     A subtype of Collection in which members of the logical collection are
     assumed to always be strictly ordered.
     """
-    context = "https://www.w3.org/ns/activitystreams#OrderedCollection"
     type = "OrderedCollection"
 
 
@@ -156,7 +150,6 @@ class CollectionPage(Collection, CollectionPageModel):
     Activity Streams 2.0 Core for a complete description of the CollectionPage
     object.
     """
-    context = "https://www.w3.org/ns/activitystreams#CollectionPage"
     type = "CollectionPage"
 
 
@@ -167,5 +160,4 @@ class OrderedCollectionPage(OrderedCollection, CollectionPage,
     Refer to the Activity Streams 2.0 Core for a complete description of the
     OrderedCollectionPage object.
     """
-    context = "https://www.w3.org/ns/activitystreams#OrderedCollectionPage"
     type = "OrderedCollectionPage"

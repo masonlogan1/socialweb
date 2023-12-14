@@ -19,7 +19,6 @@ class Actor(Object):
     Base class that defines standardized behavior for actor objects
     """
     type = "Actor"
-    context = "https://www.w3.org/ns/activitystreams"
 
     def create(self, id, object, summary: str = None, to: List = None,
                 **kwargs) -> Create:
@@ -65,7 +64,6 @@ class Application(Actor, ApplicationModel):
     Describes a software application.
     """
     type = "Application"
-    context = "https://www.w3.org/ns/activitystreams#Application"
 
 
 class Group(Actor, GroupModel):
@@ -73,7 +71,6 @@ class Group(Actor, GroupModel):
     Represents a formal or informal collective of Actors.
     """
     type = "Group"
-    context = "https://www.w3.org/ns/activitystreams#Group"
 
 
 class Organization(Actor, OrganizationModel):
@@ -81,7 +78,6 @@ class Organization(Actor, OrganizationModel):
     Represents an organization.
     """
     type = "Organization"
-    context = "https://www.w3.org/ns/activitystreams#Organization"
 
 
 class Person(Actor, PersonModel):
@@ -89,7 +85,6 @@ class Person(Actor, PersonModel):
     Represents an individual person.
     """
     type = "Person"
-    context = "https://www.w3.org/ns/activitystreams#Person"
 
 
 class Service(Actor, ServiceModel):
@@ -97,4 +92,3 @@ class Service(Actor, ServiceModel):
     Represents a service of any kind.
     """
     type = "Service"
-    context = "https://www.w3.org/ns/activitystreams#Service"

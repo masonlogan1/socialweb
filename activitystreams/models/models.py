@@ -58,6 +58,24 @@ class IdProperty:
         self.__id = val
 
 
+class AContextProperty:
+    """
+    Provides the activitystreams @context value
+    """
+    __acontext = "https://www.w3.org/ns/activitystreams"
+
+    @property
+    def acontext(self):
+        return self.__acontext
+
+    @acontext.setter
+    def acontext(self, val):
+        # TODO: add @context setter checking
+        logger.debug(f'setting "@context" of {self} to {val}')
+        self.__acontext = val
+
+
+
 class TypeProperty:
     """
     Identifies the Object or Link type. Multiple values may be specified.
@@ -1412,9 +1430,9 @@ class DeletedProperty:
 
 # this insane cluster of inheritance might look bad, but it's actually a lot
 # easier to manage the properties if we make them their own classes
-class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
-                  AudienceProperty, ContentProperty, ContextProperty,
-                  NameProperty, TypeProperty,
+class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
+                  AttributedToProperty, AudienceProperty, ContentProperty,
+                  ContextProperty, NameProperty, TypeProperty,
                   EndTimeProperty, GeneratorProperty, IconProperty,
                   ImageProperty,
                   InReplyToProperty, LocationProperty, PreviewProperty,
@@ -1442,7 +1460,7 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
         self.attributedTo = attributedTo
         self.audience = audience
         self.content = content
-        self.context = context or self.context
+        self.context = context
         self.name = name
         self.endTime = endTime
         self.generator = generator
@@ -1468,7 +1486,7 @@ class ObjectModel(IdProperty, AttachmentProperty, AttributedToProperty,
 
 class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
                 HrefLangProperty, HeightProperty, WidthProperty,
-                PreviewProperty, TypeProperty, ContextProperty):
+                PreviewProperty, TypeProperty, AContextProperty):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
