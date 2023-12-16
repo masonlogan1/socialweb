@@ -18,7 +18,6 @@ class Relationship(Object, RelationshipModel):
     properties are used to identify the connected individuals.
     """
     type = "Relationship"
-    context = "https://www.w3.org/ns/activitystreams#Relationship"
 
 
 class Article(Object, ArticleModel):
@@ -26,7 +25,6 @@ class Article(Object, ArticleModel):
     Represents any kind of multi-paragraph written work.
     """
     type = "Article"
-    context = "https://www.w3.org/ns/activitystreams#Article"
 
 
 class Document(Object, DocumentModel):
@@ -34,7 +32,6 @@ class Document(Object, DocumentModel):
     Represents a document of any kind.
     """
     type = "Document"
-    context = "https://www.w3.org/ns/activitystreams#Document"
 
 
 class Audio(Object, AudioModel):
@@ -42,7 +39,6 @@ class Audio(Object, AudioModel):
     Represents an audio document of any kind.
     """
     type = "Audio"
-    context = "https://www.w3.org/ns/activitystreams#Audio"
 
 
 class Image(Document, ImageModel):
@@ -50,7 +46,6 @@ class Image(Document, ImageModel):
     An image document of any kind
     """
     type = "Image"
-    context = "https://www.w3.org/ns/activitystreams#Image"
 
 
 class Video(Document, VideoModel):
@@ -58,7 +53,6 @@ class Video(Document, VideoModel):
     Represents a video document of any kind.
     """
     type = "Video"
-    context = "https://www.w3.org/ns/activitystreams#Video"
 
 
 class Note(Object, NoteModel):
@@ -67,7 +61,10 @@ class Note(Object, NoteModel):
     length.
     """
     type = "Note"
-    context = "https://www.w3.org/ns/activitystreams"
+
+    def serialize(self, include_context=False):
+        data = {self.data(include_context=False)}
+
 
 
 class Page(Document, PageModel):
@@ -75,7 +72,6 @@ class Page(Document, PageModel):
     Represents a Web Page.
     """
     type = "Page"
-    context = "https://www.w3.org/ns/activitystreams#Page"
 
 
 class Event(Object, EventModel):
@@ -83,7 +79,6 @@ class Event(Object, EventModel):
     Represents any kind of event.
     """
     type = "Event"
-    context = "https://www.w3.org/ns/activitystreams#Event"
 
 
 class Place(Object, PlaceModel):
@@ -92,7 +87,6 @@ class Place(Object, PlaceModel):
     for additional information.
     """
     type = "Place"
-    context = "https://www.w3.org/ns/activitystreams#Place"
 
 
 class Profile(Object, ProfileModel):
@@ -102,7 +96,6 @@ class Profile(Object, ProfileModel):
     reference the object being described by the profile.
     """
     type = "Profile"
-    context = "https://www.w3.org/ns/activitystreams#Profile"
 
 
 class Tombstone(Object, TombstoneModel):
@@ -112,7 +105,6 @@ class Tombstone(Object, TombstoneModel):
     position, but it has been deleted.
     """
     type = "Tombstone"
-    context = "https://www.w3.org/ns/activitystreams#Tombstone"
 
 
 class Mention(Link, MentionModel):
@@ -120,4 +112,3 @@ class Mention(Link, MentionModel):
     A specialized Link that represents a @mention.
     """
     type = "Mention"
-    context = "https://www.w3.org/ns/activitystreams#Mention"

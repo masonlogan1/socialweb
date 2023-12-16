@@ -7,25 +7,12 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 import json
 from itertools import chain
 from collections.abc import Iterable
-from datetime import datetime
+from utils import KEYMAP
+from utils import flatten
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
-
-
-KEYMAP = {'acontext': '@context'}
-
-
-def flatten(value):
-    """
-    Transforms certain values into json-serializable format
-    """
-    if isinstance(value, datetime):
-        return value.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    if isinstance(value, Object):
-        return value.serialize()
-    return value
 
 
 class Object(ObjectModel):
@@ -59,14 +46,12 @@ class Object(ObjectModel):
         return data
 
     def json(self, include_context: bool = False, include: Iterable = None,
-             exclude: Iterable = ('acontext',)):
+             exclude: Iterable = ('acontext',), minified: bool = False) -> str:
         data = self.data(include_context=include_context,
                          include=include, exclude=exclude)
-        data = {KEYMAP.get(key, key): flatten(value) for key, value in data.items()}
+        data = {KEYMAP.get(key, key): flatten(value)
+                for key, value in data.items()}
         return json.dumps(data)
-
-    def serialize(self):
-        return self.id
 
     def __str__(self):
         return self.json(include_context=True)
