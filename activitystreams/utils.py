@@ -4,9 +4,10 @@ Utility functions for managing activitystreams data
 
 from datetime import datetime
 from collections.abc import Iterable
+from itertools import chain
 
 # used for mapping jsonld @ keys to proper names
-KEYMAP = {'abase': '@base',
+JSON_LD_KEYMAP = {'abase': '@base',
           'acontainer': '@container',
           'acontext': '@context',
           'adirection': '@direction',
@@ -31,27 +32,42 @@ KEYMAP = {'abase': '@base',
           'avocab': '@vocab',
           }
 
+# Compose multiple maps into this single one
+STD_KEYMAP = {**JSON_LD_KEYMAP}
 
-def dt_str_convert(value: datetime) -> str:
+
+def datetime_convert(value: datetime) -> str:
     """
     Converts a datetime.datetime to an ActivityStreams datetime string
     """
     return value.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
-def serialize(value) -> str:
+class PropertyAnalyzerMixin:
     """
-    Serializes an ActivityStreams Object and returns the string
-    :param value: the object to be serialized into a string
-    :return: the string value of the object
+    Class that provides a __get_properties__ method and __properties__ variable
+    to anything it is added to
     """
-    return value.serialize()
 
-VALUEMAP = {
-    datetime: dt_str_convert,
-}
-# Iterables should be turned into a json Array that iterates over every value,
-# processes it with the relevant function from the VALUEMAP (or str as a
-# default), and then concatenated together
-VALUEMAP.update({Iterable: lambda value: \
-    f'[{",".join(VALUEMAP.get(type(item), str)(item) for item in value)}]'})
+    def __init__(self):
+        self.__get_properties__()
+
+    @classmethod
+    def __get_properties__(cls) -> list:
+        """
+        Creates a list of all @property objects defined and inherited in
+        this class
+        """
+        cls.__properties__ = list(chain(key for kls in cls.mro()
+                                        for key, value in kls.__dict__.items()
+                                        if isinstance(value, property)))
+        return cls.__properties__
+
+    def __getattr__(self, key):
+        if key not in self.__dict__.keys():
+            if key != '__properties__':
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{key}'")
+            # if __properties__ does not exist, create it
+            self.__properties__ = self.__get_properties__()
+        return self.__dict__[key]

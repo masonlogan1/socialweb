@@ -5,17 +5,17 @@ vocabulary.
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 import json
-from itertools import chain
 from collections.abc import Iterable
-from utils import KEYMAP
-from utils import flatten
+from activitystreams.utils import JSON_LD_KEYMAP
+from activitystreams.utils import PropertyAnalyzerMixin
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
 
+KEY_MAP = {**JSON_LD_KEYMAP}
 
-class Object(ObjectModel):
+class Object(ObjectModel, PropertyAnalyzerMixin):
     """
     Describes an object of any kind. The Object type serves as the base type
     for most of the other kinds of objects defined in the Activity
@@ -49,32 +49,12 @@ class Object(ObjectModel):
              exclude: Iterable = ('acontext',), minified: bool = False) -> str:
         data = self.data(include_context=include_context,
                          include=include, exclude=exclude)
-        data = {KEYMAP.get(key, key): flatten(value)
+        data = {KEY_MAP.get(key, key): value if not isinstance(value, Object) else value.json()
                 for key, value in data.items()}
         return json.dumps(data)
 
     def __str__(self):
         return self.json(include_context=True)
-
-    @classmethod
-    def __get_properties__(cls) -> list:
-        """
-        Creates a list of all @property objects defined and inherited in
-        this class
-        """
-        cls.__properties__ = list(chain(key for kls in cls.mro()
-                                        for key, value in kls.__dict__.items()
-                                        if isinstance(value, property)))
-        return cls.__properties__
-
-    def __getattr__(self, key):
-        if key not in self.__dict__.keys():
-            if key != '__properties__':
-                raise AttributeError(
-                    f"'{self.__class__.__name__}' object has no attribute '{key}'")
-            # if __properties__ does not exist, create it
-            self.__properties__ = self.__get_properties__()
-        return self.__dict__[key]
 
 
 class Link(LinkModel):
