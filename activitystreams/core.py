@@ -45,7 +45,7 @@ class Object(ObjectModel):
         return data
 
     def json(self, include_context: bool = False, include: Iterable = None,
-             exclude: Iterable = ('acontext',), minified: bool = False) -> str:
+             exclude: Iterable = ('acontext',),) -> str:
         data = self.data(include_context=include_context,
                          include=include, exclude=exclude)
         data = {KEY_MAP.get(key, key): value if not isinstance(value, Object) else value.json()
