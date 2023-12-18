@@ -7,7 +7,6 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 import json
 from collections.abc import Iterable
 from activitystreams.utils import JSON_LD_KEYMAP
-from activitystreams.utils import PropertyAnalyzerMixin
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -15,7 +14,7 @@ from activitystreams.models import OrderedCollectionModel, \
 
 KEY_MAP = {**JSON_LD_KEYMAP}
 
-class Object(ObjectModel, PropertyAnalyzerMixin):
+class Object(ObjectModel):
     """
     Describes an object of any kind. The Object type serves as the base type
     for most of the other kinds of objects defined in the Activity

@@ -9,6 +9,7 @@ handled correctly.
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
+from activitystreams.models.utility_classes import PropertyAnalyzerMixin
 
 import logging
 
@@ -1439,7 +1440,7 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
                   PublishedProperty, RepliesProperty, StartTimeProperty,
                   SummaryProperty, TagProperty, UpdatedProperty, UrlProperty,
                   ToProperty, BtoProperty, CcProperty, BccProperty,
-                  MediaTypeProperty, DurationProperty):
+                  MediaTypeProperty, DurationProperty, PropertyAnalyzerMixin):
     """
     Describes an object of any kind. The Object type serves as the base type
     for most of the other kinds of objects defined in the Activity
@@ -1454,6 +1455,7 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
                  startTime=None, summary=None, tag=None, updated=None,
                  url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None):
+        PropertyAnalyzerMixin.__init__(self)
         self.id = id
         self.type = type or self.type
         self.attachment = attachment
@@ -1500,6 +1502,10 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None,
                  context=None, type=None):
+        # grants the ability to access all @property objects associated with the
+        # model via __properties__ on instantiated objects and
+        # __get_properties__ on classes
+        PropertyAnalyzerMixin.__init__(self)
         self.href = href
         self.rel = rel
         self.mediaType = mediaType
@@ -1508,7 +1514,7 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
         self.height = height
         self.width = width
         self.preview = preview
-        self.context = context or self.__context
+        self.context = context
         self.type = type or self.__type
 
 
