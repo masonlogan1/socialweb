@@ -9,7 +9,7 @@ handled correctly.
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from activitystreams.models.utility_classes import PropertyAnalyzerMixin
+from activitystreams.models.utils import PropertyAnalyzerMixin
 
 import logging
 
@@ -74,7 +74,6 @@ class AContextProperty:
         # TODO: add @context setter checking
         logger.debug(f'setting "@context" of {self} to {val}')
         self.__acontext = val
-
 
 
 class TypeProperty:
@@ -262,7 +261,7 @@ class ContextProperty:
 
     @context.setter
     def context(self, val):
-        if val is not None and not isinstance(val, (str, ObjectModel, LinkModel)):
+        if val is not None and not object_or_link(val):
             raise ValueError(
                 f'Property "context" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -1448,12 +1447,11 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
     IntransitiveActivity, Collection and OrderedCollection.
     """
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
-                 audience=None,
-                 content=None, context=None, name=None, endTime=None,
-                 generator=None, icon=None, image=None, inReplyTo=None,
-                 location=None, preview=None, published=None, replies=None,
-                 startTime=None, summary=None, tag=None, updated=None,
-                 url=None, to=None, bto=None, cc=None, bcc=None,
+                 audience=None, content=None, context=None, name=None,
+                 endTime=None, generator=None, icon=None, image=None,
+                 inReplyTo=None, location=None, preview=None, published=None,
+                 replies=None, startTime=None, summary=None, tag=None,
+                 updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None):
         PropertyAnalyzerMixin.__init__(self)
         self.id = id
@@ -1488,7 +1486,8 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
 
 class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
                 HrefLangProperty, HeightProperty, WidthProperty,
-                PreviewProperty, TypeProperty, AContextProperty):
+                PreviewProperty, TypeProperty, AContextProperty,
+                PropertyAnalyzerMixin):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
@@ -2130,5 +2129,5 @@ class TombstoneModel(ObjectModel,
 
 class MentionModel(LinkModel):
     """
-    A specialized Link that represents an @mention.
+    A specialized Link that represents a @mention.
     """

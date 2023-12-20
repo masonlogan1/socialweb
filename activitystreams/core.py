@@ -6,13 +6,14 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 import json
 from collections.abc import Iterable
-from activitystreams.utils import JSON_LD_KEYMAP
+from activitystreams.utils import JSON_LD_KEYMAP, PROPERTY_TRANSFORM_MAP
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
 
 KEY_MAP = {**JSON_LD_KEYMAP}
+
 
 class Object(ObjectModel):
     """
@@ -23,37 +24,49 @@ class Object(ObjectModel):
     """
     type = "Object"
 
-    def data(self, include_context: bool = False, include: Iterable = (),
-             exclude: Iterable = ('acontext',)) -> dict:
+    def data(self, include: Iterable = (), exclude: Iterable = (),
+             transforms: dict = None, rename: dict = None, include_none=False,
+             reject_values: Iterable = ()) -> dict:
         """
         Returns the object's properties as a dictionary. Cannot include values
         that are not already a property of the object
-        :param include_context: includes "@context" if True, defaults False
         :param include: properties to include, defaults to all
         :param exclude: properties to exclude, defaults to none
+        :param transforms: dict that maps data transformations by property name
+        :param rename: dict that renames properties in the output dict
+        :param include_none: includes pairs where value is None (defaults False)
+        :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        exclude = exclude if not include_context else \
-            (item for item in exclude if item != '@context')
-        data = {prop: getattr(self, prop) for prop in self.__properties__
-                # if the property is not None
-                if getattr(self, prop) is not None
+        transforms = {**PROPERTY_TRANSFORM_MAP,
+                      **(transforms if transforms else {})}
+        rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
+        data = {
+            # change name of property, if provided in mapping
+            rename.get(prop, prop):
+            # change value (BY UNMAPPED NAME) with function, if provided
+                transforms.get(prop, lambda o: getattr(o, prop))(self)
+            for prop in self.__properties__
+            # if include_null is True or the property is not None
+            if (include_none or getattr(self, prop) is not None)
                 # AND if including everything OR if specifically included
                 and (not include or prop in include)
                 # AND if excluding nothing OR if not specifically excluded
-                and not (exclude and prop in exclude)}
+                and not (exclude and prop in exclude)
+                and getattr(self, prop) not in reject_values}
         return data
 
-    def json(self, include_context: bool = False, include: Iterable = None,
-             exclude: Iterable = ('acontext',),) -> str:
-        data = self.data(include_context=include_context,
-                         include=include, exclude=exclude)
-        data = {KEY_MAP.get(key, key): value if not isinstance(value, Object) else value.json()
-                for key, value in data.items()}
-        return json.dumps(data)
+    def json(self, include: Iterable = (), exclude: Iterable = (),
+             transforms: dict = None, rename: dict = None, include_none=False,
+             minified: bool = False) -> str:
+        separators = (',', ':') if minified else None
+        return json.dumps(self.data(include=include, exclude=exclude,
+                                    transforms=transforms, rename=rename,
+                                    include_none=include_none),
+                          separators=separators)
 
     def __str__(self):
-        return self.json(include_context=True)
+        return self.json()
 
 
 class Link(LinkModel):
@@ -97,7 +110,7 @@ class Collection(Object, CollectionModel):
     Refer to the Activity Streams 2.0 Core specification for a complete
     description of the Collection type.
     """
-    __type = "Collection"
+    type = "Collection"
 
 
 class OrderedCollection(Collection, OrderedCollectionModel):
