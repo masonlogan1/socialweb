@@ -55,13 +55,28 @@ class PropertyObject:
         return props
 
 
-class JsonLD(PropertyObject):
+class AContext:
+    __acontext = None
+
+    @property
+    def acontext(self):
+        return self.__acontext
+
+    @acontext.setter
+    def acontext(self, value):
+        self.__acontext = value
+
+
+class JsonLD(PropertyObject, AContext):
     """
     Class for representing JSON-LD data. Utilizes @property objects for pulling
     instance data into JSON text representation
     """
-
     default_transforms = {}
+
+    def __init__(self, acontext):
+        super().__init__()
+        self.acontext = acontext
 
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
