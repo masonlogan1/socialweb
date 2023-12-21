@@ -9,7 +9,7 @@ handled correctly.
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from activitystreams.models.utils import PropertyAnalyzerMixin
+from jsonld import JsonLD
 
 import logging
 
@@ -57,23 +57,6 @@ class IdProperty:
                              f'got {val} ({type(val)})')
         logger.debug(f'setting "id" of {self} to {val}')
         self.__id = val
-
-
-class AContextProperty:
-    """
-    Provides the activitystreams @context value
-    """
-    __acontext = "https://www.w3.org/ns/activitystreams"
-
-    @property
-    def acontext(self):
-        return self.__acontext
-
-    @acontext.setter
-    def acontext(self, val):
-        # TODO: add @context setter checking
-        logger.debug(f'setting "@context" of {self} to {val}')
-        self.__acontext = val
 
 
 class TypeProperty:
@@ -1430,7 +1413,7 @@ class DeletedProperty:
 
 # this insane cluster of inheritance might look bad, but it's actually a lot
 # easier to manage the properties if we make them their own classes
-class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
+class ObjectModel(JsonLD, IdProperty, AttachmentProperty,
                   AttributedToProperty, AudienceProperty, ContentProperty,
                   ContextProperty, NameProperty, TypeProperty,
                   EndTimeProperty, GeneratorProperty, IconProperty,
@@ -1439,7 +1422,7 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
                   PublishedProperty, RepliesProperty, StartTimeProperty,
                   SummaryProperty, TagProperty, UpdatedProperty, UrlProperty,
                   ToProperty, BtoProperty, CcProperty, BccProperty,
-                  MediaTypeProperty, DurationProperty, PropertyAnalyzerMixin):
+                  MediaTypeProperty, DurationProperty):
     """
     Describes an object of any kind. The Object type serves as the base type
     for most of the other kinds of objects defined in the Activity
@@ -1453,7 +1436,7 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None):
-        PropertyAnalyzerMixin.__init__(self)
+        JsonLD.__init__(self, 'https://www.w3.org/ns/activitystreams')
         self.id = id
         self.type = type or self.type
         self.attachment = attachment
@@ -1486,8 +1469,7 @@ class ObjectModel(IdProperty, AContextProperty, AttachmentProperty,
 
 class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
                 HrefLangProperty, HeightProperty, WidthProperty,
-                PreviewProperty, TypeProperty, AContextProperty,
-                PropertyAnalyzerMixin):
+                PreviewProperty, TypeProperty, JsonLD):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
@@ -1504,7 +1486,7 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
         # grants the ability to access all @property objects associated with the
         # model via __properties__ on instantiated objects and
         # __get_properties__ on classes
-        PropertyAnalyzerMixin.__init__(self)
+        JsonLD.__init__(self, 'https://www.w3.org/ns/activitystreams')
         self.href = href
         self.rel = rel
         self.mediaType = mediaType

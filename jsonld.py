@@ -43,6 +43,19 @@ class PropertyObject:
     def __init__(self):
         self.__properties__ = self.__get_properties__()
 
+    def __iter__(self):
+        for prop in self.__properties__:
+            yield prop, getattr(self, prop)
+
+    def __getitem__(self, keys):
+        keys = [keys] if isinstance(keys, str) else keys
+        if any(key not in self.__properties__ for key in keys):
+            bad_keys = [key for key in keys if key not in self.__properties__]
+            raise KeyError(f'''Key{'s' if len(bad_keys) > 1 else ''} ''' +
+                           f'''('{"', '".join(bad_keys)}') ''' +
+                           f'''not in type '{self.__class__.__name__}\'''')
+        return {key: getattr(self, key) for key in keys}
+
     @classmethod
     def __get_properties__(cls):
         """
