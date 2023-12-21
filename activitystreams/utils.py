@@ -1,7 +1,7 @@
 """
 Utility functions for managing activitystreams data
 """
-
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 
 
@@ -37,7 +37,8 @@ STD_KEYMAP = {**JSON_LD_KEYMAP}
 
 
 def object_or_string(obj):
-    return obj if isinstance(obj, str) else obj.data(exclude=('acontext',))
+    return obj if isinstance(obj, (str, Iterable, bool)) \
+        else obj.data(exclude=('acontext',))
 
 
 def stringify_timedelta(obj) -> str:
@@ -77,7 +78,10 @@ def stringify_datetime(obj: datetime) -> str:
 # matches a data type to a function
 STRINGIFY_MAP = {
     datetime: stringify_datetime,
-    timedelta: stringify_timedelta
+    float: float,
+    timedelta: stringify_timedelta,
+    str: str,
+    int: int,
 }
 
 
@@ -86,34 +90,54 @@ def stringify(obj):
 
 
 PROPERTY_TRANSFORM_MAP = {
+    'accuracy': lambda obj: stringify(obj.accuracy),
     'acontext': lambda obj: stringify(obj.acontext),
-    'actor': lambda obj: object_or_string(obj.actor),
-    'attachment': lambda obj: object_or_string(obj.attachment),
-    'attributedTo': lambda obj: object_or_string(obj.attributedTo),
-    'audience': lambda obj: object_or_string(obj.audience),
-    'bcc': lambda obj: object_or_string(obj.bcc),
-    'bto': lambda obj: object_or_string(obj.bto),
-    'cc': lambda obj: object_or_string(obj.cc),
+    'actor': lambda obj: stringify(obj.actor),
+    'altitude': lambda obj: stringify(obj.altitude),
+    'anyOf': lambda obj: stringify(obj.anyOf),
+    'attachment': lambda obj: stringify(obj.attachment),
+    'attributedTo': lambda obj: stringify(obj.attributedTo),
+    'audience': lambda obj: stringify(obj.audience),
+    'bcc': lambda obj: stringify(obj.bcc),
+    'bto': lambda obj: stringify(obj.bto),
+    'cc': lambda obj: stringify(obj.cc),
+    'closed': lambda obj: stringify(obj.closed),
     'content': lambda obj: stringify(obj.content),
-    'context': lambda obj: object_or_string(obj.context),
+    'context': lambda obj: stringify(obj.context),
+    'current': lambda obj: stringify(obj.current),
     'duration': lambda obj: stringify(obj.duration),
     'endTime': lambda obj: stringify(obj.endTime),
-    'generator': lambda obj: object_or_string(obj.generator),
-    'icon': lambda obj: object_or_string(obj.icon),
+    'first': lambda obj: stringify(obj.first),
+    'generator': lambda obj: stringify(obj.generator),
+    'height': lambda obj: stringify(obj.height),
+    'href': lambda obj: stringify(obj.href),
+    'hrefLang': lambda obj: stringify(obj.hrefLang),
+    'icon': lambda obj: stringify(obj.icon),
     'id': lambda obj: stringify(obj.id),
-    'image': lambda obj: object_or_string(obj.image),
-    'inReplyTo': lambda obj: object_or_string(obj.inReplyTo),
-    'location': lambda obj: object_or_string(obj.location),
+    'image': lambda obj: stringify(obj.image),
+    'inReplyTo': lambda obj: stringify(obj.inReplyTo),
+    'instrument': lambda obj: stringify(obj.instrument),
+    'items': lambda obj: stringify(obj.items),
+    'last': lambda obj: stringify(obj.last),
+    'location': lambda obj: stringify(obj.location),
     'mediaType': lambda obj: stringify(obj.mediaType),
     'name': lambda obj: stringify(obj.name),
-    'preview': lambda obj: object_or_string(obj.preview),
+    'next': lambda obj: stringify(obj.next),
+    'object': lambda obj: stringify(obj.object),
+    'oneOf': lambda obj: stringify(obj.oneOf),
+    'origin': lambda obj: stringify(obj.origin),
+    'partOf': lambda obj: stringify(obj.partOf),
+    'prev': lambda obj: stringify(obj.prev),
+    'preview': lambda obj: stringify(obj.preview),
     'published': lambda obj: stringify(obj.published),
-    'replies': lambda obj: object_or_string(obj.replies),
+    'replies': lambda obj: stringify(obj.replies),
+    'result': lambda obj: stringify(obj),
     'startTime': lambda obj: stringify(obj.startTime),
     'summary': lambda obj: stringify(obj.summary),
-    'tag': lambda obj: object_or_string(obj.tag),
-    'to': lambda obj: object_or_string(obj.to),
+    'tag': lambda obj: stringify(obj.tag),
+    'target': lambda obj: stringify(obj.target),
+    'to': lambda obj: stringify(obj.to),
     'type': lambda obj: stringify(obj.type),
     'updated': lambda obj: stringify(obj.updated),
-    'url': lambda obj: object_or_string(obj.url),
+    'url': lambda obj: stringify(obj.url),
 }
