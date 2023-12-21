@@ -5,42 +5,6 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 
 
-# used for mapping jsonld @ keys to proper names
-JSON_LD_KEYMAP = {
-          'abase': '@base',
-          'acontainer': '@container',
-          'acontext': '@context',
-          'adirection': '@direction',
-          'agraph': '@graph',
-          'aid': '@id',
-          'aimport': '@import',
-          'aincluded': '@included',
-          'aindex': '@index',
-          'ajson': '@json',
-          'alanguage': '@language',
-          'alist': '@list',
-          'anest': '@nest',
-          'anone': '@none',
-          'aprefix': '@prefix',
-          'apropagate': '@propagate',
-          'aprotected': '@protected',
-          'areverse': '@reverse',
-          'aset': '@set',
-          'atype': '@type',
-          'avalue': '@value',
-          'aversion': '@version',
-          'avocab': '@vocab',
-          }
-
-# Compose multiple maps into this single one
-STD_KEYMAP = {**JSON_LD_KEYMAP}
-
-
-def object_or_string(obj):
-    return obj if isinstance(obj, (str, Iterable, bool)) \
-        else obj.data(exclude=('acontext',))
-
-
 def stringify_timedelta(obj) -> str:
     """
     Converts a timedelta to an ISO 8601 string
@@ -74,7 +38,6 @@ def stringify_datetime(obj: datetime) -> str:
     """
     return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-
 # matches a data type to a function
 STRINGIFY_MAP = {
     datetime: stringify_datetime,
@@ -87,6 +50,14 @@ STRINGIFY_MAP = {
 
 def stringify(obj):
     return STRINGIFY_MAP.get(obj.__class__, str)(obj)
+
+
+def stringify_iterable(obj: Iterable):
+    # we run the stringification process on every object in the iterable
+    return [stringify(item) for item in obj]
+
+
+STRINGIFY_MAP.update({Iterable: stringify_iterable})
 
 
 PROPERTY_TRANSFORM_MAP = {

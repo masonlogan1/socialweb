@@ -4,15 +4,11 @@ vocabulary.
 """
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
-import json
-from collections.abc import Iterable
-from activitystreams.utils import JSON_LD_KEYMAP, PROPERTY_TRANSFORM_MAP
+from activitystreams.utils import PROPERTY_TRANSFORM_MAP
 
 from activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
-
-KEY_MAP = {**JSON_LD_KEYMAP}
 
 
 class Object(ObjectModel):
