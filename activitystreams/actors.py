@@ -3,14 +3,13 @@ Actor types are Object types that are capable of performing activities.
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#actor-types"
 
-from abc import ABC
 from typing import List, Union
 from datetime import datetime
 
 from activitystreams.models import ApplicationModel, GroupModel, \
     OrganizationModel, PersonModel, ServiceModel
 from activitystreams.core import Object, Link, Collection
-from activitystreams.objects import Relationship, Note
+from activitystreams.objects import Note
 from activitystreams.activity import Create
 
 
@@ -21,11 +20,13 @@ class Actor(Object):
     type = "Actor"
 
     def create(self, id, object, summary: str = None, to: List = None,
-                **kwargs) -> Create:
+               **kwargs) -> Create:
         """
         Generic method for generating a Create object linked back to the actor
         :param id: the id for the new Create
-        :param object: the object linked to the new Create
+        :param object: the object being created
+        :param summary: brief summary of the created object
+        :param to: audience intended for the created object
         :return: Create
         """
         new = Create(id=id, object=object, to=to, summary=summary,
@@ -41,12 +42,11 @@ class Actor(Object):
                     inReplyTo=inReplyTo, to=to, cc=cc, attachment=attachment,
                     tag=tag, replies=replies, attributedTo=self, name=name)
         create_obj = self.create(id=create_id, object=note,
-                        summary=f"{self.name} created a note")
+                                 summary=f"{self.name} created a note")
         return create_obj
 
     def serialize(self):
         return self.data(include=('id', 'name', 'type'))
-
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -57,7 +57,6 @@ class Actor(Object):
 #   and perform activities
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
-
 
 class Application(Actor, ApplicationModel):
     """

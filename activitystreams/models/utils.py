@@ -2,7 +2,6 @@
 Classes used to add specific functionality to their inheritors
 """
 from itertools import chain
-from json import JSONEncoder
 
 
 class PropertyAnalyzerMixin:

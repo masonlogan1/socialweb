@@ -62,10 +62,6 @@ class Note(Object, NoteModel):
     """
     type = "Note"
 
-    def serialize(self, include_context=False):
-        data = {self.data(include_context=False)}
-
-
 
 class Page(Document, PageModel):
     """
