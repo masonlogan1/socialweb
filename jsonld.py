@@ -2,35 +2,45 @@
 Tools for working with json-ld data
 """
 import json
+import re
+from urllib import parse
 from collections.abc import Iterable
 from itertools import chain
 
+from typing import Union
+
+import requests
+
+from pyld import jsonld
+from pyld.jsonld import JsonLdError, parse_link_header, LINK_HEADER_REL
 
 JSON_LD_KEYMAP = {
-          'abase': '@base',
-          'acontainer': '@container',
-          'acontext': '@context',
-          'adirection': '@direction',
-          'agraph': '@graph',
-          'aid': '@id',
-          'aimport': '@import',
-          'aincluded': '@included',
-          'aindex': '@index',
-          'ajson': '@json',
-          'alanguage': '@language',
-          'alist': '@list',
-          'anest': '@nest',
-          'anone': '@none',
-          'aprefix': '@prefix',
-          'apropagate': '@propagate',
-          'aprotected': '@protected',
-          'areverse': '@reverse',
-          'aset': '@set',
-          'atype': '@type',
-          'avalue': '@value',
-          'aversion': '@version',
-          'avocab': '@vocab',
-          }
+    'abase': '@base',
+    'acontainer': '@container',
+    'acontext': '@context',
+    'adirection': '@direction',
+    'agraph': '@graph',
+    'aid': '@id',
+    'aimport': '@import',
+    'aincluded': '@included',
+    'aindex': '@index',
+    'ajson': '@json',
+    'alanguage': '@language',
+    'alist': '@list',
+    'anest': '@nest',
+    'anone': '@none',
+    'aprefix': '@prefix',
+    'apropagate': '@propagate',
+    'aprotected': '@protected',
+    'areverse': '@reverse',
+    'aset': '@set',
+    'atype': '@type',
+    'avalue': '@value',
+    'aversion': '@version',
+    'avocab': '@vocab',
+}
+
+JSON_LD_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
 
 
 class PropertyObject:
@@ -80,12 +90,110 @@ class AContext:
         self.__acontext = value
 
 
+class RequestsJsonLoader:
+    """
+    Modified version of pyld.jsonld.requests_document_loader that fixes an
+    issue where application/ld+json can be pushed aside in favor of text/html
+    as the return type. Also tries to improve readability and documentation
+    and makes the object callable rather than returning an internal function
+
+    :param secure: require all requests to use HTTPS (default: False).
+    :param **kwargs: extra keyword args for Requests get() call.
+
+    :return: the RemoteDocument loader function.
+    """
+
+    headers = {'Accept': 'application/ld+json'}
+
+    def __init__(self, secure=True, headers=None):
+        self.secure = secure
+        self.headers = headers if headers else self.headers
+
+    def __call__(self, url, *args, **kwargs):
+        """
+        Passes the url into RequestsDocumentLoader().get(url)
+        :param url:
+        :return:
+        """
+        try:
+            return self.get(url)
+        except Exception as cause:
+            # the only reason I'm keeping this is for consistency
+            raise JsonLdError(
+                'Could not retrieve a JSON-LD document from the URL.',
+                'jsonld.LoadDocumentError', code='loading document failed',
+                cause=cause)
+
+    def get(self, url):
+        """
+        Retrieves JSON-LD at the given URL.
+        :param url: the URL to retrieve.
+        :return: the RemoteDocument.
+        """
+        pieces = parse.urlparse(url)
+        # urls must start with "http" or "https"
+        if not pieces.scheme or pieces.scheme not in ['http', 'https']:
+            raise ValueError('Cannot dereference url without valid scheme; add ' +
+                             f'''{'"http://" or' if not self.secure else ''} ''' +
+                             '"https://" to url')
+        # urls must have a body
+        if not pieces.netloc:
+            raise ValueError('Cannot dereference url without body')
+        # urls can only have certain characters
+        if re.match(JSON_LD_URL_REGEX, pieces.netloc):
+            raise ValueError('url cannot contain characters outside of' +
+                             'alphanumeric (a-Z, 0-9), "-", "_", ":", and "."')
+        # secure connections MUST use https
+        if self.secure and pieces.scheme != 'https':
+            raise ValueError('Cannot dereference non-"https://" url when ' +
+                             'secure=True; set secure=False or change scheme')
+
+        response = requests.get(url, headers=self.headers)
+
+        content_type = response.headers.get('content-type')
+        if not content_type:
+            content_type = 'application/octet-stream'
+        doc = {
+            'contentType': content_type,
+            'contextUrl': None,
+            'documentUrl': response.url,
+            'document': response.json()
+        }
+        link_header = response.headers.get('link')
+        if link_header:
+            linked_context = parse_link_header(link_header).get(LINK_HEADER_REL)
+            # only 1 related link header permitted
+            if linked_context and content_type != 'application/ld+json':
+                if isinstance(linked_context, list):
+                    raise JsonLdError(
+                        'URL could not be dereferenced, '
+                        'it has more than one '
+                        'associated HTTP Link Header.',
+                        'jsonld.LoadDocumentError',
+                        {'url': url},
+                        code='multiple context link headers')
+                doc['contextUrl'] = linked_context['target']
+            linked_alternate = parse_link_header(link_header).get('alternate')
+            # if not JSON-LD, alternate may point there
+            if linked_alternate and \
+               linked_alternate.get('type') == 'application/ld+json' and \
+               not re.match(r'^application/(\w*\+)?json$', content_type):
+                doc['contentType'] = 'application/ld+json'
+                doc['documentUrl'] = jsonld.prepend_base(
+                                            url, linked_alternate['target'])
+        return doc
+
+
 class JsonLD(PropertyObject, AContext):
     """
     Class for representing JSON-LD data. Utilizes @property objects for pulling
     instance data into JSON text representation
     """
+    # overridable dict for mapping a transformation function to a property
     default_transforms = {}
+    # overridable dict for mapping class types to a function for loading them
+    # as objects
+    type_constructor_map = {}
 
     def __init__(self, acontext):
         super().__init__()
@@ -116,11 +224,11 @@ class JsonLD(PropertyObject, AContext):
             for prop in self.__properties__
             # if include_null is True or the property is not None
             if (include_none or getattr(self, prop) is not None)
-                # AND if including everything OR if specifically included
-                and (not include or prop in include)
-                # AND if excluding nothing OR if not specifically excluded
-                and not (exclude and prop in exclude)
-                and getattr(self, prop) not in reject_values}
+               # AND if including everything OR if specifically included
+               and (not include or prop in include)
+               # AND if excluding nothing OR if not specifically excluded
+               and not (exclude and prop in exclude)
+               and getattr(self, prop) not in reject_values}
         return data
 
     def json(self, include: Iterable = (), exclude: Iterable = (),
@@ -131,6 +239,24 @@ class JsonLD(PropertyObject, AContext):
                                     transforms=transforms, rename=rename,
                                     include_none=include_none),
                           separators=separators)
+
+    @classmethod
+    def from_json(cls, data: Union[str, dict]):
+        """
+        Extracts fields from the provided JSON
+        :param data:
+        :return:
+        """
+        # This needs a jsonld expander that doesn't try to extract data from
+        # every fucking link like pyld does. Whose idea was it to make the
+        # official python jsonld parser try to treat *every link* like a node
+        # to extract with no option to turn that off???
+        if isinstance(data, str):
+            data = json.loads(data)
+        # filter out anything extra and populate None values where necessary
+        data = {key: data.get(key, None) for key in cls.__get_properties__()}
+
+        return cls(**data)
 
     def __str__(self):
         return self.json()
