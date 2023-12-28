@@ -7,7 +7,7 @@ handled correctly.
 # Vocabulary document. This whole module is intentionally barely one level of
 # abstraction from the spec
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sized
 from datetime import datetime, timedelta
 from activitypy.jsonld import ApplicationActivityJson
 from activitypy.activitystreams.models.utils import is_activity_datetime, \
@@ -481,17 +481,16 @@ class ItemsProperty:
         self.__items = val
 
 
-class OrderedItemsProperty:
+class OrderedItemsProperty(ItemsProperty):
     """
     Identifies the items contained in a collection. The items might be ordered
     or unordered.
     """
 
-    __orderedItems = None
-
+    # this is essentially just a wrapper for "items"
     @property
     def orderedItems(self):
-        return self.__orderedItems
+        return self.items
 
     @orderedItems.setter
     def orderedItems(self, val):
@@ -500,7 +499,7 @@ class OrderedItemsProperty:
             raise ValueError(
                 f'Property "orderedItems" must be of type "Object", ' +
                 f'"Link", or Iterable; got {val} ({type(val)})')
-        self.__orderedItems = val
+        self.items = val
 
 
 class UnorderedItemsProperty:
@@ -1674,11 +1673,18 @@ class CollectionModel(ObjectModel,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, acontext=acontext)
-        self.totalItems = totalItems if totalItems else 0
         self.current = current
         self.first = first
         self.last = last
-        self.items = items
+        # some inheritors may override this with more specific orderings,
+        # they should be given precedence
+        self.items = self.items if self.items else items
+
+        # supplied value takes priority, followed by size of items if they are
+        # sizeable, defaulting to 0 if not
+        self.totalItems = totalItems if totalItems else (
+            0 if not isinstance(self.items, Sized) else len(self.items)
+        )
 
 
 class OrderedCollectionModel(CollectionModel,
@@ -1769,6 +1775,7 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                  acontext='https://www.w3.org/ns/activitystreams'):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
+        OrderedCollectionModel.__init__(self, orderedItems=orderedItems)
         CollectionPageModel.__init__(self, id=id, type=type,
                                      attachment=attachment,
                                      attributedTo=attributedTo,
@@ -1788,7 +1795,6 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                                      current=current, first=first, last=last,
                                      partOf=partOf, next=next, prev=prev,
                                      acontext=acontext)
-        OrderedCollectionModel.__init__(self, orderedItems=orderedItems)
         self.startIndex = startIndex if startIndex else 0
 
 

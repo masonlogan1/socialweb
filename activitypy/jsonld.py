@@ -138,7 +138,7 @@ class RequestsJsonLoader:
     """
     logger = logging.getLogger('jsonld_request_loader')
     logger.setLevel(logging.INFO)
-    headers = {'Accept': 'application/ld+json'}
+    headers = {'Accept': 'application/ld+json, application/activity+json'}
 
     def __init__(self, secure=True, headers=None):
         self.secure = secure
@@ -224,10 +224,13 @@ class RequestsJsonLoader:
 class CachedRequestsJsonLoader(RequestsJsonLoader):
     """
     Modified version of the RequestsJsonLoader that caches schemas to prevent
-    dozens of unnecessary calls when parsing large sets of jsonld data
+    dozens of unnecessary calls when parsing large sets of jsonld data. Intended
+    to be used as a singleton
     """
 
     cached_schemas = {}
+    logger = logging.getLogger('cached-json-doc-loader')
+    logger.setLevel(logging.INFO)
 
     def __init__(self, secure=True, headers=None):
         super().__init__(secure=secure, headers=headers)
@@ -235,11 +238,12 @@ class CachedRequestsJsonLoader(RequestsJsonLoader):
     def __call__(self, url, *args, **kwargs):
         """
         Passes the url into RequestsDocumentLoader().get(url)
-        :param url:
+        :param url: the web location to get the jsonld document from
         :return:
         """
         try:
             if url not in self.cached_schemas.keys():
+                self.logger.info(f'Caching schema for {url}')
                 self.cached_schemas[url] = self.get(url)
             return self.cached_schemas.get(url)
         except Exception as cause:
@@ -269,8 +273,8 @@ class PropertyJsonLD(PropertyObject, AContext):
              transforms: dict = None, rename: dict = None, include_none=False,
              reject_values: Iterable = ()) -> dict:
         """
-        Returns the object's properties as a dictionary. Cannot include values
-        that are not already a property of the object
+        Returns the object's properties as a dictionary. Does not include values
+        that are not a property of the object
         :param include: properties to include, defaults to all
         :param exclude: properties to exclude, defaults to none
         :param transforms: dict that maps data transformations by property name
@@ -295,11 +299,26 @@ class PropertyJsonLD(PropertyObject, AContext):
                # AND if excluding nothing OR if not specifically excluded
                and not (exclude and prop in exclude)
                and getattr(self, prop) not in reject_values}
-        return data
+        # second pass of the None filter to ensure anything that returned None
+        # after being passed through a function is also captured. Removing the
+        # first pass results in a recursion error. I do not understand why but
+        # would love a solution
+        return {key: val for key, val in data.items()
+                if (include_none or val is not None)}
 
     def json(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
              minified: bool = False) -> str:
+        """
+        Transforms the object into a json string
+        :param include: properties to include, defaults to all
+        :param exclude: properties to exclude, defaults to none
+        :param transforms: dict that maps data transformations by property name
+        :param rename: dict that renames properties in the output dict
+        :param include_none: includes pairs where value is None (defaults False)
+        :param reject_values: values to refuse to include
+        :return:
+        """
         separators = (',', ':') if minified else None
         return json.dumps(self.data(include=include, exclude=exclude,
                                     transforms=transforms, rename=rename,
