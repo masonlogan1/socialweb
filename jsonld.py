@@ -2,6 +2,7 @@
 Tools for working with json-ld data
 """
 import json
+import logging
 import re
 from urllib import parse
 from collections.abc import Iterable
@@ -12,7 +13,11 @@ from typing import Union
 import requests
 
 from pyld import jsonld
-from pyld.jsonld import JsonLdError, parse_link_header, LINK_HEADER_REL
+from pyld.jsonld import JsonLdError, parse_link_header, LINK_HEADER_REL, \
+    expand
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 JSON_LD_KEYMAP = {
     'abase': '@base',
@@ -41,6 +46,32 @@ JSON_LD_KEYMAP = {
 }
 
 JSON_LD_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
+
+# keys are "type" attributes on incoming json, values are classes they map to
+# the __init__ file should be used to populate this to avoid circular imports
+JSON_TYPE_MAP = {
+
+}
+
+
+# These are separate methods to ensure existing types are not accidentally
+# overwritten; there are already so many that it's easy to mess up
+def register_jsonld_type(name: str, cls: object):
+    """
+    Adds a name-class mapping to the JSON_TYPE_MAP
+    """
+    if name in JSON_TYPE_MAP.keys():
+        raise ValueError(f'"{name}" already exists in mapping, cannot add new')
+    JSON_TYPE_MAP.update({name: cls})
+
+
+def update_jsonld_type(name: str, cls: object):
+    """
+    Updates an existing mapping to the JSON_TYPE_MAP
+    """
+    if name not in JSON_TYPE_MAP.keys():
+        raise ValueError(f'"{name}" not in mapping yet, cannot update')
+    JSON_TYPE_MAP.update({name: cls})
 
 
 class PropertyObject:
@@ -133,9 +164,10 @@ class RequestsJsonLoader:
         pieces = parse.urlparse(url)
         # urls must start with "http" or "https"
         if not pieces.scheme or pieces.scheme not in ['http', 'https']:
-            raise ValueError('Cannot dereference url without valid scheme; add ' +
-                             f'''{'"http://" or' if not self.secure else ''} ''' +
-                             '"https://" to url')
+            raise ValueError(
+                'Cannot dereference url without valid scheme; add ' +
+                f'''{'"http://" or' if not self.secure else ''} ''' +
+                '"https://" to url')
         # urls must have a body
         if not pieces.netloc:
             raise ValueError('Cannot dereference url without body')
@@ -176,11 +208,11 @@ class RequestsJsonLoader:
             linked_alternate = parse_link_header(link_header).get('alternate')
             # if not JSON-LD, alternate may point there
             if linked_alternate and \
-               linked_alternate.get('type') == 'application/ld+json' and \
-               not re.match(r'^application/(\w*\+)?json$', content_type):
+                    linked_alternate.get('type') == 'application/ld+json' and \
+                    not re.match(r'^application/(\w*\+)?json$', content_type):
                 doc['contentType'] = 'application/ld+json'
                 doc['documentUrl'] = jsonld.prepend_base(
-                                            url, linked_alternate['target'])
+                    url, linked_alternate['target'])
         return doc
 
 
@@ -241,22 +273,40 @@ class JsonLD(PropertyObject, AContext):
                           separators=separators)
 
     @classmethod
-    def from_json(cls, data: Union[str, dict]):
+    def from_json(cls, data: Union[str, dict], classmap: dict = None):
         """
-        Extracts fields from the provided JSON
-        :param data:
-        :return:
+        Extracts fields from the provided JSON. Uses the @type value to
+        determine the type of object to be created.
+        :param data: JSON data to transform into Python object
+        :param classmap: additional class mappings to use for conversion
+        :return: Python object
         """
-        # This needs a jsonld expander that doesn't try to extract data from
-        # every fucking link like pyld does. Whose idea was it to make the
-        # official python jsonld parser try to treat *every link* like a node
-        # to extract with no option to turn that off???
-        if isinstance(data, str):
-            data = json.loads(data)
-        # filter out anything extra and populate None values where necessary
-        data = {key: data.get(key, None) for key in cls.__get_properties__()}
+        # convert to dict and expand
+        data = json.loads(data) if isinstance(data, str) else data
+        expanded = expand(data)
+        class_type = expanded.get('@type', '')
+        if not class_type:
+            logger.debug(f'Bad json-ld:\n{expanded}')
+            raise ValueError('No @type value provided')
 
-        return cls(**data)
+        # check that the @type value is in the mapping
+        classmap = classmap if classmap else {}
+        if class_type not in classmap.keys():
+            raise ValueError('@type value not in mapping: "{class_type}"')
+
+        # gets the class for the object that needs to be created from the
+        object_class = classmap.get(class_type)
+        if not object_class:
+            ValueError(f'Provided data has invalid or missing "@type"')
+
+        # filter out properties that are not part of the specified class and
+        # populate None values where necessary
+        expanded = {
+            key: data.get(key, None)
+            for key in object_class.__get_properties__()
+        }
+
+        return object_class(**expanded)
 
     def __str__(self):
         return self.json()
