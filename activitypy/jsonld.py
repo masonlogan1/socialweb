@@ -104,6 +104,7 @@ class PropertyObject:
         this class
         """
         if not hasattr(cls, '__properties__'):
+            # we cache a copy
             cls.__properties__ = tuple(chain(key for kls in cls.mro()
                                              for key, value in
                                              kls.__dict__.items()
@@ -218,6 +219,35 @@ class RequestsJsonLoader:
                 doc['documentUrl'] = jsonld.prepend_base(
                     url, linked_alternate['target'])
         return doc
+
+
+class CachedRequestsJsonLoader(RequestsJsonLoader):
+    """
+    Modified version of the RequestsJsonLoader that caches schemas to prevent
+    dozens of unnecessary calls when parsing large sets of jsonld data
+    """
+
+    cached_schemas = {}
+
+    def __init__(self, secure=True, headers=None):
+        super().__init__(secure=secure, headers=headers)
+
+    def __call__(self, url, *args, **kwargs):
+        """
+        Passes the url into RequestsDocumentLoader().get(url)
+        :param url:
+        :return:
+        """
+        try:
+            if url not in self.cached_schemas.keys():
+                self.cached_schemas[url] = self.get(url)
+            return self.cached_schemas.get(url)
+        except Exception as cause:
+            # the only reason I'm keeping this is for consistency
+            raise JsonLdError(
+                'Could not retrieve a JSON-LD document from the URL.',
+                'jsonld.LoadDocumentError', code='loading document failed',
+                cause=cause)
 
 
 class PropertyJsonLD(PropertyObject, AContext):
