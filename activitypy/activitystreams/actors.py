@@ -6,11 +6,11 @@ __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#actor-types"
 from typing import List, Union
 from datetime import datetime
 
-from activitystreams.models import ApplicationModel, GroupModel, \
+from activitypy.activitystreams.models import ApplicationModel, GroupModel, \
     OrganizationModel, PersonModel, ServiceModel
-from activitystreams.core import Object, Link, Collection
-from activitystreams.objects import Note
-from activitystreams.activity import Create
+from activitypy.activitystreams.core import Object, Link, Collection
+from activitypy.activitystreams.objects import Note
+from activitypy.activitystreams.activity import Create
 
 
 class Actor(Object):

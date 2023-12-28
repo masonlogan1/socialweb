@@ -4,11 +4,11 @@ Tools for working with json-ld data
 import json
 import logging
 import re
-from urllib import parse
 from collections.abc import Iterable
 from itertools import chain
-
+from numbers import Number
 from typing import Union
+from urllib import parse
 
 import requests
 
@@ -103,10 +103,12 @@ class PropertyObject:
         Creates a list of all @property objects defined and inherited in
         this class
         """
-        props = tuple(chain(key for kls in cls.mro()
-                            for key, value in kls.__dict__.items()
-                            if isinstance(value, property)))
-        return props
+        if not hasattr(cls, '__properties__'):
+            cls.__properties__ = tuple(chain(key for kls in cls.mro()
+                                             for key, value in
+                                             kls.__dict__.items()
+                                             if isinstance(value, property)))
+        return cls.__properties__
 
 
 class AContext:
@@ -133,7 +135,8 @@ class RequestsJsonLoader:
 
     :return: the RemoteDocument loader function.
     """
-
+    logger = logging.getLogger('jsonld_request_loader')
+    logger.setLevel(logging.INFO)
     headers = {'Accept': 'application/ld+json'}
 
     def __init__(self, secure=True, headers=None):
@@ -180,6 +183,7 @@ class RequestsJsonLoader:
             raise ValueError('Cannot dereference non-"https://" url when ' +
                              'secure=True; set secure=False or change scheme')
 
+        self.logger.info(f'GET "{url}"; headers: {{{self.headers}}}')
         response = requests.get(url, headers=self.headers)
 
         content_type = response.headers.get('content-type')
@@ -216,7 +220,7 @@ class RequestsJsonLoader:
         return doc
 
 
-class JsonLD(PropertyObject, AContext):
+class PropertyJsonLD(PropertyObject, AContext):
     """
     Class for representing JSON-LD data. Utilizes @property objects for pulling
     instance data into JSON text representation
@@ -272,6 +276,63 @@ class JsonLD(PropertyObject, AContext):
                                     include_none=include_none),
                           separators=separators)
 
+    @staticmethod
+    def _get_object_class(data, classmap=None):
+        """
+        If the data has a recognized @type value (after json-ld expansion) then
+        returns the class registered to the given @type. Returns None otherwise
+        :param data: json-ld data to examine
+        :param classmap: additional type-class mappings outside the registry
+        :return: object fitting the type or None
+        """
+        expanded = expand(data)
+        if len(expanded) < 0:
+            return None
+        expanded = expanded[0]
+        class_type = expanded.get('@type', '')[0]
+        if not class_type:
+            logger.debug(f'Bad json-ld:\n{expanded}')
+            raise ValueError('No @type value provided')
+
+        # check that the @type value is in the mapping
+        classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
+        if class_type not in classmap.keys():
+            # raise ValueError(f'@type value not in mapping: "{class_type}"')
+            logger.warning(f'@type value not in mapping: "{class_type}"')
+            class_type = classmap.get('default')
+
+        # gets the class for the object that needs to be created from the
+        object_class = classmap.get(class_type)
+        if not object_class:
+            ValueError(f'Provided data has invalid or missing "@type"')
+        return object_class
+
+    @classmethod
+    def _unpack_objects(cls, data, context, classmap: dict = None):
+        """
+        Recursively unpacks a piece of data into flat values, lists (arrays),
+        and linked objects
+        :param data: the data to evaluate
+        :param context: the json-ld context this is being performed under
+        :param classmap: type-class mapping outside the typical registry
+        :return: flat value, python object, or list
+        """
+        # if the value is a basic type (str, bool, or number) then return the
+        # raw value, we don't need to handle those in a special way
+        if data is None or isinstance(data, (Number, str, bool)):
+            return data
+        if isinstance(data, dict):
+            # treat a nested dictionary like a linked object
+            # context has to be appended to read objects individually
+            context_val = {'@context': context, **data}
+            if cls._get_object_class(context_val, classmap=classmap):
+                return cls.from_json(context_val)
+            return None
+        if isinstance(data, Iterable):
+            # turn iterables into lists and evaluate everything inside
+            return [cls._unpack_objects(item, context, classmap)
+                    for item in data]
+
     @classmethod
     def from_json(cls, data: Union[str, dict], classmap: dict = None):
         """
@@ -283,30 +344,27 @@ class JsonLD(PropertyObject, AContext):
         """
         # convert to dict and expand
         data = json.loads(data) if isinstance(data, str) else data
-        expanded = expand(data)
-        class_type = expanded.get('@type', '')
-        if not class_type:
-            logger.debug(f'Bad json-ld:\n{expanded}')
-            raise ValueError('No @type value provided')
+        context = data.get('@context', '')
+        object_class = cls._get_object_class(data, classmap=classmap)
 
-        # check that the @type value is in the mapping
-        classmap = classmap if classmap else {}
-        if class_type not in classmap.keys():
-            raise ValueError('@type value not in mapping: "{class_type}"')
-
-        # gets the class for the object that needs to be created from the
-        object_class = classmap.get(class_type)
-        if not object_class:
-            ValueError(f'Provided data has invalid or missing "@type"')
-
-        # filter out properties that are not part of the specified class and
-        # populate None values where necessary
-        expanded = {
-            key: data.get(key, None)
+        # only include values from the json that are properties of the class
+        # unpack data structures and populate None values where appropriate
+        filtered_data = {
+            key: cls._unpack_objects(data.get(key, None), context,
+                                     classmap=classmap)
             for key in object_class.__get_properties__()
         }
 
-        return object_class(**expanded)
+        return object_class(**filtered_data)
 
     def __str__(self):
         return self.json()
+
+
+class ApplicationActivityJson(PropertyJsonLD):
+    """
+    Base class for representing application/activity+json type objects
+    """
+
+    def __init__(self, acontext):
+        super().__init__(acontext=acontext)

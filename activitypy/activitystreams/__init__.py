@@ -12,17 +12,15 @@ import datetime
 __created__ = datetime.datetime(2023, 7, 16)
 __updated__ = datetime.datetime(2023, 12, 11)
 
-from activitystreams.utils import PROPERTY_TRANSFORM_MAP
-
-from activitystreams.core import Object, Link, Activity, IntransitiveActivity, \
+from activitypy.activitystreams.core import Object, Link, Activity, IntransitiveActivity, \
     Collection, OrderedCollection, CollectionPage, OrderedCollectionPage
-from activitystreams.actors import Application, Group, Organization, Person, \
+from activitypy.activitystreams.actors import Application, Group, Organization, Person, \
     Service
-from activitystreams.activity import Accept, TentativeAccept, Add, Arrive, \
+from activitypy.activitystreams.activity import Accept, TentativeAccept, Add, Arrive, \
     Create, Delete, Follow, Ignore, Join, Leave, Like, Offer, Invite, Reject, \
     TentativeReject, Remove, Undo, Update, View, Listen, Read, Move, Travel, \
     Announce, Block, Flag, Dislike, Question
-from activitystreams.objects import Relationship, Article, Document, Audio, \
+from activitypy.activitystreams.objects import Relationship, Article, Document, Audio, \
     Image, Video, Note, Page, Event, Place, Profile, Tombstone, Mention
 
 
@@ -31,7 +29,7 @@ def update_stringify_map():
     # circular import error, so we import the map and the objects and map
     # a function that runs obj.data(exclude=('acontext',)) on all
     # ActivityStreams objects
-    from activitystreams.utils import STRINGIFY_MAP
+    from activitypy.activitystreams.utils import STRINGIFY_MAP
 
     def get_data(obj):
         return obj.data(exclude=('acontext',))

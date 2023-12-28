@@ -9,7 +9,9 @@ handled correctly.
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from jsonld import JsonLD
+from activitypy.jsonld import ApplicationActivityJson
+from activitypy.activitystreams.models.utils import is_activity_datetime, \
+    parse_activitystream_datetime
 
 import logging
 
@@ -25,8 +27,24 @@ logger.setLevel(logging.INFO)
 
 
 # VALIDATOR TOOLS
+# Currently the validator tools allow for storing things as literal strings.
+# In the future, this functionality will be REMOVED in favor of a system
+# that uses Links/Objects that are transformed back into the string literal
+# when generating the outgoing json
 def object_or_link(val):
     return isinstance(val, (ObjectModel, LinkModel, str))
+
+def object_list_or_link(val):
+    return isinstance(val, (ObjectModel, LinkModel, list, str))
+
+def collectionpage_or_link(val):
+    return isinstance(val, (CollectionPageModel, LinkModel, str))
+
+def collection_or_link(val):
+    return isinstance(val, (CollectionModel, LinkModel, str))
+
+def is_collection(val):
+    return isinstance(val, (CollectionModel, str))
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -52,7 +70,7 @@ class IdProperty:
 
     @id.setter
     def id(self, val):
-        if not isinstance(val, str):
+        if val is not None and not isinstance(val, str):
             raise ValueError(f'Property "id" must be of type "str"; ' +
                              f'got {val} ({type(val)})')
         logger.debug(f'setting "id" of {self} to {val}')
@@ -112,7 +130,7 @@ class AttachmentProperty:
 
     @attachment.setter
     def attachment(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "attachment" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -176,7 +194,7 @@ class BccProperty:
 
     @bcc.setter
     def bcc(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "bcc" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -197,7 +215,7 @@ class BtoProperty:
 
     @bto.setter
     def bto(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "bto" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -218,7 +236,7 @@ class CcProperty:
 
     @cc.setter
     def cc(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "cc" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -265,8 +283,7 @@ class CurrentProperty:
 
     @current.setter
     def current(self, val):
-        if val is not None and not isinstance(val,
-                                              (CollectionPageModel, LinkModel)):
+        if val is not None and not collectionpage_or_link(val):
             raise ValueError(
                 f'Property "current" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -287,8 +304,7 @@ class FirstProperty:
 
     @first.setter
     def first(self, val):
-        if val is not None and not isinstance(val,
-                                              (CollectionPageModel, LinkModel)):
+        if val is not None and not collectionpage_or_link(val):
             raise ValueError(
                 f'Property "first" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -415,7 +431,7 @@ class LastProperty:
 
     @last.setter
     def last(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not collectionpage_or_link(val):
             raise ValueError(
                 f'Property "last" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -463,6 +479,50 @@ class ItemsProperty:
                 f'Property "items" must be of type "Object", "Link", or ' +
                 f'Iterable; got {val} ({type(val)})')
         self.__items = val
+
+
+class OrderedItemsProperty:
+    """
+    Identifies the items contained in a collection. The items might be ordered
+    or unordered.
+    """
+
+    __orderedItems = None
+
+    @property
+    def orderedItems(self):
+        return self.__orderedItems
+
+    @orderedItems.setter
+    def orderedItems(self, val):
+        if val is not None and not isinstance(val, (
+                ObjectModel, LinkModel, Iterable)):
+            raise ValueError(
+                f'Property "orderedItems" must be of type "Object", ' +
+                f'"Link", or Iterable; got {val} ({type(val)})')
+        self.__orderedItems = val
+
+
+class UnorderedItemsProperty:
+    """
+    Identifies the items contained in a collection. The items might be ordered
+    or unordered.
+    """
+
+    __unorderedItems = None
+
+    @property
+    def unorderedItems(self):
+        return self.__unorderedItems
+
+    @unorderedItems.setter
+    def unorderedItems(self, val):
+        if val is not None and not isinstance(val, (
+                ObjectModel, LinkModel, Iterable)):
+            raise ValueError(
+                f'Property "unorderedItems" must be of type "Object", ' +
+                f'"Link", or Iterable; got {val} ({type(val)})')
+        self.__unorderedItems = val
 
 
 class OneOfProperty:
@@ -568,8 +628,7 @@ class NextProperty:
 
     @next.setter
     def next(self, val):
-        if val is not None and not isinstance(val,
-                                              (CollectionPageModel, LinkModel)):
+        if val is not None and not collectionpage_or_link(val):
             raise ValueError(
                 f'Property "next" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -614,8 +673,7 @@ class PrevProperty:
 
     @prev.setter
     def prev(self, val):
-        if val is not None and not isinstance(val,
-                                              (CollectionPageModel, LinkModel)):
+        if val is not None and not collectionpage_or_link(val):
             raise ValueError(
                 f'Property "prev" must be of type "CollectionPage" or ' +
                 f'"Link"; got {val} ({type(val)})')
@@ -678,7 +736,7 @@ class RepliesProperty:
 
     @replies.setter
     def replies(self, val):
-        if val is not None and not isinstance(val, CollectionModel):
+        if val is not None and not is_collection(val):
             raise ValueError(
                 f'Property "replies" must be of type "Collection"; ' +
                 f'got {val} ({type(val)})')
@@ -701,7 +759,7 @@ class TagProperty:
 
     @tag.setter
     def tag(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "tag" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -747,7 +805,7 @@ class ToProperty:
 
     @to.setter
     def to(self, val):
-        if val is not None and not object_or_link(val):
+        if val is not None and not object_list_or_link(val):
             raise ValueError(
                 f'Property "to" must be of type "Object" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -901,13 +959,14 @@ class HeightProperty:
 
     @height.setter
     def height(self, val):
-        if val is not None and not isinstance(val, int):
-            raise ValueError(
-                f'Property "content" must be of type "int"; ' +
-                f'got {val} ({type(val)})')
-        if val < 0:
-            raise ValueError(f'Property "height" must be greater than 0; ' +
-                             f'got {val}')
+        if val is not None:
+            if not isinstance(val, int):
+                raise ValueError(
+                    f'Property "content" must be of type "int"; ' +
+                    f'got {val} ({type(val)})')
+            if val < 0:
+                raise ValueError(f'Property "height" must be greater than 0; ' +
+                                 f'got {val}')
         self.__height = val
 
 
@@ -965,8 +1024,7 @@ class PartOfProperty:
 
     @partOf.setter
     def partOf(self, val):
-        if val is not None and not isinstance(val,
-                                              (CollectionModel, LinkModel)):
+        if val is not None and not collection_or_link(val):
             raise ValueError(
                 f'Property "partOf" must be of type "Collection" or "Link"; ' +
                 f'got {val} ({type(val)})')
@@ -1054,11 +1112,12 @@ class EndTimeProperty:
 
     @endTime.setter
     def endTime(self, val):
-        if val is not None and not isinstance(val, datetime):
+        if val is not None and not is_activity_datetime(val):
             raise ValueError(
-                f'Property "endTime" must be of type "datetime"; ' +
+                f'Property "endTime" must be of type "datetime" or "str" in ' +
+                f'"YYYY-mm-dd-THH:MM:SSZ" format; ' +
                 f'got {val} ({type(val)})')
-        self.__endTime = val
+        self.__endTime = parse_activitystream_datetime(val)
 
 
 class PublishedProperty:
@@ -1074,11 +1133,12 @@ class PublishedProperty:
 
     @published.setter
     def published(self, val):
-        if val is not None and not isinstance(val, datetime):
+        if val is not None and not is_activity_datetime(val):
             raise ValueError(
-                f'Property "published" must be of type "datetime"; ' +
+                f'Property "published" must be of type "datetime" or "str" ' +
+                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
                 f'got {val} ({type(val)})')
-        self.__published = val
+        self.__published = parse_activitystream_datetime(val)
 
 
 class StartTimeProperty:
@@ -1096,11 +1156,12 @@ class StartTimeProperty:
 
     @startTime.setter
     def startTime(self, val):
-        if val is not None and not isinstance(val, datetime):
+        if val is not None and not is_activity_datetime(val):
             raise ValueError(
-                f'Property "startTime" must be of type "datetime"; ' +
+                f'Property "startTime" must be of type "datetime" or "str" ' +
+                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
                 f'got {val} ({type(val)})')
-        self.__startTime = val
+        self.__startTime = parse_activitystream_datetime(val)
 
 
 class RadiusProperty:
@@ -1118,16 +1179,17 @@ class RadiusProperty:
 
     @radius.setter
     def radius(self, val):
-        if val is not None and not isinstance(val, float):
-            raise ValueError(
-                f'Property "radius" must be of type "float"; ' +
-                f'got {val} ({type(val)})')
-        if val < 0:
-            raise ValueError(
-                f'Property "radius" must be greater than 0; ' +
-                f'got {val}'
-            )
-        self.radius = val
+        if val is not None:
+            if not isinstance(val, float):
+                raise ValueError(
+                    f'Property "radius" must be of type "float"; ' +
+                    f'got {val} ({type(val)})')
+            if val < 0:
+                raise ValueError(
+                    f'Property "radius" must be greater than 0; ' +
+                    f'got {val}'
+                )
+        self.__radius = val
 
 
 class RelProperty:
@@ -1169,15 +1231,16 @@ class StartIndexProperty:
 
     @startIndex.setter
     def startIndex(self, val):
-        if val is not None and not isinstance(val, int):
-            raise ValueError(
-                f'Property "startIndex" must be of type "int"; ' +
-                f'got {val} ({type(val)})')
-        if val < 0:
-            raise ValueError(
-                f'Property "startIndex" must be greater than 0; ' +
-                f'got {val}'
-            )
+        if val is not None:
+            if not isinstance(val, int):
+                raise ValueError(
+                    f'Property "startIndex" must be of type "int"; ' +
+                    f'got {val} ({type(val)})')
+            if val < 0:
+                raise ValueError(
+                    f'Property "startIndex" must be greater than 0; ' +
+                    f'got {val}'
+                )
         self.__startIndex = val
 
 
@@ -1217,15 +1280,16 @@ class TotalItemsProperty:
 
     @totalItems.setter
     def totalItems(self, val):
-        if val is not None and not isinstance(val, int):
-            raise ValueError(
-                f'Property "totalItems" must be of type "int"; ' +
-                f'got {val} ({type(val)})')
-        if val < 0:
-            raise ValueError(
-                f'Property "totalItems" must be greater than 0; ' +
-                f'got {val}'
-            )
+        if val is not None:
+            if not isinstance(val, int):
+                raise ValueError(
+                    f'Property "totalItems" must be of type "int"; ' +
+                    f'got {val} ({type(val)})')
+            if val < 0:
+                raise ValueError(
+                    f'Property "totalItems" must be greater than 0; ' +
+                    f'got {val}'
+                )
         self.__totalItems = val
 
 
@@ -1264,11 +1328,12 @@ class UpdatedProperty:
 
     @updated.setter
     def updated(self, val):
-        if val is not None and not isinstance(val, datetime):
+        if val is not None and not is_activity_datetime(val):
             raise ValueError(
-                f'Property "updated" must be of type "datetime"; ' +
+                f'Property "updated" must be of type "datetime" or "str" ' +
+                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
                 f'got {val} ({type(val)})')
-        self.__updated = val
+        self.__updated = parse_activitystream_datetime(val)
 
 
 class WidthProperty:
@@ -1285,15 +1350,16 @@ class WidthProperty:
 
     @width.setter
     def width(self, val):
-        if val is not None and not isinstance(val, int):
-            raise ValueError(
-                f'Property "width" must be of type "int"; ' +
-                f'got {val} ({type(val)})')
-        if val < 0:
-            raise ValueError(
-                f'Property "width" must be greater than 0; ' +
-                f'got {val}'
-            )
+        if val is not None:
+            if not isinstance(val, int):
+                raise ValueError(
+                    f'Property "width" must be of type "int"; ' +
+                    f'got {val} ({type(val)})')
+            if val < 0:
+                raise ValueError(
+                    f'Property "width" must be greater than 0; ' +
+                    f'got {val}'
+                )
         self.__width = val
 
 
@@ -1413,7 +1479,7 @@ class DeletedProperty:
 
 # this insane cluster of inheritance might look bad, but it's actually a lot
 # easier to manage the properties if we make them their own classes
-class ObjectModel(JsonLD, IdProperty, AttachmentProperty,
+class ObjectModel(ApplicationActivityJson, IdProperty, AttachmentProperty,
                   AttributedToProperty, AudienceProperty, ContentProperty,
                   ContextProperty, NameProperty, TypeProperty,
                   EndTimeProperty, GeneratorProperty, IconProperty,
@@ -1435,8 +1501,9 @@ class ObjectModel(JsonLD, IdProperty, AttachmentProperty,
                  inReplyTo=None, location=None, preview=None, published=None,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 mediaType=None, duration=None):
-        JsonLD.__init__(self, 'https://www.w3.org/ns/activitystreams')
+                 mediaType=None, duration=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
+        ApplicationActivityJson.__init__(self, acontext=acontext)
         self.id = id
         self.type = type or self.type
         self.attachment = attachment
@@ -1469,7 +1536,7 @@ class ObjectModel(JsonLD, IdProperty, AttachmentProperty,
 
 class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
                 HrefLangProperty, HeightProperty, WidthProperty,
-                PreviewProperty, TypeProperty, JsonLD):
+                PreviewProperty, TypeProperty, ApplicationActivityJson):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
@@ -1482,11 +1549,12 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
 
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None,
-                 context=None, type=None):
+                 context=None, type=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         # grants the ability to access all @property objects associated with the
         # model via __properties__ on instantiated objects and
         # __get_properties__ on classes
-        JsonLD.__init__(self, 'https://www.w3.org/ns/activitystreams')
+        ApplicationActivityJson.__init__(self, acontext=acontext)
         self.href = href
         self.rel = rel
         self.mediaType = mediaType
@@ -1518,7 +1586,8 @@ class ActivityModel(ObjectModel,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
-                 target=None, result=None, origin=None, instrument=None):
+                 target=None, result=None, origin=None, instrument=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         # "this looks so bad" I KNOW, but it's the only way to make all the
         # params show up in tooltips! Yes it looks bad! But it makes it easier
         # to work with!!
@@ -1532,7 +1601,7 @@ class ActivityModel(ObjectModel,
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration)
+                         duration=duration, acontext=acontext)
         self.actor = actor
         self.object = object
         self.target = target
@@ -1555,7 +1624,8 @@ class IntransitiveActivityModel(ActivityModel):
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
-                 target=None, result=None, origin=None, instrument=None):
+                 target=None, result=None, origin=None, instrument=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -1568,7 +1638,7 @@ class IntransitiveActivityModel(ActivityModel):
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
-                         instrument=instrument)
+                         instrument=instrument, acontext=acontext)
         # intransitive activities do NOT inherit the 'object' attribute
         delattr(self, 'object')
 
@@ -1590,8 +1660,9 @@ class CollectionModel(ObjectModel,
                  inReplyTo=None, location=None, preview=None, published=None,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 mediaType=None, duration=None, total_items=None, current=None,
-                 first=None, last=None, items=None):
+                 mediaType=None, duration=None, totalItems=None, current=None,
+                 first=None, last=None, items=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -1602,15 +1673,16 @@ class CollectionModel(ObjectModel,
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration)
-        self.total_items = total_items
+                         duration=duration, acontext=acontext)
+        self.totalItems = totalItems if totalItems else 0
         self.current = current
         self.first = first
         self.last = last
         self.items = items
 
 
-class OrderedCollectionModel(CollectionModel):
+class OrderedCollectionModel(CollectionModel,
+                             OrderedItemsProperty):
     """
     A subtype of Collection in which members of the logical collection are
     assumed to always be strictly ordered.
@@ -1622,8 +1694,9 @@ class OrderedCollectionModel(CollectionModel):
                  inReplyTo=None, location=None, preview=None, published=None,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 mediaType=None, duration=None, total_items=None, current=None,
-                 first=None, last=None, items=None):
+                 mediaType=None, duration=None, totalItems=None, current=None,
+                 first=None, last=None, orderedItems=None, items=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -1633,9 +1706,11 @@ class OrderedCollectionModel(CollectionModel):
                          published=published, replies=replies,
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
-                         cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration, total_items=total_items,
-                         current=current, first=first, last=last, items=items)
+                         cc=cc, bcc=bcc, mediaType=mediaType, items=items,
+                         duration=duration, totalItems=totalItems,
+                         current=current, first=first, last=last,
+                         acontext=acontext)
+        self.orderedItems = orderedItems
 
 
 class CollectionPageModel(CollectionModel,
@@ -1652,9 +1727,10 @@ class CollectionPageModel(CollectionModel,
                  inReplyTo=None, location=None, preview=None, published=None,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 mediaType=None, duration=None, total_items=None, current=None,
+                 mediaType=None, duration=None, totalItems=None, current=None,
                  first=None, last=None, items=None, partOf=None, next=None,
-                 prev=None, **kwargs):
+                 prev=None, acontext='https://www.w3.org/ns/activitystreams',
+                 **kwargs):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -1665,8 +1741,9 @@ class CollectionPageModel(CollectionModel,
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration, total_items=total_items,
-                         current=current, first=first, last=last, items=items)
+                         duration=duration, totalItems=totalItems,
+                         current=current, first=first, last=last, items=items,
+                         acontext=acontext)
         self.partOf = partOf
         self.next = next
         self.prev = prev
@@ -1686,9 +1763,10 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                  inReplyTo=None, location=None, preview=None, published=None,
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
-                 mediaType=None, duration=None, total_items=None, current=None,
+                 mediaType=None, duration=None, totalItems=None, current=None,
                  first=None, last=None, items=None, partOf=None, next=None,
-                 prev=None, startIndex=None):
+                 prev=None, startIndex=None, orderedItems=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
         CollectionPageModel.__init__(self, id=id, type=type,
@@ -1706,10 +1784,11 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel,
                                      tag=tag, updated=updated, url=url, to=to,
                                      bto=bto,
                                      cc=cc, bcc=bcc, mediaType=mediaType,
-                                     duration=duration, total_items=total_items,
+                                     duration=duration, totalItems=totalItems,
                                      current=current, first=first, last=last,
-                                     items=items,
-                                     partOf=partOf, next=next, prev=prev)
+                                     partOf=partOf, next=next, prev=prev,
+                                     acontext=acontext)
+        OrderedCollectionModel.__init__(self, orderedItems=orderedItems)
         self.startIndex = startIndex if startIndex else 0
 
 
@@ -1922,7 +2001,8 @@ class DislikeModel(ActivityModel):
     """
 
 
-class QuestionModel(IntransitiveActivityModel):
+class QuestionModel(IntransitiveActivityModel,
+                    OneOfProperty, AnyOfProperty, ClosedProperty):
     """
     Represents a question being asked. Question objects are an extension of
     IntransitiveActivity. That is, the Question object is an Activity,
@@ -1941,7 +2021,8 @@ class QuestionModel(IntransitiveActivityModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
-                 oneOf=None, anyOf=None, closed=None):
+                 oneOf=None, anyOf=None, closed=None,
+                 acontext='https://www.w3.org/ns/activitystreams'):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -1954,7 +2035,7 @@ class QuestionModel(IntransitiveActivityModel):
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
-                         instrument=instrument)
+                         instrument=instrument, acontext=acontext)
         self.oneOf = oneOf
         self.anyOf = anyOf
         self.closed = closed
@@ -2007,7 +2088,8 @@ class ServiceModel(ObjectModel):
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
-class RelationshipModel(ObjectModel):
+class RelationshipModel(ObjectModel, SubjectProperty, ObjectProperty,
+                        RelationshipProperty):
     """
     Describes a relationship between two individuals. The subject and object
     properties are used to identify the connected individuals.
@@ -2069,7 +2151,9 @@ class EventModel(ObjectModel):
     """
 
 
-class PlaceModel(ObjectModel):
+class PlaceModel(ObjectModel, AccuracyProperty, AltitudeProperty,
+                 LatitudeProperty, LongitudeProperty, RadiusProperty,
+                 UnitsProperty):
     """
     Represents a logical or physical location. See 5.3 Representing Places
     for additional information.
@@ -2085,7 +2169,7 @@ class PlaceModel(ObjectModel):
         self.units = units
 
 
-class ProfileModel(ObjectModel):
+class ProfileModel(ObjectModel, DescribesProperty):
     """
     A Profile is a content object that describes another Object, typically
     used to describe Actor Type objects. The describes property is used to

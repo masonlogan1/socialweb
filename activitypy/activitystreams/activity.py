@@ -6,8 +6,8 @@ of the Offer Activity Type).
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#activity-types"
 
-from activitystreams.core import Activity, IntransitiveActivity
-from activitystreams.models import AcceptModel, TentativeAcceptModel, \
+from activitypy.activitystreams.core import Activity, IntransitiveActivity
+from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel, \
     AddModel, CreateModel, ArriveModel, DeleteModel, FollowModel, IgnoreModel, \
     JoinModel, LeaveModel, LikeModel, OfferModel, InviteModel, RejectModel, \
     TentativeRejectModel, RemoveModel, UndoModel, UpdateModel, ViewModel, \

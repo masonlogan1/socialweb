@@ -4,9 +4,9 @@ vocabulary.
 """
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
-from activitystreams.utils import PROPERTY_TRANSFORM_MAP
+from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP
 
-from activitystreams.models import OrderedCollectionModel, \
+from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
 

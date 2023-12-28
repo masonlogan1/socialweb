@@ -6,8 +6,8 @@ the Like Type is a more specific form of the Activity type).
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#object-types"
 
-from activitystreams.core import Object, Link
-from activitystreams.models import RelationshipModel, ArticleModel, \
+from activitypy.activitystreams.core import Object, Link
+from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
 
