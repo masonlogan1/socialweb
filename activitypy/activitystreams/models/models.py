@@ -31,6 +31,10 @@ logger.setLevel(logging.INFO)
 # In the future, this functionality will be REMOVED in favor of a system
 # that uses Links/Objects that are transformed back into the string literal
 # when generating the outgoing json
+
+def linkify(val: str):
+    return LinkModel(href=val)
+
 def object_or_link(val):
     return isinstance(val, (ObjectModel, LinkModel, str))
 
@@ -1563,7 +1567,7 @@ class LinkModel(HrefProperty, RelProperty, MediaTypeProperty, NameProperty,
         self.width = width
         self.preview = preview
         self.context = context
-        self.type = type or self.__type
+        self.type = type or self.type
 
 
 class ActivityModel(ObjectModel,
@@ -1638,8 +1642,7 @@ class IntransitiveActivityModel(ActivityModel):
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
                          instrument=instrument, acontext=acontext)
-        # intransitive activities do NOT inherit the 'object' attribute
-        delattr(self, 'object')
+
 
 
 class CollectionModel(ObjectModel,

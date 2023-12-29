@@ -9,6 +9,7 @@ from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
+from activitypy.activitystreams.models.models import ActorProperty
 
 
 class Object(ObjectModel):
@@ -46,6 +47,15 @@ class Activity(Object, ActivityModel):
     """
     type = "Activity"
 
+    # wraps the actor property's setter; converts raw strings into Link objects
+    # it still performs the standard type checking, it just normalizes incoming
+    # strings for the purpose of handling incoming json
+    @ActorProperty.actor.setter
+    def actor(self, val):
+        if isinstance(val, str):
+            val = Link(href=val)
+        ActorProperty.actor.fset(self, val)
+
 
 class IntransitiveActivity(Activity, IntransitiveActivityModel):
     """
@@ -65,6 +75,12 @@ class Collection(Object, CollectionModel):
     description of the Collection type.
     """
     type = "Collection"
+
+    def __iter__(self):
+        if not self.items:
+            yield
+        for item in self.items:
+            yield item
 
 
 class OrderedCollection(Collection, OrderedCollectionModel):

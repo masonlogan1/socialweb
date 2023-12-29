@@ -33,10 +33,13 @@ def update_stringify_map():
 
     def get_data(obj):
         return obj.data(exclude=('acontext',))
+
+    def link_href(obj):
+        return obj.href
     
     STRINGIFY_MAP.update({
         Object: get_data,
-        Link: get_data,
+        Link: link_href,
         Activity: get_data,
         IntransitiveActivity: get_data,
         Collection: get_data,

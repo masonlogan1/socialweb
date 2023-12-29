@@ -57,7 +57,8 @@ def stringify_iterable(obj: Iterable):
     return [stringify(item) for item in obj]
 
 
-STRINGIFY_MAP.update({Iterable: stringify_iterable})
+STRINGIFY_MAP.update({list: stringify_iterable, tuple: stringify_iterable,
+                      set: stringify_iterable})
 
 
 PROPERTY_TRANSFORM_MAP = {

@@ -5,7 +5,7 @@ from datetime import datetime
 from itertools import chain
 import re
 
-DATETIME_REGEX = re.compile('\d{4}-\d{2}-\d{2}T[01]\d:\d{2}:\d{2}Z')
+DATETIME_REGEX = re.compile('\d{4}-\d{2}-\d{2}T[012]\d:\d{2}:\d{2}Z')
 
 def is_activity_datetime(val):
     return isinstance(val, datetime) or \
