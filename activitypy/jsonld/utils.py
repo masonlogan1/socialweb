@@ -1,3 +1,6 @@
+"""
+Utility functions and constants for jsonld package
+"""
 JSON_LD_KEYMAP = {
     'abase': '@base',
     'acontainer': '@container',

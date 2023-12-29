@@ -36,7 +36,7 @@ def linkify(val: str):
     return LinkModel(href=val)
 
 def object_or_link(val):
-    return isinstance(val, (ObjectModel, LinkModel, str))
+    return isinstance(val, (ObjectModel, LinkModel))
 
 def object_list_or_link(val):
     return isinstance(val, (ObjectModel, LinkModel, list, str))

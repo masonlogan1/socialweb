@@ -10,6 +10,8 @@ from activitypy.activitystreams.core import Object, Link
 from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
+from activitypy.activitystreams.models.models import SubjectProperty
+from activitypy.activitystreams.utils import validate_url
 
 
 class Relationship(Object, RelationshipModel):
@@ -18,6 +20,12 @@ class Relationship(Object, RelationshipModel):
     properties are used to identify the connected individuals.
     """
     type = "Relationship"
+
+    @SubjectProperty.subject.setter
+    def result(self, val):
+        if isinstance(val, str) and validate_url(val):
+            val = Link(href=val)
+        SubjectProperty.subject.fset(self, val)
 
 
 class Article(Object, ArticleModel):

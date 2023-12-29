@@ -6,13 +6,16 @@ of the Offer Activity Type).
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#activity-types"
 
-from activitypy.activitystreams.core import Activity, IntransitiveActivity
+from activitypy.activitystreams.core import Link, Activity, IntransitiveActivity
 from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel, \
     AddModel, CreateModel, ArriveModel, DeleteModel, FollowModel, IgnoreModel, \
     JoinModel, LeaveModel, LikeModel, OfferModel, InviteModel, RejectModel, \
     TentativeRejectModel, RemoveModel, UndoModel, UpdateModel, ViewModel, \
     ListenModel, ReadModel, MoveModel, TravelModel, AnnounceModel, BlockModel, \
     FlagModel, DislikeModel, QuestionModel
+from activitypy.activitystreams.models.models import OneOfProperty, \
+    AnyOfProperty
+from activitypy.activitystreams.utils import validate_url
 
 
 class Accept(Activity, AcceptModel):
@@ -254,3 +257,15 @@ class Question(IntransitiveActivity, QuestionModel):
     answers, but a Question object MUST NOT have both properties.
     """
     type = "Question"
+
+    @OneOfProperty.oneOf.setter
+    def oneOf(self, val):
+        if isinstance(val, str) and validate_url(val):
+            val = Link(href=val)
+        OneOfProperty.oneOf.fset(self, val)
+
+    @AnyOfProperty.anyOf.setter
+    def anyOf(self, val):
+        if isinstance(val, str) and validate_url(val):
+            val = Link(href=val)
+        AnyOfProperty.anyOf.fset(self, val)

@@ -1,8 +1,47 @@
 """
 Utility functions for managing activitystreams data
 """
+import logging
+import re
+from urllib import parse
 from collections.abc import Iterable
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+VALID_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
+
+
+def validate_url(url, secure: bool = False):
+    """
+    Checks a provided URL to ensure it meets a handful of basic criteria for
+    being a valid internet URL
+    :param url: URL to validate
+    :param secure: whether to accept only HTTPS urls
+    :return: True if valid, False otherwise
+    """
+    pieces = parse.urlparse(url)
+    if not pieces.scheme or pieces.scheme not in ['http', 'https']:
+        logger.info('Cannot dereference url without valid scheme; add ' +
+                    f'''{'"http://" or' if not secure else ''} ''' +
+                    '"https://" to url')
+        return False
+    # urls must have a body
+    if not pieces.netloc:
+        logger.info('Cannot dereference url without body')
+        return False
+    # urls can only have certain characters
+    if re.match(VALID_URL_REGEX, pieces.netloc):
+        logger.info('url cannot contain characters outside of' +
+                    'alphanumeric (a-Z, 0-9), "-", "_", ":", and "."')
+        return False
+    # secure connections MUST use https
+    if secure and pieces.scheme != 'https':
+        logger.info('Cannot dereference non-"https://" url when ' +
+                    'secure=True; set secure=False or change scheme')
+        return False
+    return True
 
 
 def stringify_timedelta(obj) -> str:
@@ -38,6 +77,7 @@ def stringify_datetime(obj: datetime) -> str:
     """
     return obj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
+
 # matches a data type to a function
 STRINGIFY_MAP = {
     datetime: stringify_datetime,
@@ -59,7 +99,6 @@ def stringify_iterable(obj: Iterable):
 
 STRINGIFY_MAP.update({list: stringify_iterable, tuple: stringify_iterable,
                       set: stringify_iterable})
-
 
 PROPERTY_TRANSFORM_MAP = {
     'accuracy': lambda obj: stringify(obj.accuracy),
