@@ -6,17 +6,19 @@ handled correctly.
 # Yes, the docstrings for each class are directly taken from the ActivityStreams
 # Vocabulary document. This whole module is intentionally barely one level of
 # abstraction from the spec
-
-from collections.abc import Iterable, Sized
+import logging
+from collections.abc import Sized
 from datetime import datetime, timedelta
+
 from activitypy.jsonld import ApplicationActivityJson
 from activitypy.activitystreams.models.utils import is_activity_datetime, \
-    parse_activitystream_datetime
-
-import logging
+    parse_activitystream_datetime, url_validator, is_nonnegative, \
+    PropValidator, MODELS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+SECURE_URLS_ONLY = False
 
 
 # "Why is this one big file? Shouldn't you break this into multiple modules?"
@@ -24,32 +26,6 @@ logger.setLevel(logging.INFO)
 # relate to one another and everything has a clearly defined domain and range,
 # any attempt to split these into separate files results in a clusterfuck of
 # circular imports. Abandon hope ye who enter! This is a godless nightmare
-
-
-# VALIDATOR TOOLS
-# Currently the validator tools allow for storing things as literal strings.
-# In the future, this functionality will be REMOVED in favor of a system
-# that uses Links/Objects that are transformed back into the string literal
-# when generating the outgoing json
-
-def linkify(val: str):
-    return LinkModel(href=val)
-
-def object_or_link(val):
-    return isinstance(val, (ObjectModel, LinkModel))
-
-def object_list_or_link(val):
-    return isinstance(val, (ObjectModel, LinkModel, list, str))
-
-def collectionpage_or_link(val):
-    return isinstance(val, (CollectionPageModel, LinkModel, str))
-
-def collection_or_link(val):
-    return isinstance(val, (CollectionModel, LinkModel, str))
-
-def is_collection(val):
-    return isinstance(val, (CollectionModel, str))
-
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 # PROPERTIES
@@ -73,11 +49,9 @@ class IdProperty:
         return self.__id
 
     @id.setter
+    @PropValidator(types=(str), functional=True, additional=(url_validator,),
+                   secure=SECURE_URLS_ONLY, skip_none=True).check
     def id(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(f'Property "id" must be of type "str"; ' +
-                             f'got {val} ({type(val)})')
-        logger.debug(f'setting "id" of {self} to {val}')
         self.__id = val
 
 
@@ -92,32 +66,9 @@ class TypeProperty:
         return self.__type
 
     @type.setter
+    @PropValidator(types=(str)).check
     def type(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(f'Property "type" must be of type "str"; ' +
-                             f'got {val} ({type(val)})')
         self.__type = val
-
-
-class ActorProperty:
-    """
-    Describes one or more entities that either performed or are expected to
-    perform the activity. Any single activity can have multiple actors. The
-    actor MAY be specified using an indirect Link.
-    """
-    __actor = None
-
-    @property
-    def actor(self):
-        return self.__actor
-
-    @actor.setter
-    def actor(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "actor" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
-        self.__actor = val
 
 
 class AttachmentProperty:
@@ -133,11 +84,8 @@ class AttachmentProperty:
         return self.__attachment
 
     @attachment.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def attachment(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "attachment" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__attachment = val
 
 
@@ -155,12 +103,26 @@ class AttributedToProperty:
         return self.__attributedTo
 
     @attributedTo.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def attributedTo(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "attributedTo" must be of type "Object" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__attributedTo = val
+
+
+class ActorProperty(AttributedToProperty):
+    """
+    Describes one or more entities that either performed or are expected to
+    perform the activity. Any single activity can have multiple actors. The
+    actor MAY be specified using an indirect Link.
+    """
+
+    @property
+    def actor(self):
+        return self.attributedTo
+
+    @actor.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    def actor(self, val):
+        self.attributedTo = val
 
 
 class AudienceProperty:
@@ -176,11 +138,8 @@ class AudienceProperty:
         return self.__audience
 
     @audience.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def audience(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "audience" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__audience = val
 
 
@@ -197,11 +156,8 @@ class BccProperty:
         return self.__bcc
 
     @bcc.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def bcc(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "bcc" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__bcc = val
 
 
@@ -218,11 +174,8 @@ class BtoProperty:
         return self.__bto
 
     @bto.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def bto(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "bto" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__bto = val
 
 
@@ -239,11 +192,8 @@ class CcProperty:
         return self.__cc
 
     @cc.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def cc(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "cc" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__cc = self.__cc
 
 
@@ -265,11 +215,8 @@ class ContextProperty:
         return self.__context
 
     @context.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def context(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "context" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__context = val
 
 
@@ -286,11 +233,9 @@ class CurrentProperty:
         return self.__current
 
     @current.setter
+    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
+                   functional=True).check
     def current(self, val):
-        if val is not None and not collectionpage_or_link(val):
-            raise ValueError(
-                f'Property "current" must be of type "CollectionPage" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__current = val
 
 
@@ -307,11 +252,9 @@ class FirstProperty:
         return self.__first
 
     @first.setter
+    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
+                   functional=True).check
     def first(self, val):
-        if val is not None and not collectionpage_or_link(val):
-            raise ValueError(
-                f'Property "first" must be of type "CollectionPage" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__first = val
 
 
@@ -327,11 +270,8 @@ class GeneratorProperty:
         return self.__generator
 
     @generator.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def generator(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "generator" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__generator = val
 
 
@@ -349,11 +289,8 @@ class IconProperty:
         return self.__icon
 
     @icon.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def icon(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "icon" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__icon = val
 
 
@@ -371,11 +308,8 @@ class ImageProperty:
         return self.__image
 
     @image.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def image(self, val):
-        if val is not None and not isinstance(val, (ImageModel, LinkModel)):
-            raise ValueError(
-                f'Property "image" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__image = val
 
 
@@ -392,11 +326,8 @@ class InReplyToProperty:
         return self.__inReplyTo
 
     @inReplyTo.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def inReplyTo(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "inReplyTo" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__inReplyTo = val
 
 
@@ -413,11 +344,8 @@ class InstrumentProperty:
         return self.__instrument
 
     @instrument.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def instrument(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "instrument" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__instrument = val
 
 
@@ -434,11 +362,9 @@ class LastProperty:
         return self.__last
 
     @last.setter
+    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
+                   functional=True).check
     def last(self, val):
-        if val is not None and not collectionpage_or_link(val):
-            raise ValueError(
-                f'Property "last" must be of type "CollectionPage" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__last = val
 
 
@@ -455,11 +381,8 @@ class LocationProperty:
         return self.__location
 
     @location.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def location(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "location" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__location = val
 
 
@@ -476,12 +399,8 @@ class ItemsProperty:
         return self.__items
 
     @items.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def items(self, val):
-        if val is not None and not isinstance(val, (
-                ObjectModel, LinkModel, Iterable)):
-            raise ValueError(
-                f'Property "items" must be of type "Object", "Link", or ' +
-                f'Iterable; got {val} ({type(val)})')
         self.__items = val
 
 
@@ -497,12 +416,8 @@ class OrderedItemsProperty(ItemsProperty):
         return self.items
 
     @orderedItems.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def orderedItems(self, val):
-        if val is not None and not isinstance(val, (
-                ObjectModel, LinkModel, Iterable)):
-            raise ValueError(
-                f'Property "orderedItems" must be of type "Object", ' +
-                f'"Link", or Iterable; got {val} ({type(val)})')
         self.items = val
 
 
@@ -519,12 +434,8 @@ class UnorderedItemsProperty:
         return self.__unorderedItems
 
     @unorderedItems.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def unorderedItems(self, val):
-        if val is not None and not isinstance(val, (
-                ObjectModel, LinkModel, Iterable)):
-            raise ValueError(
-                f'Property "unorderedItems" must be of type "Object", ' +
-                f'"Link", or Iterable; got {val} ({type(val)})')
         self.__unorderedItems = val
 
 
@@ -542,11 +453,8 @@ class OneOfProperty:
         return self.__oneOf
 
     @oneOf.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def oneOf(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "oneOf" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__oneOf = val
 
 
@@ -564,11 +472,8 @@ class AnyOfProperty:
         return self.__anyOf
 
     @anyOf.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def anyOf(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "anyOf" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__anyOf = val
 
 
@@ -585,6 +490,7 @@ class ClosedProperty:
         return self.__closed
 
     @closed.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel', datetime, bool)).check
     def closed(self, val):
         if val is not None and not isinstance(val,
                                               (ObjectModel, LinkModel, bool,
@@ -610,11 +516,8 @@ class OriginProperty:
         return self.__origin
 
     @origin.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def origin(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "origin" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__origin = val
 
 
@@ -630,11 +533,9 @@ class NextProperty:
         return self.__next
 
     @next.setter
+    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
+                   functional=True).check
     def next(self, val):
-        if val is not None and not collectionpage_or_link(val):
-            raise ValueError(
-                f'Property "next" must be of type "CollectionPage" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__next = val
 
 
@@ -655,11 +556,8 @@ class ObjectProperty:
         return self.__object
 
     @object.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def object(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "object" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__object = val
 
 
@@ -675,11 +573,9 @@ class PrevProperty:
         return self.__prev
 
     @prev.setter
+    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
+                   functional=True).check
     def prev(self, val):
-        if val is not None and not collectionpage_or_link(val):
-            raise ValueError(
-                f'Property "prev" must be of type "CollectionPage" or ' +
-                f'"Link"; got {val} ({type(val)})')
         self.__prev = val
 
 
@@ -695,11 +591,8 @@ class PreviewProperty:
         return self.__preview
 
     @preview.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def preview(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "preview" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__preview = val
 
 
@@ -717,11 +610,8 @@ class ResultProperty:
         return self.__result
 
     @result.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def result(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "result" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__result = val
 
 
@@ -738,11 +628,8 @@ class RepliesProperty:
         return self.__replies
 
     @replies.setter
+    @PropValidator(types=('CollectionModel',), functional=True).check
     def replies(self, val):
-        if val is not None and not is_collection(val):
-            raise ValueError(
-                f'Property "replies" must be of type "Collection"; ' +
-                f'got {val} ({type(val)})')
         self.__replies = val
 
 
@@ -761,11 +648,8 @@ class TagProperty:
         return self.__tag
 
     @tag.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def tag(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "tag" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__tag = val
 
 
@@ -786,11 +670,8 @@ class TargetProperty:
         return self.__target
 
     @target.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def target(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "target" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__target = val
 
 
@@ -807,11 +688,8 @@ class ToProperty:
         return self.__to
 
     @to.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def to(self, val):
-        if val is not None and not object_list_or_link(val):
-            raise ValueError(
-                f'Property "to" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__to = val
 
 
@@ -827,11 +705,8 @@ class UrlProperty:
         return self.__url
 
     @url.setter
+    @PropValidator(types=('LinkModel', str)).check
     def url(self, val):
-        if val is not None and not isinstance(val, (LinkModel, str)):
-            raise ValueError(
-                f'Property "url" must be of type "Link" or "str"; ' +
-                f'got {val} ({type(val)})')
         self.__url = val
 
 
@@ -848,11 +723,8 @@ class AccuracyProperty:
         return self.__accuracy
 
     @accuracy.setter
+    @PropValidator(types=(float,), functional=True).check
     def accuracy(self, val):
-        if val is not None and not isinstance(val, float):
-            raise ValueError(
-                f'Property "accuracy" must be of type "float"; ' +
-                f'got {val} ({type(val)})')
         self.__accuracy = val
 
 
@@ -870,11 +742,8 @@ class AltitudeProperty:
         return self.__altitude
 
     @altitude.setter
+    @PropValidator(types=(float,), functional=True).check
     def altitude(self, val):
-        if val is not None and not isinstance(val, float):
-            raise ValueError(
-                f'Property "altitude" must be of type "float"; ' +
-                f'got {val} ({type(val)})')
         self.__altitude = val
 
 
@@ -894,11 +763,8 @@ class ContentProperty:
         return self.__content
 
     @content.setter
+    @PropValidator(types=(str,)).check
     def content(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "content" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__content = val
 
 
@@ -916,11 +782,8 @@ class NameProperty:
         return self.__name
 
     @name.setter
+    @PropValidator(types=(str,)).check
     def name(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "name" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__name = val
 
 
@@ -940,11 +803,8 @@ class DurationProperty:
         return self.__duration
 
     @duration.setter
+    @PropValidator(types=(timedelta, str), functional=True).check
     def duration(self, val):
-        if val is not None and not isinstance(val, (str, timedelta)):
-            raise ValueError(
-                f'Property "duration" must be of type "str" or "timedelta"; ' +
-                f'got {val} ({type(val)})')
         self.__duration = val
 
 
@@ -961,15 +821,9 @@ class HeightProperty:
         return self.__height
 
     @height.setter
+    @PropValidator(types=(int,), functional=True,
+                   additional=(is_nonnegative,)).check
     def height(self, val):
-        if val is not None:
-            if not isinstance(val, int):
-                raise ValueError(
-                    f'Property "content" must be of type "int"; ' +
-                    f'got {val} ({type(val)})')
-            if val < 0:
-                raise ValueError(f'Property "height" must be greater than 0; ' +
-                                 f'got {val}')
         self.__height = val
 
 
@@ -985,11 +839,8 @@ class HrefProperty:
         return self.__href
 
     @href.setter
+    @PropValidator(types=(str,), functional=True).check
     def href(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "href" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__href = val
 
 
@@ -1006,11 +857,8 @@ class HrefLangProperty:
         return self.__hrefLang
 
     @hreflang.setter
+    @PropValidator(types=(str,), functional=True).check
     def hreflang(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "hrefLang" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__hrefLang = val
 
 
@@ -1026,11 +874,8 @@ class PartOfProperty:
         return self.__partOf
 
     @partOf.setter
+    @PropValidator(types=('CollectionModel', 'LinkModel'), functional=True).check
     def partOf(self, val):
-        if val is not None and not collection_or_link(val):
-            raise ValueError(
-                f'Property "partOf" must be of type "Collection" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__partOf = val
 
 
@@ -1046,11 +891,8 @@ class LatitudeProperty:
         return self.__latitude
 
     @latitude.setter
+    @PropValidator(types=(float,), functional=True).check
     def latitude(self, val):
-        if val is not None and not isinstance(val, float):
-            raise ValueError(
-                f'Property "latitude" must be of type "float"; ' +
-                f'got {val} ({type(val)})')
         self.__latitude = val
 
 
@@ -1066,11 +908,8 @@ class LongitudeProperty:
         return self.__longitude
 
     @longitude.setter
+    @PropValidator(types=(float,), functional=True).check
     def longitude(self, val):
-        if val is not None and not isinstance(val, float):
-            raise ValueError(
-                f'Property "longitude" must be of type "float"; ' +
-                f'got {val} ({type(val)})')
         self.__longitude = val
 
 
@@ -1084,18 +923,15 @@ class MediaTypeProperty:
     contain text/html content.
     """
 
-    __mediaType = None
+    __mediaType = 'text/html'
 
     @property
     def mediaType(self):
         return self.__mediaType
 
     @mediaType.setter
+    @PropValidator(types=(str,), functional=True).check
     def mediaType(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "mediaType" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__mediaType = val
 
 
@@ -1114,12 +950,9 @@ class EndTimeProperty:
         return self.__endTime
 
     @endTime.setter
+    @PropValidator(types=(datetime, str), functional=True,
+                   additional=(is_activity_datetime,)).check
     def endTime(self, val):
-        if val is not None and not is_activity_datetime(val):
-            raise ValueError(
-                f'Property "endTime" must be of type "datetime" or "str" in ' +
-                f'"YYYY-mm-dd-THH:MM:SSZ" format; ' +
-                f'got {val} ({type(val)})')
         self.__endTime = parse_activitystream_datetime(val)
 
 
@@ -1135,12 +968,9 @@ class PublishedProperty:
         return self.__published
 
     @published.setter
+    @PropValidator(types=(datetime, str), functional=True,
+                   additional=(is_activity_datetime,)).check
     def published(self, val):
-        if val is not None and not is_activity_datetime(val):
-            raise ValueError(
-                f'Property "published" must be of type "datetime" or "str" ' +
-                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
-                f'got {val} ({type(val)})')
         self.__published = parse_activitystream_datetime(val)
 
 
@@ -1158,12 +988,9 @@ class StartTimeProperty:
         return self.__startTime
 
     @startTime.setter
+    @PropValidator(types=(datetime, str), functional=True,
+                   additional=(is_activity_datetime,)).check
     def startTime(self, val):
-        if val is not None and not is_activity_datetime(val):
-            raise ValueError(
-                f'Property "startTime" must be of type "datetime" or "str" ' +
-                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
-                f'got {val} ({type(val)})')
         self.__startTime = parse_activitystream_datetime(val)
 
 
@@ -1181,17 +1008,9 @@ class RadiusProperty:
         return self.__radius
 
     @radius.setter
+    @PropValidator(types=(float,), functional=True,
+                   additional=(is_nonnegative,)).check
     def radius(self, val):
-        if val is not None:
-            if not isinstance(val, float):
-                raise ValueError(
-                    f'Property "radius" must be of type "float"; ' +
-                    f'got {val} ({type(val)})')
-            if val < 0:
-                raise ValueError(
-                    f'Property "radius" must be greater than 0; ' +
-                    f'got {val}'
-                )
         self.__radius = val
 
 
@@ -1212,11 +1031,8 @@ class RelProperty:
         return self.__rel
 
     @rel.setter
+    @PropValidator(types=(str)).check
     def rel(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "rel" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__rel = val
 
 
@@ -1233,17 +1049,9 @@ class StartIndexProperty:
         return self.__startIndex
 
     @startIndex.setter
+    @PropValidator(types=(int,), functional=True,
+                   additional=(is_nonnegative,)).check
     def startIndex(self, val):
-        if val is not None:
-            if not isinstance(val, int):
-                raise ValueError(
-                    f'Property "startIndex" must be of type "int"; ' +
-                    f'got {val} ({type(val)})')
-            if val < 0:
-                raise ValueError(
-                    f'Property "startIndex" must be greater than 0; ' +
-                    f'got {val}'
-                )
         self.__startIndex = val
 
 
@@ -1260,11 +1068,8 @@ class SummaryProperty:
         return self.__summary
 
     @summary.setter
+    @PropValidator(types=(str,)).check
     def summary(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "summary" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__summary = val
 
 
@@ -1282,17 +1087,9 @@ class TotalItemsProperty:
         return self.__totalItems
 
     @totalItems.setter
+    @PropValidator(types=(int,), functional=True,
+                   additional=(is_nonnegative,)).check
     def totalItems(self, val):
-        if val is not None:
-            if not isinstance(val, int):
-                raise ValueError(
-                    f'Property "totalItems" must be of type "int"; ' +
-                    f'got {val} ({type(val)})')
-            if val < 0:
-                raise ValueError(
-                    f'Property "totalItems" must be greater than 0; ' +
-                    f'got {val}'
-                )
         self.__totalItems = val
 
 
@@ -1310,11 +1107,8 @@ class UnitsProperty:
         return self.__units
 
     @units.setter
+    @PropValidator(types=(str,), functional=True).check
     def units(self, val):
-        if val is not None and not isinstance(val, str):
-            raise ValueError(
-                f'Property "units" must be of type "str"; ' +
-                f'got {val} ({type(val)})')
         self.__units = val
 
 
@@ -1330,12 +1124,9 @@ class UpdatedProperty:
         return self.__updated
 
     @updated.setter
+    @PropValidator(types=(datetime, str), functional=True,
+                   additional=(is_activity_datetime,)).check
     def updated(self, val):
-        if val is not None and not is_activity_datetime(val):
-            raise ValueError(
-                f'Property "updated" must be of type "datetime" or "str" ' +
-                f'in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
-                f'got {val} ({type(val)})')
         self.__updated = parse_activitystream_datetime(val)
 
 
@@ -1352,17 +1143,9 @@ class WidthProperty:
         return self.__width
 
     @width.setter
+    @PropValidator(types=(int,), functional=True,
+                   additional=(is_nonnegative,)).check
     def width(self, val):
-        if val is not None:
-            if not isinstance(val, int):
-                raise ValueError(
-                    f'Property "width" must be of type "int"; ' +
-                    f'got {val} ({type(val)})')
-            if val < 0:
-                raise ValueError(
-                    f'Property "width" must be greater than 0; ' +
-                    f'got {val}'
-                )
         self.__width = val
 
 
@@ -1380,11 +1163,8 @@ class SubjectProperty:
         return self.__subject
 
     @subject.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel'), functional=True).check
     def subject(self, val):
-        if val is not None and not object_or_link(val):
-            raise ValueError(
-                f'Property "subject" must be of type "Object" or "Link"; ' +
-                f'got {val} ({type(val)})')
         self.__subject = val
 
 
@@ -1401,11 +1181,8 @@ class RelationshipProperty:
         return self.__relationship
 
     @relationship.setter
+    @PropValidator(types=('ObjectModel',)).check
     def relationship(self, val):
-        if val is not None and not isinstance(val, ObjectModel):
-            raise ValueError(
-                f'Property "relationship" must be of type "Object"' +
-                f'got {val} ({type(val)})')
         self.__relationship = val
 
 
@@ -1422,11 +1199,8 @@ class DescribesProperty:
         return self.__describes
 
     @describes.setter
+    @PropValidator(types=('ObjectModel',), functional=True).check
     def describes(self, val):
-        if val is not None and not isinstance(val, ObjectModel):
-            raise ValueError(
-                f'Property "describes" must be of type "Object"' +
-                f'got {val} ({type(val)})')
         self.__describes = val
 
 
@@ -1443,11 +1217,8 @@ class FormerTypeProperty:
         return self.__formerType
 
     @formerType.setter
+    @PropValidator(types=('ObjectModel',)).check
     def formerType(self, val):
-        if val is not None and not isinstance(val, ObjectModel):
-            raise ValueError(
-                f'Property "formerType" must be of type "Object"' +
-                f'got {val} ({type(val)})')
         self.__formerType = val
 
 
@@ -1464,11 +1235,9 @@ class DeletedProperty:
         return self.__deleted
 
     @deleted.setter
+    @PropValidator(types=(datetime,), functional=True,
+                   additional=(is_activity_datetime,)).check
     def deleted(self, val):
-        if val is not None and not isinstance(val, ObjectModel):
-            raise ValueError(
-                f'Property "deleted" must be of type "Object"' +
-                f'got {val} ({type(val)})')
         self.__deleted = val
 
 
@@ -1498,6 +1267,7 @@ class ObjectModel(ApplicationActivityJson, IdProperty, AttachmentProperty,
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
+
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
                  endTime=None, generator=None, icon=None, image=None,
@@ -1642,7 +1412,6 @@ class IntransitiveActivityModel(ActivityModel):
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
                          instrument=instrument, acontext=acontext)
-
 
 
 class CollectionModel(ObjectModel,
@@ -2103,6 +1872,7 @@ class RelationshipModel(ObjectModel, SubjectProperty, ObjectProperty,
     Describes a relationship between two individuals. The subject and object
     properties are used to identify the connected individuals.
     """
+
     def __init__(self, id, subject=None, object=None, relationship=None,
                  **kwargs):
         super().__init__(id, **kwargs)
@@ -2167,6 +1937,7 @@ class PlaceModel(ObjectModel, AccuracyProperty, AltitudeProperty,
     Represents a logical or physical location. See 5.3 Representing Places
     for additional information.
     """
+
     def __init__(self, id, accuracy=None, altitude=None, latitude=None,
                  longitude=None, radius=None, units=None, **kwargs):
         super().__init__(id, **kwargs)
@@ -2184,6 +1955,7 @@ class ProfileModel(ObjectModel, DescribesProperty):
     used to describe Actor Type objects. The describes property is used to
     reference the object being described by the profile.
     """
+
     def __init__(self, id, describes=None, **kwargs):
         super().__init__(id, **kwargs)
         self.describes = describes
@@ -2196,6 +1968,7 @@ class TombstoneModel(ObjectModel,
     used in Collections to signify that there used to be an object at this
     position, but it has been deleted.
     """
+
     def __init__(self, id, former_type, deleted, **kwargs):
         super().__init__(id, **kwargs)
         self.former_type = former_type
@@ -2206,3 +1979,59 @@ class MentionModel(LinkModel):
     """
     A specialized Link that represents a @mention.
     """
+
+
+MODELS.register_class(ObjectModel)
+MODELS.register_class(LinkModel)
+MODELS.register_class(ActivityModel)
+MODELS.register_class(IntransitiveActivityModel)
+MODELS.register_class(CollectionModel)
+MODELS.register_class(OrderedCollectionModel)
+MODELS.register_class(CollectionPageModel)
+MODELS.register_class(OrderedCollectionPageModel)
+MODELS.register_class(AcceptModel)
+MODELS.register_class(TentativeAcceptModel)
+MODELS.register_class(AddModel)
+MODELS.register_class(ArriveModel)
+MODELS.register_class(CreateModel)
+MODELS.register_class(DeleteModel)
+MODELS.register_class(FollowModel)
+MODELS.register_class(IgnoreModel)
+MODELS.register_class(JoinModel)
+MODELS.register_class(LeaveModel)
+MODELS.register_class(LikeModel)
+MODELS.register_class(OfferModel)
+MODELS.register_class(InviteModel)
+MODELS.register_class(RejectModel)
+MODELS.register_class(TentativeRejectModel)
+MODELS.register_class(RemoveModel)
+MODELS.register_class(UndoModel)
+MODELS.register_class(UpdateModel)
+MODELS.register_class(ViewModel)
+MODELS.register_class(ListenModel)
+MODELS.register_class(ReadModel)
+MODELS.register_class(MoveModel)
+MODELS.register_class(TravelModel)
+MODELS.register_class(AnnounceModel)
+MODELS.register_class(BlockModel)
+MODELS.register_class(FlagModel)
+MODELS.register_class(DislikeModel)
+MODELS.register_class(QuestionModel)
+MODELS.register_class(ApplicationModel)
+MODELS.register_class(GroupModel)
+MODELS.register_class(OrganizationModel)
+MODELS.register_class(PersonModel)
+MODELS.register_class(ServiceModel)
+MODELS.register_class(RelationshipModel)
+MODELS.register_class(ArticleModel)
+MODELS.register_class(DocumentModel)
+MODELS.register_class(AudioModel)
+MODELS.register_class(ImageModel)
+MODELS.register_class(VideoModel)
+MODELS.register_class(NoteModel)
+MODELS.register_class(PageModel)
+MODELS.register_class(EventModel)
+MODELS.register_class(PlaceModel)
+MODELS.register_class(ProfileModel)
+MODELS.register_class(TombstoneModel)
+MODELS.register_class(MentionModel)

@@ -132,7 +132,7 @@ class CachedRequestsJsonLoader(RequestsJsonLoader):
         try:
             if url not in self.cached_schemas.keys():
                 self.logger.info(f'Caching schema for {url}')
-                self.cached_schemas[url] = self.get(url)
+                CachedRequestsJsonLoader.cached_schemas[url] = self.get(url)
             return self.cached_schemas.get(url)
         except Exception as cause:
             # the only reason I'm keeping this is for consistency

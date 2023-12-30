@@ -14,7 +14,28 @@ from activitypy.activitystreams.models.models import ActorProperty, \
     AttributedToProperty, InReplyToProperty, ObjectProperty, AudienceProperty, \
     ContextProperty, GeneratorProperty, IconProperty, InstrumentProperty, \
     LocationProperty, OriginProperty, PreviewProperty, ResultProperty, \
-    TargetProperty
+    TargetProperty, AttachmentProperty, BccProperty, CcProperty, BtoProperty, \
+    CurrentProperty, FirstProperty, ImageProperty, LastProperty, ItemsProperty, \
+    OrderedItemsProperty, NextProperty, PrevProperty, TagProperty, ToProperty, \
+    UrlProperty, PartOfProperty
+
+
+class Linkify:
+    """Class serving as a decorator that can convert strings into Links"""
+    def __call__(self, set_prop, *args, **kwargs):
+        def create_link(v):
+            # if it's a string, create a single link
+            if isinstance(v, str) and validate_url(v):
+                return Link(href=v)
+            # if it's an iterable other than a string or dict, create many links
+            if isinstance(v, (list, tuple, set)):
+                return [create_link(item) for item in v]
+            return v
+
+        def linkify(obj, val):
+            val = create_link(val)
+            set_prop(obj, val)
+        return linkify
 
 
 class Object(ObjectModel):
@@ -27,53 +48,85 @@ class Object(ObjectModel):
     type = "Object"
     default_transforms = PROPERTY_TRANSFORM_MAP
 
+    @AttachmentProperty.attachment.setter
+    @Linkify()
+    def attachment(self, val):
+        AttachmentProperty.attachment.fset(self, val)
+
     @AttributedToProperty.attributedTo.setter
+    @Linkify()
     def attributedTo(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         AttributedToProperty.attributedTo.fset(self, val)
 
-    @InReplyToProperty.inReplyTo.setter
-    def inReplyTo(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
-        InReplyToProperty.inReplyTo.fset(self, val)
-
     @AudienceProperty.audience.setter
+    @Linkify()
     def audience(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         AudienceProperty.audience.fset(self, val)
 
+    @ToProperty.to.setter
+    @Linkify()
+    def to(self, val):
+        ToProperty.to.fset(self, val)
+
+    @BccProperty.bcc.setter
+    @Linkify()
+    def bcc(self, value):
+        BccProperty.bcc.fset(self, value)
+
+    @BtoProperty.bto.setter
+    @Linkify()
+    def bto(self, value):
+        BtoProperty.bto.fset(self, value)
+
+    @CcProperty.cc.setter
+    @Linkify()
+    def cc(self, value):
+        CcProperty.cc.fset(self, value)
+
     @ContextProperty.context.setter
+    @Linkify()
     def context(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         ContextProperty.context.fset(self, val)
 
     @GeneratorProperty.generator.setter
+    @Linkify()
     def generator(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         GeneratorProperty.generator.fset(self, val)
 
     @IconProperty.icon.setter
+    @Linkify()
     def icon(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         IconProperty.icon.fset(self, val)
 
+    @ImageProperty.image.setter
+    @Linkify()
+    def image(self, val):
+        ImageProperty.image.fset(self, val)
+
+    @InReplyToProperty.inReplyTo.setter
+    @Linkify()
+    def inReplyTo(self, val):
+        InReplyToProperty.inReplyTo.fset(self, val)
+
     @LocationProperty.location.setter
+    @Linkify()
     def location(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         LocationProperty.location.fset(self, val)
 
     @PreviewProperty.preview.setter
+    @Linkify()
     def preview(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         PreviewProperty.preview.fset(self, val)
+
+    @TagProperty.tag.setter
+    @Linkify()
+    def tag(self, val):
+        TagProperty.tag.fset(self, val)
+
+    @UrlProperty.url.setter
+    @Linkify()
+    def url(self, val):
+        UrlProperty.url.fset(self, val)
 
 
 class Link(LinkModel):
@@ -90,9 +143,8 @@ class Link(LinkModel):
     default_transforms = PROPERTY_TRANSFORM_MAP
 
     @PreviewProperty.preview.setter
+    @Linkify()
     def preview(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         PreviewProperty.preview.fset(self, val)
 
 
@@ -110,39 +162,33 @@ class Activity(Object, ActivityModel):
     # it still performs the standard type checking, it just normalizes incoming
     # strings for the purpose of handling incoming json
     @ActorProperty.actor.setter
+    @Linkify()
     def actor(self, val):
-        if isinstance(val, str):
-            val = Link(href=val)
         ActorProperty.actor.fset(self, val)
 
     @ObjectProperty.object.setter
+    @Linkify()
     def object(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         ObjectProperty.object.fset(self, val)
 
     @InstrumentProperty.instrument.setter
+    @Linkify()
     def instrument(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         InstrumentProperty.instrument.fset(self, val)
 
     @OriginProperty.origin.setter
+    @Linkify()
     def origin(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         OriginProperty.origin.fset(self, val)
 
     @ResultProperty.result.setter
+    @Linkify()
     def result(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         ResultProperty.result.fset(self, val)
 
     @TargetProperty.target.setter
+    @Linkify()
     def target(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         TargetProperty.target.fset(self, val)
 
 
@@ -165,6 +211,16 @@ class Collection(Object, CollectionModel):
     """
     type = "Collection"
 
+    @CurrentProperty.current.setter
+    @Linkify()
+    def current(self, val):
+        CurrentProperty.current.fset(self, val)
+
+    @ItemsProperty.items.setter
+    @Linkify()
+    def items(self, val):
+        ItemsProperty.items.fset(self, val)
+
     def __iter__(self):
         if not self.items:
             yield
@@ -179,6 +235,11 @@ class OrderedCollection(Collection, OrderedCollectionModel):
     """
     type = "OrderedCollection"
 
+    @OrderedItemsProperty.orderedItems.setter
+    @Linkify()
+    def orderedItems(self, val):
+        OrderedItemsProperty.orderedItems.fset(self, val)
+
 
 class CollectionPage(Collection, CollectionPageModel):
     """
@@ -187,6 +248,31 @@ class CollectionPage(Collection, CollectionPageModel):
     object.
     """
     type = "CollectionPage"
+
+    @FirstProperty.first.setter
+    @Linkify()
+    def first(self, val):
+        FirstProperty.first.fset(self, val)
+
+    @LastProperty.last.setter
+    @Linkify()
+    def last(self, val):
+        LastProperty.last.fset(self, val)
+
+    @NextProperty.next.setter
+    @Linkify()
+    def next(self, val):
+        NextProperty.next.fset(self, val)
+
+    @PartOfProperty.partOf.setter
+    @Linkify()
+    def partOf(self, val):
+        PartOfProperty.partOf.fset(self, val)
+
+    @PrevProperty.prev.setter
+    @Linkify()
+    def prev(self, val):
+        PrevProperty.prev.fset(self, val)
 
 
 class OrderedCollectionPage(OrderedCollection, CollectionPage,

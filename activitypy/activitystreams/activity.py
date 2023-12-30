@@ -6,7 +6,8 @@ of the Offer Activity Type).
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#activity-types"
 
-from activitypy.activitystreams.core import Link, Activity, IntransitiveActivity
+from activitypy.activitystreams.core import Link, Activity, \
+    IntransitiveActivity, Linkify
 from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel, \
     AddModel, CreateModel, ArriveModel, DeleteModel, FollowModel, IgnoreModel, \
     JoinModel, LeaveModel, LikeModel, OfferModel, InviteModel, RejectModel, \
@@ -14,7 +15,7 @@ from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel,
     ListenModel, ReadModel, MoveModel, TravelModel, AnnounceModel, BlockModel, \
     FlagModel, DislikeModel, QuestionModel
 from activitypy.activitystreams.models.models import OneOfProperty, \
-    AnyOfProperty
+    AnyOfProperty, ClosedProperty
 from activitypy.activitystreams.utils import validate_url
 
 
@@ -259,13 +260,16 @@ class Question(IntransitiveActivity, QuestionModel):
     type = "Question"
 
     @OneOfProperty.oneOf.setter
+    @Linkify()
     def oneOf(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         OneOfProperty.oneOf.fset(self, val)
 
     @AnyOfProperty.anyOf.setter
+    @Linkify()
     def anyOf(self, val):
-        if isinstance(val, str) and validate_url(val):
-            val = Link(href=val)
         AnyOfProperty.anyOf.fset(self, val)
+
+    @ClosedProperty.closed.setter
+    @Linkify()
+    def closed(self, val):
+        ClosedProperty.closed.fset(self, val)
