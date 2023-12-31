@@ -21,7 +21,11 @@ logger.setLevel(logging.INFO)
 def register_jsonld_type(name: str, cls: object):
     """
     Adds a name-class mapping to the JSON_TYPE_MAP
+    :param name: the fully qualified namespace id to associate with the class
+    :param cls: the new object class
+    :
     """
+    logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
     if name in JSON_TYPE_MAP.keys():
         raise ValueError(f'"{name}" already exists in mapping, cannot add new')
     JSON_TYPE_MAP.update({name: cls})
@@ -30,10 +34,30 @@ def register_jsonld_type(name: str, cls: object):
 def update_jsonld_type(name: str, cls: object):
     """
     Updates an existing mapping to the JSON_TYPE_MAP
+    :param name: the fully qualified namespace id associated with the class
+    :param cls: the new object class
+    :return: previous class
+    :raises ValueError: if the name is not already in the mapping
     """
+    logger.info(f'Updating jsonld type "{name}" to "{cls.__name__}"')
     if name not in JSON_TYPE_MAP.keys():
         raise ValueError(f'"{name}" not in mapping yet, cannot update')
+    prior = JSON_TYPE_MAP.get(name)
     JSON_TYPE_MAP.update({name: cls})
+    return prior
+
+
+def remove_jsonld_type(name: str) -> object:
+    """
+    Removes an existing mapping from the JSON_TYPE_MAP
+    :param name: the fully qualified namespace id of the class
+    :return: removed class or None if it was not found
+    """
+    if name in JSON_TYPE_MAP.keys():
+        logger.info(f'Removing jsonld type "{name}"')
+        return JSON_TYPE_MAP.pop(name)
+    logger.info(f'Cannot remove jsonld type "{name}", does not exist')
+    return JSON_TYPE_MAP.pop(name, None)
 
 
 class PropertyObject:
@@ -179,9 +203,9 @@ class PropertyJsonLD(PropertyObject, AContext):
         # check that the @type value is in the mapping
         classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
         if class_type not in classmap.keys():
-            # raise ValueError(f'@type value not in mapping: "{class_type}"')
+            # if the class type is not in our mapping, use the default value
             logger.warning(f'@type value not in mapping: "{class_type}"')
-            class_type = classmap.get('default')
+            class_type = 'default'
 
         # gets the class for the object that needs to be created from the
         object_class = classmap.get(class_type)

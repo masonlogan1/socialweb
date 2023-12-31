@@ -102,7 +102,8 @@ STRINGIFY_MAP.update({list: stringify_iterable, tuple: stringify_iterable,
 
 PROPERTY_TRANSFORM_MAP = {
     'accuracy': lambda obj: stringify(obj.accuracy),
-    'acontext': lambda obj: stringify(obj.acontext),
+    # DO NOT ALTER THE CONTEXT **EVER**, IT WILL BREAK THINGS BADLY!!
+    'acontext': lambda obj: obj.acontext,
     'actor': lambda obj: stringify(obj.actor),
     'altitude': lambda obj: stringify(obj.altitude),
     'anyOf': lambda obj: stringify(obj.anyOf),
