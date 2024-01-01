@@ -723,7 +723,7 @@ class AccuracyProperty:
         return self.__accuracy
 
     @accuracy.setter
-    @PropValidator(types=(float,), functional=True).check
+    @PropValidator(types=(float, int), functional=True).check
     def accuracy(self, val):
         self.__accuracy = val
 
@@ -742,7 +742,7 @@ class AltitudeProperty:
         return self.__altitude
 
     @altitude.setter
-    @PropValidator(types=(float,), functional=True).check
+    @PropValidator(types=(float, int), functional=True).check
     def altitude(self, val):
         self.__altitude = val
 
@@ -891,7 +891,7 @@ class LatitudeProperty:
         return self.__latitude
 
     @latitude.setter
-    @PropValidator(types=(float,), functional=True).check
+    @PropValidator(types=(float, int), functional=True).check
     def latitude(self, val):
         self.__latitude = val
 
@@ -908,7 +908,7 @@ class LongitudeProperty:
         return self.__longitude
 
     @longitude.setter
-    @PropValidator(types=(float,), functional=True).check
+    @PropValidator(types=(float, int), functional=True).check
     def longitude(self, val):
         self.__longitude = val
 
@@ -1008,7 +1008,7 @@ class RadiusProperty:
         return self.__radius
 
     @radius.setter
-    @PropValidator(types=(float,), functional=True,
+    @PropValidator(types=(float, int), functional=True,
                    additional=(is_nonnegative,)).check
     def radius(self, val):
         self.__radius = val
@@ -1969,7 +1969,7 @@ class TombstoneModel(ObjectModel,
     position, but it has been deleted.
     """
 
-    def __init__(self, id, former_type, deleted, **kwargs):
+    def __init__(self, id, former_type=None, deleted=None, **kwargs):
         super().__init__(id, **kwargs)
         self.former_type = former_type
         self.deleted = deleted

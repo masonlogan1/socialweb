@@ -218,8 +218,10 @@ class Collection(Object, CollectionModel):
 
     @ItemsProperty.items.setter
     @Linkify()
-    def items(self, val):
-        ItemsProperty.items.fset(self, val)
+    def items(self, items):
+        ItemsProperty.items.fset(self, items)
+        if items:
+            self.totalItems = len(items)
 
     def __iter__(self):
         if not self.items:
