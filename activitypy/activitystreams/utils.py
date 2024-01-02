@@ -100,6 +100,7 @@ def stringify_iterable(obj: Iterable):
 STRINGIFY_MAP.update({list: stringify_iterable, tuple: stringify_iterable,
                       set: stringify_iterable})
 
+
 PROPERTY_TRANSFORM_MAP = {
     'accuracy': lambda obj: stringify(obj.accuracy),
     # DO NOT ALTER THE CONTEXT **EVER**, IT WILL BREAK THINGS BADLY!!
@@ -108,7 +109,7 @@ PROPERTY_TRANSFORM_MAP = {
     'altitude': lambda obj: stringify(obj.altitude),
     'anyOf': lambda obj: stringify(obj.anyOf),
     'attachment': lambda obj: stringify(obj.attachment),
-    'attributedTo': lambda obj: stringify(obj.attributedTo),
+    'attributedTo': lambda obj: stringify(obj.attributedTo) if not hasattr(obj, 'actor') else None,
     'audience': lambda obj: stringify(obj.audience),
     'bcc': lambda obj: stringify(obj.bcc),
     'bto': lambda obj: stringify(obj.bto),
@@ -129,7 +130,7 @@ PROPERTY_TRANSFORM_MAP = {
     'image': lambda obj: stringify(obj.image),
     'inReplyTo': lambda obj: stringify(obj.inReplyTo),
     'instrument': lambda obj: stringify(obj.instrument),
-    'items': lambda obj: stringify(obj.items) if not obj.items else None,
+    'items': lambda obj: stringify(obj.items) if not hasattr(obj, 'orderedItems') else None,
     'last': lambda obj: stringify(obj.last),
     'location': lambda obj: stringify(obj.location),
     'mediaType': lambda obj: stringify(obj.mediaType),
