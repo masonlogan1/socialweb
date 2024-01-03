@@ -14,8 +14,8 @@ from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel,
     TentativeRejectModel, RemoveModel, UndoModel, UpdateModel, ViewModel, \
     ListenModel, ReadModel, MoveModel, TravelModel, AnnounceModel, BlockModel, \
     FlagModel, DislikeModel, QuestionModel
-from activitypy.activitystreams.models.models import OneOfProperty, \
-    AnyOfProperty, ClosedProperty
+from activitypy.activitystreams.models.properties import OneOf, \
+    AnyOf, Closed
 from activitypy.activitystreams.utils import validate_url
 
 
@@ -259,17 +259,17 @@ class Question(IntransitiveActivity, QuestionModel):
     """
     type = "Question"
 
-    @OneOfProperty.oneOf.setter
+    @OneOf.oneOf.setter
     @Linkify()
     def oneOf(self, val):
-        OneOfProperty.oneOf.fset(self, val)
+        OneOf.oneOf.fset(self, val)
 
-    @AnyOfProperty.anyOf.setter
+    @AnyOf.anyOf.setter
     @Linkify()
     def anyOf(self, val):
-        AnyOfProperty.anyOf.fset(self, val)
+        AnyOf.anyOf.fset(self, val)
 
-    @ClosedProperty.closed.setter
+    @Closed.closed.setter
     @Linkify()
     def closed(self, val):
-        ClosedProperty.closed.fset(self, val)
+        Closed.closed.fset(self, val)

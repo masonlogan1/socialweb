@@ -10,14 +10,14 @@ from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
     ActivityModel, LinkModel, ObjectModel, CollectionPageModel
-from activitypy.activitystreams.models.models import ActorProperty, \
-    AttributedToProperty, InReplyToProperty, ObjectProperty, AudienceProperty, \
-    ContextProperty, GeneratorProperty, IconProperty, InstrumentProperty, \
-    LocationProperty, OriginProperty, PreviewProperty, ResultProperty, \
-    TargetProperty, AttachmentProperty, BccProperty, CcProperty, BtoProperty, \
-    CurrentProperty, FirstProperty, ImageProperty, LastProperty, ItemsProperty, \
-    OrderedItemsProperty, NextProperty, PrevProperty, TagProperty, ToProperty, \
-    UrlProperty, PartOfProperty
+from activitypy.activitystreams.models.properties import Actor, \
+    AttributedTo, InReplyTo, Object as ObjectProp, Audience, \
+    Context, Generator, Icon, Instrument, \
+    Location, Origin, Preview, Result, \
+    Target, Attachment, Bcc, Cc, Bto, \
+    Current, First, Image, Last, Items, \
+    OrderedItems, Next, Prev, Tag, To, \
+    Url, PartOf
 
 
 class Linkify:
@@ -27,6 +27,8 @@ class Linkify:
             # if it's a string, create a single link
             if isinstance(v, str) and validate_url(v):
                 return Link(href=v)
+            if isinstance(v, dict) and hasattr(v, 'href') and validate_url(v.get('href', '')):
+                return Link(**v)
             # if it's an iterable other than a string or dict, create many links
             if isinstance(v, (list, tuple, set)):
                 return [create_link(item) for item in v]
@@ -48,85 +50,85 @@ class Object(ObjectModel):
     type = "Object"
     default_transforms = PROPERTY_TRANSFORM_MAP
 
-    @AttachmentProperty.attachment.setter
+    @Attachment.attachment.setter
     @Linkify()
     def attachment(self, val):
-        AttachmentProperty.attachment.fset(self, val)
+        Attachment.attachment.fset(self, val)
 
-    @AttributedToProperty.attributedTo.setter
+    @AttributedTo.attributedTo.setter
     @Linkify()
     def attributedTo(self, val):
-        AttributedToProperty.attributedTo.fset(self, val)
+        AttributedTo.attributedTo.fset(self, val)
 
-    @AudienceProperty.audience.setter
+    @Audience.audience.setter
     @Linkify()
     def audience(self, val):
-        AudienceProperty.audience.fset(self, val)
+        Audience.audience.fset(self, val)
 
-    @ToProperty.to.setter
+    @To.to.setter
     @Linkify()
     def to(self, val):
-        ToProperty.to.fset(self, val)
+        To.to.fset(self, val)
 
-    @BccProperty.bcc.setter
+    @Bcc.bcc.setter
     @Linkify()
     def bcc(self, value):
-        BccProperty.bcc.fset(self, value)
+        Bcc.bcc.fset(self, value)
 
-    @BtoProperty.bto.setter
+    @Bto.bto.setter
     @Linkify()
     def bto(self, value):
-        BtoProperty.bto.fset(self, value)
+        Bto.bto.fset(self, value)
 
-    @CcProperty.cc.setter
+    @Cc.cc.setter
     @Linkify()
     def cc(self, value):
-        CcProperty.cc.fset(self, value)
+        Cc.cc.fset(self, value)
 
-    @ContextProperty.context.setter
+    @Context.context.setter
     @Linkify()
     def context(self, val):
-        ContextProperty.context.fset(self, val)
+        Context.context.fset(self, val)
 
-    @GeneratorProperty.generator.setter
+    @Generator.generator.setter
     @Linkify()
     def generator(self, val):
-        GeneratorProperty.generator.fset(self, val)
+        Generator.generator.fset(self, val)
 
-    @IconProperty.icon.setter
+    @Icon.icon.setter
     @Linkify()
     def icon(self, val):
-        IconProperty.icon.fset(self, val)
+        Icon.icon.fset(self, val)
 
-    @ImageProperty.image.setter
+    @Image.image.setter
     @Linkify()
     def image(self, val):
-        ImageProperty.image.fset(self, val)
+        Image.image.fset(self, val)
 
-    @InReplyToProperty.inReplyTo.setter
+    @InReplyTo.inReplyTo.setter
     @Linkify()
     def inReplyTo(self, val):
-        InReplyToProperty.inReplyTo.fset(self, val)
+        InReplyTo.inReplyTo.fset(self, val)
 
-    @LocationProperty.location.setter
+    @Location.location.setter
     @Linkify()
     def location(self, val):
-        LocationProperty.location.fset(self, val)
+        Location.location.fset(self, val)
 
-    @PreviewProperty.preview.setter
+    @Preview.preview.setter
     @Linkify()
     def preview(self, val):
-        PreviewProperty.preview.fset(self, val)
+        Preview.preview.fset(self, val)
 
-    @TagProperty.tag.setter
+    @Tag.tag.setter
     @Linkify()
     def tag(self, val):
-        TagProperty.tag.fset(self, val)
+        Tag.tag.fset(self, val)
 
-    @UrlProperty.url.setter
+    @Url.url.setter
     @Linkify()
     def url(self, val):
-        UrlProperty.url.fset(self, val)
+        Url.url.fset(self, val)
 
 
 class Link(LinkModel):
@@ -142,10 +144,10 @@ class Link(LinkModel):
     type = "Link"
     default_transforms = PROPERTY_TRANSFORM_MAP
 
-    @PreviewProperty.preview.setter
+    @Preview.preview.setter
     @Linkify()
     def preview(self, val):
-        PreviewProperty.preview.fset(self, val)
+        Preview.preview.fset(self, val)
 
 
 class Activity(Object, ActivityModel):
@@ -161,35 +163,35 @@ class Activity(Object, ActivityModel):
     # wraps the actor property's setter; converts raw strings into Link objects
     # it still performs the standard type checking, it just normalizes incoming
     # strings for the purpose of handling incoming json
-    @ActorProperty.actor.setter
+    @Actor.actor.setter
     @Linkify()
     def actor(self, val):
-        ActorProperty.actor.fset(self, val)
+        Actor.actor.fset(self, val)
 
-    @ObjectProperty.object.setter
+    @ObjectProp.object.setter
     @Linkify()
     def object(self, val):
-        ObjectProperty.object.fset(self, val)
+        ObjectProp.object.fset(self, val)
 
-    @InstrumentProperty.instrument.setter
+    @Instrument.instrument.setter
     @Linkify()
     def instrument(self, val):
-        InstrumentProperty.instrument.fset(self, val)
+        Instrument.instrument.fset(self, val)
 
-    @OriginProperty.origin.setter
+    @Origin.origin.setter
     @Linkify()
     def origin(self, val):
-        OriginProperty.origin.fset(self, val)
+        Origin.origin.fset(self, val)
 
-    @ResultProperty.result.setter
+    @Result.result.setter
     @Linkify()
     def result(self, val):
-        ResultProperty.result.fset(self, val)
+        Result.result.fset(self, val)
 
-    @TargetProperty.target.setter
+    @Target.target.setter
     @Linkify()
     def target(self, val):
-        TargetProperty.target.fset(self, val)
+        Target.target.fset(self, val)
 
 
 class IntransitiveActivity(Activity, IntransitiveActivityModel):
@@ -211,15 +213,15 @@ class Collection(Object, CollectionModel):
     """
     type = "Collection"
 
-    @CurrentProperty.current.setter
+    @Current.current.setter
     @Linkify()
     def current(self, val):
-        CurrentProperty.current.fset(self, val)
+        Current.current.fset(self, val)
 
-    @ItemsProperty.items.setter
+    @Items.items.setter
     @Linkify()
     def items(self, items):
-        ItemsProperty.items.fset(self, items)
+        Items.items.fset(self, items)
         if items:
             self.totalItems = len(items)
 
@@ -237,10 +239,10 @@ class OrderedCollection(Collection, OrderedCollectionModel):
     """
     type = "OrderedCollection"
 
-    @OrderedItemsProperty.orderedItems.setter
+    @OrderedItems.orderedItems.setter
     @Linkify()
     def orderedItems(self, val):
-        OrderedItemsProperty.orderedItems.fset(self, val)
+        OrderedItems.orderedItems.fset(self, val)
 
 
 class CollectionPage(Collection, CollectionPageModel):
@@ -251,30 +253,30 @@ class CollectionPage(Collection, CollectionPageModel):
     """
     type = "CollectionPage"
 
-    @FirstProperty.first.setter
+    @First.first.setter
     @Linkify()
     def first(self, val):
-        FirstProperty.first.fset(self, val)
+        First.first.fset(self, val)
 
-    @LastProperty.last.setter
+    @Last.last.setter
     @Linkify()
     def last(self, val):
-        LastProperty.last.fset(self, val)
+        Last.last.fset(self, val)
 
-    @NextProperty.next.setter
+    @Next.next.setter
     @Linkify()
     def next(self, val):
-        NextProperty.next.fset(self, val)
+        Next.next.fset(self, val)
 
-    @PartOfProperty.partOf.setter
+    @PartOf.partOf.setter
     @Linkify()
     def partOf(self, val):
-        PartOfProperty.partOf.fset(self, val)
+        PartOf.partOf.fset(self, val)
 
-    @PrevProperty.prev.setter
+    @Prev.prev.setter
     @Linkify()
     def prev(self, val):
-        PrevProperty.prev.fset(self, val)
+        Prev.prev.fset(self, val)
 
 
 class OrderedCollectionPage(OrderedCollection, CollectionPage,

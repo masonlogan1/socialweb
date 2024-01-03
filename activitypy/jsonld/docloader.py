@@ -59,18 +59,20 @@ class RequestsJsonLoader:
             raise ValueError(
                 'Cannot dereference url without valid scheme; add ' +
                 f'''{'"http://" or' if not self.secure else ''} ''' +
-                '"https://" to url')
+                f'"https://" to url "{url}"')
         # urls must have a body
         if not pieces.netloc:
             raise ValueError('Cannot dereference url without body')
         # urls can only have certain characters
         if re.match(JSON_LD_URL_REGEX, pieces.netloc):
             raise ValueError('url cannot contain characters outside of' +
-                             'alphanumeric (a-Z, 0-9), "-", "_", ":", and "."')
+                             'alphanumeric (a-Z, 0-9), "-", "_", ":", and "."' +
+                             f';\ngot: "{url}" ')
         # secure connections MUST use https
         if self.secure and pieces.scheme != 'https':
             raise ValueError('Cannot dereference non-"https://" url when ' +
-                             'secure=True; set secure=False or change scheme')
+                             'secure=True; set secure=False or change scheme' +
+                             f';\ngot: "{url}"')
 
         self.logger.info(f'GET "{url}"; headers: {{{self.headers}}}')
         response = requests.get(url, headers=self.headers)

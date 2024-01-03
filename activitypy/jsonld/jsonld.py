@@ -10,7 +10,8 @@ from typing import Union
 
 from pyld.jsonld import expand
 
-from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP
+from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
+    DEFAULT_TYPE, DEFAULT_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -60,7 +61,73 @@ def remove_jsonld_type(name: str) -> object:
     return JSON_TYPE_MAP.pop(name, None)
 
 
-class PropertyObject:
+class JsonProperty:
+    """
+    Base object for managing properties that can be registered to a class.
+    Supports one and only one property.
+    """
+
+    # This class is useless on its own, it needs to be inherited by a class that
+    # implements a single @property value. The primary use for this is so that
+    # object derived from PropertyAwareObject can register new properties,
+    # allowing for extensions and on-the-fly class modification when handling
+    # JSONLD structures that utilize aspects from multiple schemas.
+
+    def __init__(self):
+        self.__property_name__ = self.__get_property_name__()
+        self.__registration__ = self.__get_registration__()
+
+    def __getattr__(self, item):
+        if item == '__registration__' and not hasattr(self, '__registration__'):
+            self.__registration__ = self.__get_registration__()
+            return self.__registration__
+        if item not in self.__dict__.keys():
+            raise ValueError(f"'{self.__class__.__name__}' has no " +
+                             f"attribute '{item}'")
+        return self.__dict__[item]
+
+    @classmethod
+    def __get_property_name__(cls, refresh=False):
+        """
+        Locates the name of the property. Will raise a value error if more or
+        less than one property is present.
+        :param refresh:
+        :return:
+        """
+        if not hasattr(cls, '__property_name__') or refresh:
+            prop = [key for key, value in cls.__dict__.items()
+                    if isinstance(value, property)]
+            # the registration process only supports ONE property per class;
+            # this is intentional
+            if len(prop) != 1:
+                raise ValueError(f'"JsonProperty" objects must have one and ' +
+                                 f'only one property, found {len(prop)} for ' +
+                                 f'{cls.__name__}')
+            cls.__property_name__ = prop[0]
+        return cls.__property_name__
+
+    @classmethod
+    def __get_registration__(cls, refresh=False):
+        """
+        Retrieves all necessary info to register the property of this class
+        onto another class and stores it in self.__registration__
+        :param refresh:
+        :return:
+        """
+        if not hasattr(cls, '__property_name__') or refresh:
+            cls.__property_name__ = cls.__get_property_name__(refresh=True)
+        # caches the registration for ease of use
+        if not hasattr(cls, '__registration__') or refresh:
+            prop = getattr(cls, cls.__property_name__, None)
+            if prop:
+                cls.__registration__ = (prop.fget, prop.fset, prop.fdel,
+                                        prop.__doc__)
+            else:
+                cls.__registration__ = None
+        return cls.__registration__
+
+
+class PropertyAwareObject:
     """
     Base object that provides tools for working with object properties.
     Provides a __get_properties__ method to produce a tuple for classes and a
@@ -84,18 +151,53 @@ class PropertyObject:
         return {key: getattr(self, key) for key in keys}
 
     @classmethod
-    def __get_properties__(cls):
+    def __get_properties__(cls, refresh=False):
         """
         Creates a list of all @property objects defined and inherited in
         this class
         """
-        if not hasattr(cls, '__properties__'):
+        if not hasattr(cls, '__properties__') or refresh:
             # we cache a copy
             cls.__properties__ = tuple(chain(key for kls in cls.mro()
                                              for key, value in
                                              kls.__dict__.items()
                                              if isinstance(value, property)))
         return cls.__properties__
+
+
+def register_property(property_class, object_class):
+    if JsonProperty not in property_class.mro():
+        raise TypeError('Cannot register non-JsonProperty class to ' +
+                        'PropertyAwareObject class; got ' +
+                        f'{property_class.__class__.__name__}')
+    if PropertyAwareObject not in object_class.mro():
+        raise TypeError('Cannot register JsonProperty class to non-' +
+                        'PropertyAwareObject object; got ' +
+                        f'{object_class.__class__.__name__}')
+    setattr(object_class, property_class.__get_property_name__(),
+            property(*property_class.__get_registration__()))
+
+
+def update_property(property_class: JsonProperty,
+                    object_class: PropertyAwareObject):
+    if JsonProperty not in property_class.mro():
+        raise TypeError('Cannot register non-JsonProperty class to ' +
+                        'PropertyAwareObject class; got ' +
+                        f'{property_class.__class__.__name__}')
+    if PropertyAwareObject not in object_class.mro():
+        raise TypeError('Cannot register JsonProperty class to non-' +
+                        'PropertyAwareObject object; got ' +
+                        f'{object_class.__class__.__name__}')
+    setattr(object_class, property_class.__get_property_name__(),
+            property(*property_class.__get_registration__()))
+
+
+def remove_property(property_name: str, object_class: PropertyAwareObject):
+    if PropertyAwareObject not in object_class.mro():
+        raise TypeError('Cannot alter registration of non-' +
+                        'PropertyAwareObject object; got ' +
+                        f'{object.__class__.__name__}')
+    delattr(object_class, property_name)
 
 
 class AContext:
@@ -110,7 +212,7 @@ class AContext:
         self.__acontext = value
 
 
-class PropertyJsonLD(PropertyObject, AContext):
+class PropertyJsonLD(PropertyAwareObject, AContext):
     """
     Class for representing JSON-LD data. Utilizes @property objects for pulling
     instance data into JSON text representation
@@ -164,7 +266,7 @@ class PropertyJsonLD(PropertyObject, AContext):
 
     def json(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
-             minified: bool = False, indent=None) -> str:
+             minified: bool = False, indent: int = None) -> str:
         """
         Transforms the object into a json string
         :param include: properties to include, defaults to all
@@ -172,7 +274,8 @@ class PropertyJsonLD(PropertyObject, AContext):
         :param transforms: dict that maps data transformations by property name
         :param rename: dict that renames properties in the output dict
         :param include_none: includes pairs where value is None (defaults False)
-        :param reject_values: values to refuse to include
+        :param minified: removes as much whitespace as possible in the output
+        :param indent: indentation level; usually for readability
         :return:
         """
         separators = (',', ':') if minified else None
@@ -192,13 +295,14 @@ class PropertyJsonLD(PropertyObject, AContext):
         :return: object fitting the type or None
         """
         expanded = expand(data)
-        if len(expanded) < 0:
-            return None
+        if len(expanded) < 1:
+            # if the list is empty, assume it is because there are no values
+            # provided other than @context and id, which produces an empty list
+            expanded = [{'@context': DEFAULT_CONTEXT}]
         expanded = expanded[0]
-        class_type = expanded.get('@type', '')[0]
+        class_type = expanded.get('@type', [''])[0]
         if not class_type:
-            logger.debug(f'Bad json-ld:\n{expanded}')
-            raise ValueError('No @type value provided')
+            logger.warning(f'No @type value provided:\n{expanded}')
 
         # check that the @type value is in the mapping
         classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
@@ -231,6 +335,14 @@ class PropertyJsonLD(PropertyObject, AContext):
             # treat a nested dictionary like a linked object
             # context has to be appended to read objects individually
             context_val = {'@context': context, **data}
+
+            # if there is no @type value in the expanded form, assume this is
+            # just supposed to be a regular dictionary
+            type = expand(context_val)
+            if len(type) < 1 or type[0].get('@type', None) is None:
+                return {key: cls._unpack_objects(val, context, classmap)
+                        for key, val in data.items()}
+
             if cls._get_object_class(context_val, classmap=classmap):
                 return cls.from_json(context_val)
             return None
@@ -249,8 +361,11 @@ class PropertyJsonLD(PropertyObject, AContext):
         :return: Python object
         """
         # convert to dict and expand
-        data = json.loads(data) if isinstance(data, str) else data
-        context = data.get('@context', '')
+        data = json.loads(data) if isinstance(data, str) else data.copy()
+        context = data.get('@context', DEFAULT_CONTEXT)
+        if not data.get('@context', None):
+            logger.warning(f"No '@context' provided, using '{DEFAULT_CONTEXT}'")
+            data.update({'@context': DEFAULT_CONTEXT})
         object_class = cls._get_object_class(data, classmap=classmap)
 
         # only include values from the json that are properties of the class

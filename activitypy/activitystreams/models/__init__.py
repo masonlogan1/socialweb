@@ -16,3 +16,15 @@ from activitypy.activitystreams.models.models import \
     ReadModel, RejectModel, RelationshipModel, RemoveModel, ServiceModel, \
     TentativeAcceptModel, TentativeRejectModel, TombstoneModel, TravelModel, \
     UndoModel, UpdateModel, VideoModel, ViewModel
+
+def register_models():
+    from inspect import getmembers, isclass
+    from activitypy.activitystreams.models.utils import MODELS
+    from activitypy.activitystreams.models import models
+    from activitypy.jsonld import ApplicationActivityJson
+    for name, cls in getmembers(models):
+        if isclass(cls) and ApplicationActivityJson in cls.mro():
+            MODELS.register_class(cls)
+
+register_models()
+del register_models

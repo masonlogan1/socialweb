@@ -9,7 +9,7 @@ __source__ = "https://www.w3.org/TR/activitystreams-vocabulary/#properties"
 
 from pyld.jsonld import set_document_loader
 from activitypy.jsonld import register_jsonld_type, update_jsonld_type, \
-    JSON_TYPE_MAP
+    register_property, JSON_TYPE_MAP
 
 from activitypy.activitystreams import Object, Link, Activity, \
     IntransitiveActivity, Collection, OrderedCollection, CollectionPage, \

@@ -10,8 +10,8 @@ from activitypy.activitystreams.core import Object, Link, Linkify
 from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
-from activitypy.activitystreams.models.models import SubjectProperty, \
-    ObjectProperty, RelationshipProperty
+from activitypy.activitystreams.models.properties import Subject, \
+    Object as ObjectProp, Relationship as RelationshipProp
 
 
 class Relationship(Object, RelationshipModel):
@@ -21,20 +21,20 @@ class Relationship(Object, RelationshipModel):
     """
     type = "Relationship"
 
-    @ObjectProperty.object.setter
+    @ObjectProp.object.setter
     @Linkify()
     def object(self, val):
-        ObjectProperty.object.fset(self, val)
+        ObjectProp.object.fset(self, val)
 
-    @SubjectProperty.subject.setter
+    @Subject.subject.setter
     @Linkify()
     def subject(self, val):
-        SubjectProperty.subject.fset(self, val)
+        Subject.subject.fset(self, val)
 
-    @RelationshipProperty.relationship.setter
+    @RelationshipProp.relationship.setter
     @Linkify()
     def relationship(self, val):
-        RelationshipProperty.relationship.fset(self)
+        Relationship.relationship.fset(self, val)
 
 
 class Article(Object, ArticleModel):

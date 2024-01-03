@@ -15,6 +15,9 @@ logger.setLevel(logging.INFO)
 
 DATETIME_REGEX = re.compile('\d{4}-\d{2}-\d{2}T[012]\d:\d{2}:\d{2}Z?([\-+][012]\d:\d{2})?')
 
+AS2_PARTIAL_TIME = re.compile('\d{2}:\d{2}(:\d{2})?(\.\d{1,2})?$')
+AS2_FULL_TIME = re.compile('\d{2}:\d{2}(:\d{2})?(\.\d{1,2})?(Z|(Z?[\-+]\d{2}:\d{2}))?$')
+
 
 def is_class(val, classes: Iterable, functional: bool = False):
     """

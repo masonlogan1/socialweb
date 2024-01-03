@@ -97,8 +97,14 @@ def stringify_iterable(obj: Iterable):
     return [stringify(item) for item in obj]
 
 
+def stringify_dict(obj: dict):
+    # we want to ensure every key and value has been converted to a string
+    # no one should be using a non-string key regardless!
+    return {stringify(key): stringify(val) for key, val in obj.items()}
+
+
 STRINGIFY_MAP.update({list: stringify_iterable, tuple: stringify_iterable,
-                      set: stringify_iterable})
+                      set: stringify_iterable, dict: stringify_dict})
 
 
 PROPERTY_TRANSFORM_MAP = {

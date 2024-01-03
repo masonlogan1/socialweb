@@ -32,3 +32,6 @@ JSON_LD_KEYMAP = {
 JSON_TYPE_MAP = {
 
 }
+
+DEFAULT_TYPE = 'https://www.w3.org/ns/activitystreams#Object'
+DEFAULT_CONTEXT = "http://www.w3.org/ns/activitystreams#"
