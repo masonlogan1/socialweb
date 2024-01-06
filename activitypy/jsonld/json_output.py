@@ -29,7 +29,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         self.__acontext = value
 
     def __init__(self, acontext, *args, **kwargs):
-        super().__init__()
+        PropertyAwareObject.__init__(self)
         self.acontext = acontext
 
     def data(self, include: Iterable = (), exclude: Iterable = (),
