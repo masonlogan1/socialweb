@@ -5,8 +5,33 @@ import json
 from collections.abc import Iterable
 
 from activitypy.jsonld.utils import JSON_LD_KEYMAP
+from activitypy.jsonld.base import PropertyAwareObject
 
-class PropertyJsonGenerator:
+
+class PropertyJsonGenerator(PropertyAwareObject):
+    """
+    Base class for generating json output based on the @property attributes
+    of implementing objects
+    """
+    default_transforms = {}
+    __acontext = None
+
+    # jsonld requires an @context attribute
+    @property
+    def acontext(self):
+        """
+        JSON-LD processing context
+        """
+        return self.__acontext
+
+    @acontext.setter
+    def acontext(self, value):
+        self.__acontext = value
+
+    def __init__(self, acontext, *args, **kwargs):
+        super().__init__()
+        self.acontext = acontext
+
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
              reject_values: Iterable = ()) -> dict:

@@ -13,68 +13,13 @@ from pyld.jsonld import expand
 from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
     DEFAULT_TYPE, DEFAULT_CONTEXT
 from activitypy.jsonld.base import PropertyAwareObject
+from activitypy.jsonld.json_output import PropertyJsonGenerator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# These are separate methods to ensure existing types are not accidentally
-# overwritten; there are already so many that it's easy to mess up
-def register_jsonld_type(name: str, cls: object):
-    """
-    Adds a name-class mapping to the JSON_TYPE_MAP
-    :param name: the fully qualified namespace id to associate with the class
-    :param cls: the new object class
-    :
-    """
-    logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
-    if name in JSON_TYPE_MAP.keys():
-        raise ValueError(f'"{name}" already exists in mapping, cannot add new')
-    JSON_TYPE_MAP.update({name: cls})
-
-
-def update_jsonld_type(name: str, cls: object):
-    """
-    Updates an existing mapping to the JSON_TYPE_MAP
-    :param name: the fully qualified namespace id associated with the class
-    :param cls: the new object class
-    :return: previous class
-    :raises ValueError: if the name is not already in the mapping
-    """
-    logger.info(f'Updating jsonld type "{name}" to "{cls.__name__}"')
-    if name not in JSON_TYPE_MAP.keys():
-        raise ValueError(f'"{name}" not in mapping yet, cannot update')
-    prior = JSON_TYPE_MAP.get(name)
-    JSON_TYPE_MAP.update({name: cls})
-    return prior
-
-
-def remove_jsonld_type(name: str) -> object:
-    """
-    Removes an existing mapping from the JSON_TYPE_MAP
-    :param name: the fully qualified namespace id of the class
-    :return: removed class or None if it was not found
-    """
-    if name in JSON_TYPE_MAP.keys():
-        logger.info(f'Removing jsonld type "{name}"')
-        return JSON_TYPE_MAP.pop(name)
-    logger.info(f'Cannot remove jsonld type "{name}", does not exist')
-    return JSON_TYPE_MAP.pop(name, None)
-
-
-class AContext:
-    __acontext = None
-
-    @property
-    def acontext(self):
-        return self.__acontext
-
-    @acontext.setter
-    def acontext(self, value):
-        self.__acontext = value
-
-
-class PropertyJsonLD(PropertyAwareObject, AContext):
+class PropertyJsonLD(PropertyJsonGenerator):
     """
     Class for representing JSON-LD data. Utilizes @property objects for pulling
     instance data into JSON text representation
@@ -86,66 +31,7 @@ class PropertyJsonLD(PropertyAwareObject, AContext):
     type_constructor_map = {}
 
     def __init__(self, acontext):
-        super().__init__()
-        self.acontext = acontext
-
-    def data(self, include: Iterable = (), exclude: Iterable = (),
-             transforms: dict = None, rename: dict = None, include_none=False,
-             reject_values: Iterable = ()) -> dict:
-        """
-        Returns the object's properties as a dictionary. Does not include values
-        that are not a property of the object
-        :param include: properties to include, defaults to all
-        :param exclude: properties to exclude, defaults to none
-        :param transforms: dict that maps data transformations by property name
-        :param rename: dict that renames properties in the output dict
-        :param include_none: includes pairs where value is None (defaults False)
-        :param reject_values: values to refuse to include
-        :return: dictionary of properties
-        """
-        transforms = {**self.default_transforms,
-                      **(transforms if transforms else {})}
-        rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
-        data = {
-            # change name of property, if provided in mapping
-            rename.get(prop, prop):
-            # change value (BY UNMAPPED NAME) with function, if provided
-                transforms.get(prop, lambda o: getattr(o, prop))(self)
-            for prop in self.__properties__
-            # if include_null is True or the property is not None
-            if (include_none or getattr(self, prop) is not None)
-               # AND if including everything OR if specifically included
-               and (not include or prop in include)
-               # AND if excluding nothing OR if not specifically excluded
-               and not (exclude and prop in exclude)
-               and getattr(self, prop) not in reject_values}
-        # second pass of the None filter to ensure anything that returned None
-        # after being passed through a function is also captured. Removing the
-        # first pass results in a recursion error. I do not understand why but
-        # would love a solution
-        return {key: val for key, val in data.items()
-                if (include_none or val is not None)}
-
-    def json(self, include: Iterable = (), exclude: Iterable = (),
-             transforms: dict = None, rename: dict = None, include_none=False,
-             minified: bool = False, indent: int = None) -> str:
-        """
-        Transforms the object into a json string
-        :param include: properties to include, defaults to all
-        :param exclude: properties to exclude, defaults to none
-        :param transforms: dict that maps data transformations by property name
-        :param rename: dict that renames properties in the output dict
-        :param include_none: includes pairs where value is None (defaults False)
-        :param minified: removes as much whitespace as possible in the output
-        :param indent: indentation level; usually for readability
-        :return:
-        """
-        separators = (',', ':') if minified else None
-        return json.dumps(self.data(include=include, exclude=exclude,
-                                    transforms=transforms, rename=rename,
-                                    include_none=include_none),
-                          separators=separators,
-                          indent=indent)
+        super().__init__(acontext=acontext)
 
     @staticmethod
     def _get_object_class(data, classmap=None):
