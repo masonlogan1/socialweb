@@ -9,14 +9,26 @@ from types import NoneType
 from urllib import parse
 
 from activitypy.activitystreams.utils import VALID_URL_REGEX
+from activitypy.jsonld import ApplicationActivityJson
+from activitypy.jsonld.utils import jsonld_get
 
 logger = logging.getLogger('activitystreams_model')
 logger.setLevel(logging.INFO)
 
-DATETIME_REGEX = re.compile('\d{4}-\d{2}-\d{2}T[012]\d:\d{2}:\d{2}Z?([\-+][012]\d:\d{2})?')
+AS2_TIME = re.compile(r'(0\d|1\d|2[0123]):[012345]\d(:([012345]\d|60))?[\.\-+Z]')
+AS2_TZ = re.compile(r'(Z?[\-+](0\d|1\d|2[0123]):[012345]\d)$')
 
-AS2_PARTIAL_TIME = re.compile('\d{2}:\d{2}(:\d{2})?(\.\d{1,2})?$')
-AS2_FULL_TIME = re.compile('\d{2}:\d{2}(:\d{2})?(\.\d{1,2})?(Z|(Z?[\-+]\d{2}:\d{2}))?$')
+AS2_DATE_TIME = re.compile(r'\d{4}-' +  # year
+                           r'(0[1-9]|1[012])-' +  # month (1-12)
+                           r'(0[1-9]|1\d|2\d|3[01])' +  # day (1-31)
+                           r'T' +  # mandatory T
+                           r'(0\d|1\d|2[0123])' +  # hour (00-23)
+                           r':[012345]\d' +  # minute (00-59)
+                           r'(:([012345]\d|60))?' +  # second (00-60)
+                           r'(\.\d{1,6})?' +  # fraction (6 digit int)
+                           # mandatory Z if no timezone
+                           # optional Z and timezone (+|-)(00-23):(00-59))
+                           r'(Z|(Z?[\-+](0\d|1\d|2[0123]):[012345]\d))$')
 
 
 def is_class(val, classes: Iterable, functional: bool = False):
@@ -30,21 +42,24 @@ def is_class(val, classes: Iterable, functional: bool = False):
 def is_activity_datetime(val, prop='', **kwargs):
     if isinstance(val, NoneType):
         return
-    if not isinstance(val, (datetime, str)):
-        raise ValueError(
-            f'Property "{prop}" must be of type "datetime" or "str" ' +
-            f'got {val} ({type(val)})')
-    if isinstance(val, str) and re.search(DATETIME_REGEX, val) is None:
+    if isinstance(val, datetime):
+        return True
+    if isinstance(val, str) and re.search(AS2_DATE_TIME, val) is None:
         raise ValueError(
             f'Property "{prop}" must be in "YYYY-mm-dd-THH:MM:SSZ" format; ' +
             f'got {val} ({type(val)})')
 
 
 def parse_activitystream_datetime(val):
-    if val is None:
-        return None
-    return val if isinstance(val, datetime) else \
-        datetime.strptime(val, '%Y-%m-%dT%H:%M:%SZ')
+    if isinstance(val, (datetime, NoneType)):
+        return val
+    dt_str = '%Y-%m-%dT%H:%M'
+    val_time = re.search(AS2_TIME, val)
+    # 9 characters indicates seconds have been included
+    dt_str += ':%S' if val_time.span()[1]-val_time.span()[0] == 9 else ''
+    dt_str += '.%f' if '.' in val else ''
+    dt_str += 'Z' if not re.search(AS2_TZ, val) else ('Z%z' if 'Z' in val else '%z')
+    return datetime.strptime(val, dt_str)
 
 
 def url_validator(url, secure: bool = False, skip_none=False, **kwargs):
@@ -88,10 +103,10 @@ def evaluate_value(val, types: Iterable, prop: str,
                    functional: bool = False, additional=tuple(), **kwargs):
     # convert types to tuple to avoid issues with generators
     types = set(types)
-    types = types if functional and list not in types else (set(types)|{list})
+    types = types if functional and list not in types else (set(types) | {list})
     if not isinstance(val, tuple(types)):
         raise ValueError(f"Property '{prop}' must be one of: ('" +
-                         f'''{"', '".join(t.__name__ for t in types 
+                         f'''{"', '".join(t.__name__ for t in types
                                           if t != NoneType)}') ''' +
                          f'got "{val}" {type(val)}')
     if isinstance(val, (list, tuple, set)):
@@ -121,11 +136,16 @@ class ModelManager:
     def register_class(self, cls):
         self.__classes[cls.__name__] = cls
 
+    def __contains__(self, item):
+        return item in self.__classes.keys()
+
     def __getitem__(self, names):
         if isinstance(names, str):
             return self.__classes.get(names, None)
         return tuple(self.__classes.get(name, None) for name in names
-                if self.__classes.get(name, None))
+                     if self.__classes.get(name, None))
+
+
 MODELS = ModelManager()
 
 
@@ -138,7 +158,7 @@ class PropValidator:
     """
 
     def __init__(self, types: Iterable, functional: bool = False,
-                 additional=tuple(), none_allowed = True, **kwargs):
+                 additional=tuple(), none_allowed=True, **kwargs):
         # allows us to pass object names as strings to avoid an issue where
         # we would be referencing a class type before it has been "created"
         self.types = set(types) if isinstance(types, Iterable) else {types}
@@ -157,4 +177,49 @@ class PropValidator:
                                          functional=self.functional,
                                          additional=self.additional,
                                          **self.kwargs))
+
         return check_val
+
+
+class LinkExpander:
+    """
+    Decorator class for setting link functionality to expand by default
+    """
+    def __init__(self, href_on_fail=True):
+        """
+        :param href_on_fail: returns the link href value if expansion fails
+        """
+
+    def __call__(self, get_prop, *args, **kwargs):
+        def decorator(obj, *args, **kwargs):
+            data = get_prop(obj)
+
+            # if LinkModel isn't registered or this isn't a Link, pass the data
+            # without expanding
+            if 'LinkModel' not in MODELS or not isinstance(data, MODELS['LinkModel']):
+                return data
+
+            link = data.__dict__.get('_Href__href', '')
+            # if we don't have an href, we can't expand; pass the data forward
+            if not link:
+                return data
+
+            try:
+                resp_data = jsonld_get(link)
+            except Exception as e:
+                # if we hit an error, pass the data through
+                logger.exception(f'Encountered an error expanding url {link}' +
+                                 f'\n{e}')
+                return data
+
+            try:
+                new_obj = ApplicationActivityJson.from_json(resp_data)
+            except Exception as e:
+                # if we fail to form the new object, pass the data through
+                logger.exception(f'Encountered an error forming object ' +
+                                 f'from {link}\n{e}')
+                return data
+            return new_obj
+
+
+        return decorator

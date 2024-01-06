@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from activitypy.jsonld import JsonProperty
 from activitypy.activitystreams.models.utils import is_activity_datetime, \
     parse_activitystream_datetime, url_validator, is_nonnegative, \
-    PropValidator
+    PropValidator, LinkExpander
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -97,6 +97,7 @@ class AttributedTo(JsonProperty):
     __attributedTo = None
 
     @property
+    #@LinkExpander()
     def attributedTo(self):
         return self.__attributedTo
 

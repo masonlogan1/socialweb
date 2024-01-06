@@ -11,8 +11,8 @@ def main():
     files = all_files[0][2]
     test_files = [f for f in files if os.path.isfile(os.path.join('sample_data', f)) and '.json' in f and f != 'package.json']
     failures = []
-    for file in ['simple0025.json']: #test_files:
-    #for file in test_files:
+    for file in ['vocabulary-ex22a-jsonld.json']:
+    # for file in test_files:
         with open(os.path.join('sample_data', file), 'r') as reader:
             try:
                 txt = reader.read()

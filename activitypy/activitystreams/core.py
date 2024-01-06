@@ -22,13 +22,27 @@ from activitypy.activitystreams.models.properties import Actor, \
 
 class Linkify:
     """Class serving as a decorator that can convert strings into Links"""
+    def __init__(self, convert_dicts: bool = False):
+        """
+        :param convert_dicts: Convert all untyped dicts to links
+        """
+        self.convert_dicts = convert_dicts
+
     def __call__(self, set_prop, *args, **kwargs):
         def create_link(v):
             # if it's a string, create a single link
             if isinstance(v, str) and validate_url(v):
                 return Link(href=v)
-            if isinstance(v, dict) and hasattr(v, 'href') and validate_url(v.get('href', '')):
+            if isinstance(v, dict) and v.get('href', None) and validate_url(v.get('href', '')):
                 return Link(**v)
+            if isinstance(v, dict) and self.convert_dicts and \
+                    (not hasattr(v, 'type') or not getattr(v, 'type')):
+                # if convert_dicts is True, convert every untyped dict value to
+                # a link. If that fails try to convert it to an object instead
+                try:
+                    return Link(**v)
+                except Exception as e:
+                    return Object(**v)
             # if it's an iterable other than a string or dict, create many links
             if isinstance(v, (list, tuple, set)):
                 return [create_link(item) for item in v]
@@ -121,7 +135,7 @@ class Object(ObjectModel):
         Preview.preview.fset(self, val)
 
     @Tag.tag.setter
-    @Linkify()
+    @Linkify(convert_dicts=True)
     def tag(self, val):
         Tag.tag.fset(self, val)
 

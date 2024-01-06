@@ -35,7 +35,9 @@ def update_stringify_map():
         return obj.data(exclude=('acontext',))
 
     def link_href(obj):
-        return obj.href
+        # Links will try to expand when accessed normally, so we have to get
+        # the href value directly from the object dictionary
+        return obj.__dict__.get('_Href__href', '')
     
     STRINGIFY_MAP.update({
         Object: get_data,
