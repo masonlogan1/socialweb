@@ -11,6 +11,28 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+class JsonContextAwareManager:
+    """
+    Class for managing the context in which an @property is being modified or
+    retrieved
+    """
+    def __init__(self):
+        self.context = None
+        self.active = False
+
+    def __call__(self, context=None, *args, **kwargs):
+        self.context = context
+        return self
+
+    def __enter__(self):
+        self.active = True
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.context = None
+        self.active = False
+
+
 class JsonProperty:
     """
     Base object for managing properties that can be registered to a class.
@@ -77,6 +99,48 @@ class JsonProperty:
         return cls.__registration__
 
 
+class PropertyContext:
+    """
+    Class with static methods for providing alternative get/set/delete methods
+    for an object's properties
+    """
+    getter_contexts = {}
+    setter_contexts = {}
+    del_contexts = {}
+
+    @classmethod
+    def register_getter_context(cls, id, fn):
+        cls.getter_contexts.update({id: fn})
+
+    @classmethod
+    def register_setter_context(cls, id, fn):
+        cls.setter_contexts.update({id: fn})
+
+    @classmethod
+    def register_del_context(cls, id, fn):
+        cls.del_contexts.update({id: fn})
+
+    class getter:
+        """
+        Decorator class for context-based @property getter methods. Takes a
+        name and a function and adds it to an internal dictionary
+        """
+        def __init__(self, context=None, fn=None):
+            """
+            :param context: key for a new getter function
+            :param fn: function to map to the key
+            """
+            self.contexts = {**PropertyContext.getter_contexts, context: fn}
+            self.fn = fn
+
+        def __call__(self, getter_func, *args, **kwargs):
+            def decorator(obj, *args, **kwargs):
+                return self.contexts.get(obj.__context__, getter_func)(
+                    obj, *args, **kwargs
+                )
+            return decorator
+
+
 class PropertyAwareObject:
     """
     Base object that provides tools for working with object properties.
@@ -86,6 +150,7 @@ class PropertyAwareObject:
 
     def __init__(self):
         self.__properties__ = self.__get_properties__()
+        self.__context__ = JsonContextAwareManager()
 
     def __iter__(self):
         for prop in self.__properties__:

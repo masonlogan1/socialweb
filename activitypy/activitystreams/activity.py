@@ -7,7 +7,7 @@ of the Offer Activity Type).
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#activity-types"
 
 from activitypy.activitystreams.core import Link, Activity, \
-    IntransitiveActivity, Linkify
+    IntransitiveActivity, LinkManager
 from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel, \
     AddModel, CreateModel, ArriveModel, DeleteModel, FollowModel, IgnoreModel, \
     JoinModel, LeaveModel, LikeModel, OfferModel, InviteModel, RejectModel, \
@@ -260,16 +260,16 @@ class Question(IntransitiveActivity, QuestionModel):
     type = "Question"
 
     @OneOf.oneOf.setter
-    @Linkify()
+    @LinkManager().setter
     def oneOf(self, val):
         OneOf.oneOf.fset(self, val)
 
     @AnyOf.anyOf.setter
-    @Linkify()
+    @LinkManager().setter
     def anyOf(self, val):
         AnyOf.anyOf.fset(self, val)
 
     @Closed.closed.setter
-    @Linkify()
+    @LinkManager().setter
     def closed(self, val):
         Closed.closed.fset(self, val)

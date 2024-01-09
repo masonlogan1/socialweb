@@ -6,6 +6,7 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
     validate_url
+from activitypy.activitystreams.models.utils import LinkExpander
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -20,15 +21,50 @@ from activitypy.activitystreams.models.properties import Actor, \
     Url, PartOf
 
 
-class Linkify:
+class LinkManager:
     """Class serving as a decorator that can convert strings into Links"""
+
+    global_contexts = {
+        None: lambda data, *args, **kwargs: LinkExpander.expand(data)
+    }
+
     def __init__(self, convert_dicts: bool = False):
         """
         :param convert_dicts: Convert all untyped dicts to links
         """
         self.convert_dicts = convert_dicts
 
-    def __call__(self, set_prop, *args, **kwargs):
+    def getter(self, get_func=None, context_aware=True, context_functions=None,
+               *args, **kwargs):
+        """
+        Decorator for automatically expanding Link objects
+        """
+        context_functions = context_functions or {}
+
+        def getter_context_unaware(self, *args, **kwargs):
+            """"""
+            def decorator(obj, *args, **kwargs):
+                """"""
+                return get_func(obj)
+            return decorator
+
+        def getter_context_aware(self, *args, **kwargs):
+            """"""
+            def decorator(obj, *args, **kwargs):
+                """"""
+                # merges globally recognized functions with decorator-specific
+                # functions, overriding global with instance-specific
+                funcs = {**self.global_contexts, **context_functions}
+                funcs.get(obj.__context__)(*args, **kwargs)
+            return decorator
+
+        return getter_context_aware if context_aware else getter_context_unaware
+
+    def setter(self, set_prop, *args, **kwargs):
+        """
+        Decorator that allows the setter of a JsonProperty object to convert
+        various data types into Link objects as a default
+        """
         def create_link(v):
             # if it's a string, create a single link
             if isinstance(v, str) and validate_url(v):
@@ -65,82 +101,82 @@ class Object(ObjectModel):
     default_transforms = PROPERTY_TRANSFORM_MAP
 
     @Attachment.attachment.setter
-    @Linkify()
+    @LinkManager().setter
     def attachment(self, val):
         Attachment.attachment.fset(self, val)
 
     @AttributedTo.attributedTo.setter
-    @Linkify()
+    @LinkManager().setter
     def attributedTo(self, val):
         AttributedTo.attributedTo.fset(self, val)
 
     @Audience.audience.setter
-    @Linkify()
+    @LinkManager().setter
     def audience(self, val):
         Audience.audience.fset(self, val)
 
     @To.to.setter
-    @Linkify()
+    @LinkManager().setter
     def to(self, val):
         To.to.fset(self, val)
 
     @Bcc.bcc.setter
-    @Linkify()
+    @LinkManager().setter
     def bcc(self, value):
         Bcc.bcc.fset(self, value)
 
     @Bto.bto.setter
-    @Linkify()
+    @LinkManager().setter
     def bto(self, value):
         Bto.bto.fset(self, value)
 
     @Cc.cc.setter
-    @Linkify()
+    @LinkManager().setter
     def cc(self, value):
         Cc.cc.fset(self, value)
 
     @Context.context.setter
-    @Linkify()
+    @LinkManager().setter
     def context(self, val):
         Context.context.fset(self, val)
 
     @Generator.generator.setter
-    @Linkify()
+    @LinkManager().setter
     def generator(self, val):
         Generator.generator.fset(self, val)
 
     @Icon.icon.setter
-    @Linkify()
+    @LinkManager().setter
     def icon(self, val):
         Icon.icon.fset(self, val)
 
     @Image.image.setter
-    @Linkify()
+    @LinkManager().setter
     def image(self, val):
         Image.image.fset(self, val)
 
     @InReplyTo.inReplyTo.setter
-    @Linkify()
+    @LinkManager().setter
     def inReplyTo(self, val):
         InReplyTo.inReplyTo.fset(self, val)
 
     @Location.location.setter
-    @Linkify()
+    @LinkManager().setter
     def location(self, val):
         Location.location.fset(self, val)
 
     @Preview.preview.setter
-    @Linkify()
+    @LinkManager().setter
     def preview(self, val):
         Preview.preview.fset(self, val)
 
     @Tag.tag.setter
-    @Linkify(convert_dicts=True)
+    @LinkManager(convert_dicts=True).setter
     def tag(self, val):
         Tag.tag.fset(self, val)
 
     @Url.url.setter
-    @Linkify()
+    @LinkManager().setter
     def url(self, val):
         Url.url.fset(self, val)
 
@@ -159,7 +195,7 @@ class Link(LinkModel):
     default_transforms = PROPERTY_TRANSFORM_MAP
 
     @Preview.preview.setter
-    @Linkify()
+    @LinkManager().setter
     def preview(self, val):
         Preview.preview.fset(self, val)
 
@@ -178,32 +214,32 @@ class Activity(Object, ActivityModel):
     # it still performs the standard type checking, it just normalizes incoming
     # strings for the purpose of handling incoming json
     @Actor.actor.setter
-    @Linkify()
+    @LinkManager().setter
     def actor(self, val):
         Actor.actor.fset(self, val)
 
     @ObjectProp.object.setter
-    @Linkify()
+    @LinkManager().setter
     def object(self, val):
         ObjectProp.object.fset(self, val)
 
     @Instrument.instrument.setter
-    @Linkify()
+    @LinkManager().setter
     def instrument(self, val):
         Instrument.instrument.fset(self, val)
 
     @Origin.origin.setter
-    @Linkify()
+    @LinkManager().setter
     def origin(self, val):
         Origin.origin.fset(self, val)
 
     @Result.result.setter
-    @Linkify()
+    @LinkManager().setter
     def result(self, val):
         Result.result.fset(self, val)
 
     @Target.target.setter
-    @Linkify()
+    @LinkManager().setter
     def target(self, val):
         Target.target.fset(self, val)
 
@@ -228,12 +264,12 @@ class Collection(Object, CollectionModel):
     type = "Collection"
 
     @Current.current.setter
-    @Linkify()
+    @LinkManager().setter
     def current(self, val):
         Current.current.fset(self, val)
 
     @Items.items.setter
-    @Linkify()
+    @LinkManager().setter
     def items(self, items):
         Items.items.fset(self, items)
         if items:
@@ -254,7 +290,7 @@ class OrderedCollection(Collection, OrderedCollectionModel):
     type = "OrderedCollection"
 
     @OrderedItems.orderedItems.setter
-    @Linkify()
+    @LinkManager().setter
     def orderedItems(self, val):
         OrderedItems.orderedItems.fset(self, val)
 
@@ -268,27 +304,27 @@ class CollectionPage(Collection, CollectionPageModel):
     type = "CollectionPage"
 
     @First.first.setter
-    @Linkify()
+    @LinkManager().setter
     def first(self, val):
         First.first.fset(self, val)
 
     @Last.last.setter
-    @Linkify()
+    @LinkManager().setter
     def last(self, val):
         Last.last.fset(self, val)
 
     @Next.next.setter
-    @Linkify()
+    @LinkManager().setter
     def next(self, val):
         Next.next.fset(self, val)
 
     @PartOf.partOf.setter
-    @Linkify()
+    @LinkManager().setter
     def partOf(self, val):
         PartOf.partOf.fset(self, val)
 
     @Prev.prev.setter
-    @Linkify()
+    @LinkManager().setter
     def prev(self, val):
         Prev.prev.fset(self, val)
 

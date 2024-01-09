@@ -190,36 +190,30 @@ class LinkExpander:
         :param href_on_fail: returns the link href value if expansion fails
         """
 
-    def __call__(self, get_prop, *args, **kwargs):
-        def decorator(obj, *args, **kwargs):
-            data = get_prop(obj)
+    def expand(data, *args, **kwargs):
+        # if LinkModel isn't registered or this isn't a Link, pass the data
+        # without expanding
+        if 'LinkModel' not in MODELS or not isinstance(data, MODELS['LinkModel']):
+            return data
 
-            # if LinkModel isn't registered or this isn't a Link, pass the data
-            # without expanding
-            if 'LinkModel' not in MODELS or not isinstance(data, MODELS['LinkModel']):
-                return data
+        link = data.__dict__.get('_Href__href', '')
+        # if we don't have an href, we can't expand; pass the data forward
+        if not link:
+            return data
 
-            link = data.__dict__.get('_Href__href', '')
-            # if we don't have an href, we can't expand; pass the data forward
-            if not link:
-                return data
+        try:
+            resp_data = jsonld_get(link)
+        except Exception as e:
+            # if we hit an error, pass the data through
+            logger.exception(f'Encountered an error expanding url {link}' +
+                             f'\n{e}')
+            return data
 
-            try:
-                resp_data = jsonld_get(link)
-            except Exception as e:
-                # if we hit an error, pass the data through
-                logger.exception(f'Encountered an error expanding url {link}' +
-                                 f'\n{e}')
-                return data
-
-            try:
-                new_obj = ApplicationActivityJson.from_json(resp_data)
-            except Exception as e:
-                # if we fail to form the new object, pass the data through
-                logger.exception(f'Encountered an error forming object ' +
-                                 f'from {link}\n{e}')
-                return data
-            return new_obj
-
-
-        return decorator
+        try:
+            new_obj = ApplicationActivityJson.from_json(resp_data)
+        except Exception as e:
+            # if we fail to form the new object, pass the data through
+            logger.exception(f'Encountered an error forming object ' +
+                             f'from {link}\n{e}')
+            return data
+        return new_obj

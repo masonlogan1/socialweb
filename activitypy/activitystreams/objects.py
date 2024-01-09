@@ -6,7 +6,7 @@ the Like Type is a more specific form of the Activity type).
 """
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#object-types"
 
-from activitypy.activitystreams.core import Object, Link, Linkify
+from activitypy.activitystreams.core import Object, Link, LinkManager
 from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
@@ -22,17 +22,17 @@ class Relationship(Object, RelationshipModel):
     type = "Relationship"
 
     @ObjectProp.object.setter
-    @Linkify()
+    @LinkManager().setter
     def object(self, val):
         ObjectProp.object.fset(self, val)
 
     @Subject.subject.setter
-    @Linkify()
+    @LinkManager().setter
     def subject(self, val):
         Subject.subject.fset(self, val)
 
     @RelationshipProp.relationship.setter
-    @Linkify()
+    @LinkManager().setter
     def relationship(self, val):
         Relationship.relationship.fset(self, val)
 

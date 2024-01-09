@@ -46,22 +46,23 @@ class PropertyJsonGenerator(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        transforms = {**self.default_transforms,
-                      **(transforms if transforms else {})}
-        rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
-        data = {
-            # change name of property, if provided in mapping
-            rename.get(prop, prop):
-            # change value (BY UNMAPPED NAME) with function, if provided
-                transforms.get(prop, lambda o: getattr(o, prop))(self)
-            for prop in self.__properties__
-            # if include_null is True or the property is not None
-            if (include_none or getattr(self, prop) is not None)
-               # AND if including everything OR if specifically included
-               and (not include or prop in include)
-               # AND if excluding nothing OR if not specifically excluded
-               and not (exclude and prop in exclude)
-               and getattr(self, prop) not in reject_values}
+        with self.__context__('data') as process_context:
+            transforms = {**self.default_transforms,
+                          **(transforms if transforms else {})}
+            rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
+            data = {
+                # change name of property, if provided in mapping
+                rename.get(prop, prop):
+                # change value (BY UNMAPPED NAME) with function, if provided
+                    transforms.get(prop, lambda o: getattr(o, prop))(self)
+                for prop in self.__properties__
+                # if include_null is True or the property is not None
+                if (include_none or getattr(self, prop) is not None)
+                   # AND if including everything OR if specifically included
+                   and (not include or prop in include)
+                   # AND if excluding nothing OR if not specifically excluded
+                   and not (exclude and prop in exclude)
+                   and getattr(self, prop) not in reject_values}
         # second pass of the None filter to ensure anything that returned None
         # after being passed through a function is also captured. Removing the
         # first pass results in a recursion error. I do not understand why but
