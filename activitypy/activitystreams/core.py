@@ -7,6 +7,7 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
     validate_url
 from activitypy.activitystreams.models.utils import LinkExpander
+from activitypy.jsonld.base import PropertyContext
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -104,6 +105,11 @@ class Object(ObjectModel):
     @LinkManager().setter
     def attachment(self, val):
         Attachment.attachment.fset(self, val)
+
+    @AttributedTo.attributedTo.getter
+    @PropertyContext.getter('process', fn=lambda obj: 'test')
+    def attributedTo(self):
+        AttributedTo.attributedTo.fget(self)
 
     @AttributedTo.attributedTo.setter
     @LinkManager().setter
@@ -210,9 +216,10 @@ class Activity(Object, ActivityModel):
     """
     type = "Activity"
 
-    # wraps the actor property's setter; converts raw strings into Link objects
-    # it still performs the standard type checking, it just normalizes incoming
-    # strings for the purpose of handling incoming json
+    @Actor.actor.getter
+    def actor(self):
+        Actor.actor.fget(self)
+
     @Actor.actor.setter
     @LinkManager().setter
     def actor(self, val):
