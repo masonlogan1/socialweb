@@ -97,7 +97,6 @@ class AttributedTo(JsonProperty):
     __attributedTo = None
 
     @property
-    #@LinkExpander()
     def attributedTo(self):
         return self.__attributedTo
 

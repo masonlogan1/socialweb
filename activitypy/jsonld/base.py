@@ -16,6 +16,7 @@ class JsonContextAwareManager:
     Class for managing the context in which an @property is being modified or
     retrieved
     """
+
     def __init__(self):
         self.context = None
         self.active = False
@@ -31,6 +32,133 @@ class JsonContextAwareManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.context = None
         self.active = False
+
+
+class ContextualProperty(property):
+    """
+    Expanded version of the property class that allows objects to get, set, and
+    delete properties based on the context of the object that has contextual
+    properties
+    """
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.__default_fget = fget
+        self.__default_fset = fset
+        self.__default_fdel = fdel
+        self.__fget_contexts = {None: self.__default_fget}
+        self.__fset_contexts = {None: self.__default_fset}
+        self.__fdel_contexts = {None: self.__default_fdel}
+
+        # replaces functions with wrappers that determine what actually gets
+        # called based on the owning object's __context__
+        super().__init__(
+            fget=lambda obj: self.__fget(obj),
+            fset=lambda obj, val: self.__fset(obj, val),
+            fdel=lambda obj: self.__fdel(obj),
+            doc=doc
+        )
+
+    def __fget(self, obj):
+        """
+        Grabs the correct getter function based on object context and returns
+        the result of the getter
+        :param obj: the object to retrieve data from
+        :return: the context-dependent data
+        """
+        return self.__fget_contexts.get(getattr(obj, '__context__', None))(obj)
+
+    def __fset(self, obj, val):
+        """
+        Sets the value of the given object to the given value using the
+        appropriate function under the given context
+        :param obj: object to modify
+        :param val: incoming value to set
+        """
+        self.__fset_contexts.get(getattr(obj, '__context__', None))(obj, val)
+
+    def __fdel(self, obj):
+        """
+        Deletes the property using the function appropriate under the given
+        object's context
+        :param obj: object to delete the property from
+        """
+        self.__fdel_contexts.get(getattr(obj, '__context__', None))(obj)
+
+    def setter(self, fset):
+        """
+        Changes the default setter function for the property. Should be used
+        as a decorator
+        :param fset: new default setter function
+        :return:
+        """
+        self.__default_fset = fset
+
+    def getter(self, fget):
+        """
+        Changes the default getter function for the property. Should be used
+        as a decorator
+        :param fget: new default getter function
+        :return:
+        """
+        self.__default_fget = fget
+
+    def deleter(self, fdel):
+        """
+        Changes the default deleter function for the property. Should be used
+        as a decorator
+        :param fdel: new default deleter function
+        :return:
+        """
+        self.__default_fdel = fdel
+
+    def setter_context(self, context):
+        """
+        Decorator for adding a context-dependent setter to the property. The
+        function will be used when the __context__ attribute of the property
+        matches the identifying value of the contextual function
+        :param context: identifier for the contextual function
+        """
+        def decorator(fn):
+            self.__fset_contexts[context] = fn
+            return self
+        return decorator
+
+    def getter_context(self, context):
+        """
+        Decorator for adding a context-dependent getter to the property. The
+        function will be used when the __context__ attribute of the property
+        matches the identifying value of the contextual function
+        :param context: identifier for the contextual function
+        """
+        def decorator(fn):
+            self.__fget_contexts[context] = fn
+            return self
+        return decorator
+
+    def deleter_context(self, context):
+        """
+        Decorator for adding a context-dependent deleter to the property. The
+        function will be used when the __context__ attribute of the property
+        matches the identifying value of the contextual function
+        :param context: identifier for the contextual function
+        """
+        def decorator(fn):
+            self.__fdel_contexts[context] = fn
+            return self
+        return decorator
+
+
+def contextualproperty(fn):
+    """
+    Wrapper function that allows for @contextualproperty decorators
+    without needlessly complex code in the actual object. The doc property will
+    be derived from the docstring of the getter function.
+    :param fn: getter function that serves as a starting point for the property
+    :return: ContextualProperty with a getter and documentation, if provided
+    """
+    # there are ways to make this part of the class but I'm not doing it. I
+    # have spent way too much time making this thing work and I am not about to
+    # drive myself insane over this one design choice.
+    return ContextualProperty(fget=fn, doc=fn.__doc__)
 
 
 class JsonProperty:
@@ -123,22 +251,20 @@ class PropertyContext:
     class getter:
         """
         Decorator class for context-based @property getter methods. Takes a
-        name and a function and adds it to an internal dictionary
+        dictionary of functions and alters the property so that the object's
+        __context__ attribute will determine which function to use as a getter.
+        The property's default getter function will be used if __context__
+        is None.
         """
-        def __init__(self, context=None, fn=None):
-            """
-            :param context: key for a new getter function
-            :param fn: function to map to the key
-            """
-            self.contexts = {**PropertyContext.getter_contexts, context: fn}
-            self.fn = fn
 
-        def __call__(self, getter_func, *args, **kwargs):
-            def decorator(obj, *args, **kwargs):
-                return self.contexts.get(obj.__context__, getter_func)(
-                    obj, *args, **kwargs
-                )
-            return decorator
+        def __init__(self, fns: dict):
+            """
+            :param fns: dict pairing context names to getter functions
+            """
+            self.contexts = {**PropertyContext.getter_contexts, **fns}
+
+        def __call__(self, default_fn, *args, **kwargs):
+            return lambda *args, **kwargs: '5'
 
 
 class PropertyAwareObject:

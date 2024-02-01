@@ -106,10 +106,10 @@ class Object(ObjectModel):
     def attachment(self, val):
         Attachment.attachment.fset(self, val)
 
+    @PropertyContext.getter(fns={'process': lambda obj: 'test'})
     @AttributedTo.attributedTo.getter
-    @PropertyContext.getter('process', fn=lambda obj: 'test')
     def attributedTo(self):
-        AttributedTo.attributedTo.fget(self)
+        return AttributedTo.attributedTo.fget(self)
 
     @AttributedTo.attributedTo.setter
     @LinkManager().setter
