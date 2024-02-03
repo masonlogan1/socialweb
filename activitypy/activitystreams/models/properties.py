@@ -8,7 +8,7 @@ handled correctly.
 # abstraction from the spec
 import logging
 from datetime import datetime, timedelta
-from activitypy.jsonld import JsonProperty
+from activitypy.jsonld import JsonProperty, contextualproperty
 from activitypy.activitystreams.models.utils import is_activity_datetime, \
     parse_activitystream_datetime, url_validator, is_nonnegative, \
     PropValidator, LinkExpander
@@ -96,11 +96,16 @@ class AttributedTo(JsonProperty):
 
     __attributedTo = None
 
-    @property
+    @contextualproperty
     def attributedTo(self):
         return self.__attributedTo
 
     @attributedTo.setter
+    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    def attributedTo(self, val):
+        self.__attributedTo = val
+
+    @attributedTo.setter_context('type_enforced')
     @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def attributedTo(self, val):
         self.__attributedTo = val

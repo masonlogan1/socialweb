@@ -7,7 +7,6 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
     validate_url
 from activitypy.activitystreams.models.utils import LinkExpander
-from activitypy.jsonld.base import PropertyContext
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -106,15 +105,12 @@ class Object(ObjectModel):
     def attachment(self, val):
         Attachment.attachment.fset(self, val)
 
-    @PropertyContext.getter(fns={'process': lambda obj: 'test'})
-    @AttributedTo.attributedTo.getter
-    def attributedTo(self):
-        return AttributedTo.attributedTo.fget(self)
-
     @AttributedTo.attributedTo.setter
-    @LinkManager().setter
     def attributedTo(self, val):
-        AttributedTo.attributedTo.fset(self, val)
+        with self.__context__('type_enforced'):
+            if isinstance(val, str) and validate_url(val):
+                val = Link(val)
+            AttributedTo.attributedTo.fset(self, val)
 
     @Audience.audience.setter
     @LinkManager().setter

@@ -3,6 +3,7 @@ Module for splitting logic that allows objects to iterate and work with
 @property objects stored inside of them
 """
 import logging
+from copy import copy
 from itertools import chain
 
 from activitypy.jsonld.utils import JSON_TYPE_MAP
@@ -13,7 +14,7 @@ logger.setLevel(logging.INFO)
 
 class JsonContextAwareManager:
     """
-    Class for managing the context in which an @property is being modified or
+    Class for managing the context in which a @property is being modified or
     retrieved
     """
 
@@ -40,22 +41,39 @@ class ContextualProperty(property):
     delete properties based on the context of the object that has contextual
     properties
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        self.__default_fget = fget
-        self.__default_fset = fset
-        self.__default_fdel = fdel
-        self.__fget_contexts = {None: self.__default_fget}
-        self.__fset_contexts = {None: self.__default_fset}
-        self.__fdel_contexts = {None: self.__default_fdel}
+
+    def __NO_GETTER(self, *args, **kwargs):
+        raise AttributeError(f"""can't get attribute{
+        "'"+self.__name+"'" if self.__name else ''}""")
+
+    def __NO_SETTER(self, *args, **kwargs):
+        raise AttributeError(f"""can't set attribute{
+        "'"+self.__name+"'" if self.__name else ''}""")
+
+    def __NO_DELETER(self, *args, **kwargs):
+        raise AttributeError(f"""can't delete attribute{
+        "'"+self.__name+"'" if self.__name else ''}""")
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
+        self.__name = name
+        self.__fget_contexts = {None: fget or self.__NO_GETTER}
+        self.__fset_contexts = {None: fset or self.__NO_SETTER}
+        self.__fdel_contexts = {None: fdel or self.__NO_DELETER}
 
         # replaces functions with wrappers that determine what actually gets
         # called based on the owning object's __context__
         super().__init__(
-            fget=lambda obj: self.__fget(obj),
-            fset=lambda obj, val: self.__fset(obj, val),
-            fdel=lambda obj: self.__fdel(obj),
+            fget=self.__fget,
+            fset=self.__fset,
+            fdel=self.__fdel,
             doc=doc
         )
+
+    @staticmethod
+    def get_context(obj):
+        # gets the context of the object; returns default for
+        # JsonContextAwareManager if the object does not have __context__
+        return getattr(obj, '__context__', JsonContextAwareManager()).context
 
     def __fget(self, obj):
         """
@@ -64,7 +82,11 @@ class ContextualProperty(property):
         :param obj: the object to retrieve data from
         :return: the context-dependent data
         """
-        return self.__fget_contexts.get(getattr(obj, '__context__', None))(obj)
+        # if the context is not recognized, revert to None so we get the default
+        # function
+        context = self.get_context(obj)
+        return self.__fget_contexts.get(
+            context if context in self.__fget_contexts.keys() else None)(obj)
 
     def __fset(self, obj, val):
         """
@@ -73,7 +95,9 @@ class ContextualProperty(property):
         :param obj: object to modify
         :param val: incoming value to set
         """
-        self.__fset_contexts.get(getattr(obj, '__context__', None))(obj, val)
+        context = self.get_context(obj)
+        return self.__fset_contexts.get(
+            context if context in self.__fset_contexts.keys() else None)(obj, val)
 
     def __fdel(self, obj):
         """
@@ -81,7 +105,9 @@ class ContextualProperty(property):
         object's context
         :param obj: object to delete the property from
         """
-        self.__fdel_contexts.get(getattr(obj, '__context__', None))(obj)
+        context = self.get_context(obj)
+        return self.__fdel_contexts.get(
+            context if context in self.__fdel_contexts.keys() else None)(obj)
 
     def setter(self, fset):
         """
@@ -90,7 +116,9 @@ class ContextualProperty(property):
         :param fset: new default setter function
         :return:
         """
-        self.__default_fset = fset
+        prop = copy(self)
+        prop.__fset_contexts[None] = fset
+        return prop
 
     def getter(self, fget):
         """
@@ -99,7 +127,8 @@ class ContextualProperty(property):
         :param fget: new default getter function
         :return:
         """
-        self.__default_fget = fget
+        self.__fget_contexts[None] = fget
+        return self
 
     def deleter(self, fdel):
         """
@@ -108,7 +137,8 @@ class ContextualProperty(property):
         :param fdel: new default deleter function
         :return:
         """
-        self.__default_fdel = fdel
+        self.__fdel_contexts[None] = fdel
+        return self
 
     def setter_context(self, context):
         """
@@ -145,6 +175,13 @@ class ContextualProperty(property):
             self.__fdel_contexts[context] = fn
             return self
         return decorator
+
+    def __copy__(self):
+        new_prop = ContextualProperty(doc=self.__doc__)
+        new_prop.__fget_contexts = self.__fget_contexts.copy()
+        new_prop.__fset_contexts = self.__fset_contexts.copy()
+        new_prop.__fdel_contexts = self.__fdel_contexts.copy()
+        return new_prop
 
 
 def contextualproperty(fn):
@@ -225,46 +262,6 @@ class JsonProperty:
             else:
                 cls.__registration__ = None
         return cls.__registration__
-
-
-class PropertyContext:
-    """
-    Class with static methods for providing alternative get/set/delete methods
-    for an object's properties
-    """
-    getter_contexts = {}
-    setter_contexts = {}
-    del_contexts = {}
-
-    @classmethod
-    def register_getter_context(cls, id, fn):
-        cls.getter_contexts.update({id: fn})
-
-    @classmethod
-    def register_setter_context(cls, id, fn):
-        cls.setter_contexts.update({id: fn})
-
-    @classmethod
-    def register_del_context(cls, id, fn):
-        cls.del_contexts.update({id: fn})
-
-    class getter:
-        """
-        Decorator class for context-based @property getter methods. Takes a
-        dictionary of functions and alters the property so that the object's
-        __context__ attribute will determine which function to use as a getter.
-        The property's default getter function will be used if __context__
-        is None.
-        """
-
-        def __init__(self, fns: dict):
-            """
-            :param fns: dict pairing context names to getter functions
-            """
-            self.contexts = {**PropertyContext.getter_contexts, **fns}
-
-        def __call__(self, default_fn, *args, **kwargs):
-            return lambda *args, **kwargs: '5'
 
 
 class PropertyAwareObject:
