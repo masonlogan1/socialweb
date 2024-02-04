@@ -18,6 +18,8 @@ from activitypy.activitystreams.models.properties import OneOf, \
     AnyOf, Closed
 from activitypy.activitystreams.utils import validate_url
 
+from activitypy.jsonld import JSON_DATA_CONTEXT
+
 
 class Accept(Activity, AcceptModel):
     """
@@ -259,17 +261,70 @@ class Question(IntransitiveActivity, QuestionModel):
     """
     type = "Question"
 
-    @OneOf.oneOf.setter
+    # //// //// //// //// //// //// oneOf //// //// //// //// //// ////
+    @OneOf.oneOf.getter
+    @LinkManager().getter
+    def oneOf(self):
+        """
+        Identifies an exclusive option for a Question. Use of oneOf implies
+        that the Question can have only a single answer. To indicate that a
+        Question can have multiple answers, use anyOf.
+        :return: Link or Object
+        :raises ValueError: if non-Link or non-Object assignment is attempted
+        """
+        return OneOf.oneOf.fget(self)
+
+    @oneOf.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def oneOf(self):
+        return OneOf.oneOf.fget(self)
+
+    @oneOf.setter
     @LinkManager().setter
     def oneOf(self, val):
         OneOf.oneOf.fset(self, val)
 
-    @AnyOf.anyOf.setter
+    # //// //// //// //// //// //// anyOf //// //// //// //// //// ////
+    @AnyOf.anyOf.getter
+    @LinkManager().getter
+    def anyOf(self):
+        """
+        Identifies an inclusive option for a Question. Use of anyOf implies
+        that the Question can have multiple answers. To indicate that a
+        Question can have only one answer, use oneOf.
+        :return: Link or Object
+        :raises ValueError: if non-Link or non-Object assignment is attempted
+        """
+        return AnyOf.anyOf.fget(self)
+
+    @anyOf.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def anyOf(self):
+        return AnyOf.anyOf.fget(self)
+
+    @anyOf.setter
     @LinkManager().setter
     def anyOf(self, val):
         AnyOf.anyOf.fset(self, val)
 
-    @Closed.closed.setter
+    # //// //// //// //// //// //// closed //// //// //// //// //// ////
+    @Closed.closed.getter
+    @LinkManager().getter
+    def closed(self):
+        """
+        Indicates that a question has been closed, and answers are no longer
+        accepted.
+        :return: Object, Link, datetime, or bool
+        :raises ValueError: if non-Object, Link, datetime, or bool assignment is attempted
+        """
+        return Closed.closed.fget(self)
+
+    @closed.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def closed(self):
+        return Closed.closed.fget(self)
+
+    @closed.setter
     @LinkManager().setter
     def closed(self, val):
         Closed.closed.fset(self, val)

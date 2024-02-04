@@ -205,7 +205,7 @@ class LinkExpander:
             resp_data = jsonld_get(link)
         except Exception as e:
             # if we hit an error, pass the data through
-            logger.exception(f'Encountered an error expanding url {link}' +
+            logger.info(f'Encountered an error expanding url {link}' +
                              f'\n{e}')
             return data
 

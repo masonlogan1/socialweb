@@ -42,7 +42,7 @@ class Id(JsonProperty):
     """
     __id = None
 
-    @property
+    @contextualproperty
     def id(self):
         return self.__id
 
@@ -59,7 +59,7 @@ class Type(JsonProperty):
     """
     __type = None
 
-    @property
+    @contextualproperty
     def type(self):
         return self.__type
 
@@ -77,7 +77,7 @@ class Attachment(JsonProperty):
     """
     __attachment = None
 
-    @property
+    @contextualproperty
     def attachment(self):
         return self.__attachment
 
@@ -113,7 +113,7 @@ class Actor(AttributedTo):
     actor MAY be specified using an indirect Link.
     """
 
-    @property
+    @contextualproperty
     def actor(self):
         return self.attributedTo
 
@@ -131,7 +131,7 @@ class Audience(JsonProperty):
 
     __audience = None
 
-    @property
+    @contextualproperty
     def audience(self):
         return self.__audience
 
@@ -149,7 +149,7 @@ class Bcc(JsonProperty):
 
     __bcc = None
 
-    @property
+    @contextualproperty
     def bcc(self):
         return self.__bcc
 
@@ -167,7 +167,7 @@ class Bto(JsonProperty):
 
     __bto = None
 
-    @property
+    @contextualproperty
     def bto(self):
         return self.__bto
 
@@ -185,7 +185,7 @@ class Cc(JsonProperty):
 
     __cc = None
 
-    @property
+    @contextualproperty
     def cc(self):
         return self.__cc
 
@@ -208,7 +208,7 @@ class Context(JsonProperty):
 
     __context = None
 
-    @property
+    @contextualproperty
     def context(self):
         return self.__context
 
@@ -226,7 +226,7 @@ class Current(JsonProperty):
 
     __current = None
 
-    @property
+    @contextualproperty
     def current(self):
         return self.__current
 
@@ -245,7 +245,7 @@ class First(JsonProperty):
 
     __first = None
 
-    @property
+    @contextualproperty
     def first(self):
         return self.__first
 
@@ -263,7 +263,7 @@ class Generator(JsonProperty):
 
     __generator = None
 
-    @property
+    @contextualproperty
     def generator(self):
         return self.__generator
 
@@ -282,7 +282,7 @@ class Icon(JsonProperty):
 
     __icon = None
 
-    @property
+    @contextualproperty
     def icon(self):
         return self.__icon
 
@@ -301,7 +301,7 @@ class Image(JsonProperty):
 
     __image = None
 
-    @property
+    @contextualproperty
     def image(self):
         return self.__image
 
@@ -319,7 +319,7 @@ class InReplyTo(JsonProperty):
 
     __inReplyTo = None
 
-    @property
+    @contextualproperty
     def inReplyTo(self):
         return self.__inReplyTo
 
@@ -337,7 +337,7 @@ class Instrument(JsonProperty):
 
     __instrument = None
 
-    @property
+    @contextualproperty
     def instrument(self):
         return self.__instrument
 
@@ -355,7 +355,7 @@ class Last(JsonProperty):
 
     __last = None
 
-    @property
+    @contextualproperty
     def last(self):
         return self.__last
 
@@ -374,7 +374,7 @@ class Location(JsonProperty):
 
     __location = None
 
-    @property
+    @contextualproperty
     def location(self):
         return self.__location
 
@@ -392,7 +392,7 @@ class Items(JsonProperty):
 
     __items = None
 
-    @property
+    @contextualproperty
     def items(self):
         return self.__items if self.__items else None
 
@@ -409,7 +409,7 @@ class OrderedItems(Items):
     """
 
     # this is essentially just a wrapper for "items"
-    @property
+    @contextualproperty
     def orderedItems(self):
         return self.items
 
@@ -427,7 +427,7 @@ class UnorderedItems(JsonProperty):
 
     __unorderedItems = None
 
-    @property
+    @contextualproperty
     def unorderedItems(self):
         return self.__unorderedItems
 
@@ -446,7 +446,7 @@ class OneOf(JsonProperty):
 
     __oneOf = None
 
-    @property
+    @contextualproperty
     def oneOf(self):
         return self.__oneOf
 
@@ -465,7 +465,7 @@ class AnyOf(JsonProperty):
 
     __anyOf = None
 
-    @property
+    @contextualproperty
     def anyOf(self):
         return self.__anyOf
 
@@ -483,7 +483,7 @@ class Closed(JsonProperty):
 
     __closed = None
 
-    @property
+    @contextualproperty
     def closed(self):
         return self.__closed
 
@@ -503,7 +503,7 @@ class Origin(JsonProperty):
 
     __origin = None
 
-    @property
+    @contextualproperty
     def origin(self):
         return self.__origin
 
@@ -520,7 +520,7 @@ class Next(JsonProperty):
 
     __next = None
 
-    @property
+    @contextualproperty
     def next(self):
         return self.__next
 
@@ -543,7 +543,7 @@ class Object(JsonProperty):
 
     __object = None
 
-    @property
+    @contextualproperty
     def object(self):
         return self.__object
 
@@ -560,7 +560,7 @@ class Prev(JsonProperty):
 
     __prev = None
 
-    @property
+    @contextualproperty
     def prev(self):
         return self.__prev
 
@@ -578,7 +578,7 @@ class Preview(JsonProperty):
 
     __preview = None
 
-    @property
+    @contextualproperty
     def preview(self):
         return self.__preview
 
@@ -597,7 +597,7 @@ class Result(JsonProperty):
 
     __result = None
 
-    @property
+    @contextualproperty
     def result(self):
         return self.__result
 
@@ -615,7 +615,7 @@ class Replies(JsonProperty):
 
     __replies = None
 
-    @property
+    @contextualproperty
     def replies(self):
         return self.__replies
 
@@ -635,12 +635,12 @@ class Tag(JsonProperty):
 
     __tag = None
 
-    @property
+    @contextualproperty
     def tag(self):
         return self.__tag
 
     @tag.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @PropValidator(types=('ObjectModel', 'LinkModel', dict)).check
     def tag(self, val):
         self.__tag = val
 
@@ -657,7 +657,7 @@ class Target(JsonProperty):
 
     __target = None
 
-    @property
+    @contextualproperty
     def target(self):
         return self.__target
 
@@ -675,7 +675,7 @@ class To(JsonProperty):
 
     __to = None
 
-    @property
+    @contextualproperty
     def to(self):
         return self.__to
 
@@ -692,7 +692,7 @@ class Url(JsonProperty):
 
     __url = None
 
-    @property
+    @contextualproperty
     def url(self):
         return self.__url
 
@@ -710,7 +710,7 @@ class Accuracy(JsonProperty):
 
     __accuracy = None
 
-    @property
+    @contextualproperty
     def accuracy(self):
         return self.__accuracy
 
@@ -729,7 +729,7 @@ class Altitude(JsonProperty):
 
     __altitude = None
 
-    @property
+    @contextualproperty
     def altitude(self):
         return self.__altitude
 
@@ -750,7 +750,7 @@ class Content(JsonProperty):
 
     __content = None
 
-    @property
+    @contextualproperty
     def content(self):
         return self.__content
 
@@ -769,7 +769,7 @@ class Name(JsonProperty):
 
     __name = None
 
-    @property
+    @contextualproperty
     def name(self):
         return self.__name
 
@@ -790,7 +790,7 @@ class Duration(JsonProperty):
 
     __duration = None
 
-    @property
+    @contextualproperty
     def duration(self):
         return self.__duration
 
@@ -808,7 +808,7 @@ class Height(JsonProperty):
 
     __height = None
 
-    @property
+    @contextualproperty
     def height(self):
         return self.__height
 
@@ -826,7 +826,7 @@ class Href(JsonProperty):
 
     __href = None
 
-    @property
+    @contextualproperty
     def href(self):
         return self.__href
 
@@ -844,7 +844,7 @@ class HrefLang(JsonProperty):
 
     __hrefLang = None
 
-    @property
+    @contextualproperty
     def hreflang(self):
         return self.__hrefLang
 
@@ -861,7 +861,7 @@ class PartOf(JsonProperty):
 
     __partOf = None
 
-    @property
+    @contextualproperty
     def partOf(self):
         return self.__partOf
 
@@ -878,7 +878,7 @@ class Latitude(JsonProperty):
 
     __latitude = None
 
-    @property
+    @contextualproperty
     def latitude(self):
         return self.__latitude
 
@@ -895,7 +895,7 @@ class Longitude(JsonProperty):
 
     __longitude = None
 
-    @property
+    @contextualproperty
     def longitude(self):
         return self.__longitude
 
@@ -917,7 +917,7 @@ class MediaType(JsonProperty):
 
     __mediaType = 'text/html'
 
-    @property
+    @contextualproperty
     def mediaType(self):
         return self.__mediaType
 
@@ -937,7 +937,7 @@ class EndTime(JsonProperty):
 
     __endTime = None
 
-    @property
+    @contextualproperty
     def endTime(self):
         return self.__endTime
 
@@ -955,7 +955,7 @@ class Published(JsonProperty):
 
     __published = None
 
-    @property
+    @contextualproperty
     def published(self):
         return self.__published
 
@@ -975,7 +975,7 @@ class StartTime(JsonProperty):
 
     __startTime = None
 
-    @property
+    @contextualproperty
     def startTime(self):
         return self.__startTime
 
@@ -995,7 +995,7 @@ class Radius(JsonProperty):
 
     __radius = None
 
-    @property
+    @contextualproperty
     def radius(self):
         return self.__radius
 
@@ -1018,7 +1018,7 @@ class Rel(JsonProperty):
 
     __rel = None
 
-    @property
+    @contextualproperty
     def rel(self):
         return self.__rel
 
@@ -1036,7 +1036,7 @@ class StartIndex(JsonProperty):
 
     __startIndex = None
 
-    @property
+    @contextualproperty
     def startIndex(self):
         return self.__startIndex
 
@@ -1055,7 +1055,7 @@ class Summary(JsonProperty):
 
     __summary = None
 
-    @property
+    @contextualproperty
     def summary(self):
         return self.__summary
 
@@ -1074,7 +1074,7 @@ class TotalItems(JsonProperty):
 
     __totalItems = None
 
-    @property
+    @contextualproperty
     def totalItems(self):
         return self.__totalItems
 
@@ -1094,7 +1094,7 @@ class Units(JsonProperty):
 
     __units = None
 
-    @property
+    @contextualproperty
     def units(self):
         return self.__units
 
@@ -1111,7 +1111,7 @@ class Updated(JsonProperty):
 
     __updated = None
 
-    @property
+    @contextualproperty
     def updated(self):
         return self.__updated
 
@@ -1130,7 +1130,7 @@ class Width(JsonProperty):
 
     __width = None
 
-    @property
+    @contextualproperty
     def width(self):
         return self.__width
 
@@ -1150,7 +1150,7 @@ class Subject(JsonProperty):
 
     __subject = None
 
-    @property
+    @contextualproperty
     def subject(self):
         return self.__subject
 
@@ -1168,7 +1168,7 @@ class Relationship(JsonProperty):
 
     __relationship = None
 
-    @property
+    @contextualproperty
     def relationship(self):
         return self.__relationship
 
@@ -1186,7 +1186,7 @@ class Describes(JsonProperty):
 
     __describes = None
 
-    @property
+    @contextualproperty
     def describes(self):
         return self.__describes
 
@@ -1204,7 +1204,7 @@ class FormerType(JsonProperty):
 
     __formerType = None
 
-    @property
+    @contextualproperty
     def formerType(self):
         return self.__formerType
 
@@ -1222,7 +1222,7 @@ class Deleted(JsonProperty):
 
     __deleted = None
 
-    @property
+    @contextualproperty
     def deleted(self):
         return self.__deleted
 

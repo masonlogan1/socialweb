@@ -58,13 +58,13 @@ class PropertyJsonIntake(PropertyAwareObject):
         expanded = expanded[0]
         class_type = expanded.get('@type', [''])[0]
         if not class_type:
-            logger.warning(f'No @type value provided:\n{expanded}')
+            logger.debug(f'No @type value provided:\n{expanded}')
 
         # check that the @type value is in the mapping
         classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
         if class_type not in classmap.keys():
             # if the class type is not in our mapping, use the default value
-            logger.warning(f'@type value not in mapping: "{class_type}"')
+            logger.debug(f'@type value not in mapping: "{class_type}"')
             class_type = 'default'
 
         # gets the class for the object that needs to be created from the

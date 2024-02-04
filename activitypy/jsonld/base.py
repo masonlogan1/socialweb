@@ -186,7 +186,7 @@ class ContextualProperty(property):
         return new_prop
 
 
-def contextualproperty(fn):
+def contextualproperty(fn) -> ContextualProperty:
     """
     Wrapper function that allows for @contextualproperty decorators
     without needlessly complex code in the actual object. The doc property will

@@ -23,6 +23,8 @@ from activitypy.activitystreams.activity import Accept, TentativeAccept, Add, Ar
 from activitypy.activitystreams.objects import Relationship, Article, Document, Audio, \
     Image, Video, Note, Page, Event, Place, Profile, Tombstone, Mention
 
+from activitypy.jsonld.json_output import JSON_DATA_CONTEXT
+
 
 def update_stringify_map():
     # we can't import the objects directly into utils without causing a
@@ -32,7 +34,7 @@ def update_stringify_map():
     from activitypy.activitystreams.utils import STRINGIFY_MAP
 
     def get_data(obj):
-        return obj.data(exclude=('acontext',), context='stringify')
+        return obj.data(exclude=('acontext',), context=JSON_DATA_CONTEXT)
     
     STRINGIFY_MAP.update({
         Object: get_data,

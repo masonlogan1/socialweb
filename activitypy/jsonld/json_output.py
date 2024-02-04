@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from activitypy.jsonld.utils import JSON_LD_KEYMAP
 from activitypy.jsonld.base import PropertyAwareObject
 
+JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
 
 class PropertyJsonGenerator(PropertyAwareObject):
     """
@@ -46,7 +47,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        with self.__context__(context) as process_context:
+        with self.__context__(JSON_DATA_CONTEXT) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
@@ -88,6 +89,6 @@ class PropertyJsonGenerator(PropertyAwareObject):
         return json.dumps(self.data(include=include, exclude=exclude,
                                     transforms=transforms, rename=rename,
                                     include_none=include_none,
-                                    context='stringify'),
+                                    context=JSON_DATA_CONTEXT),
                           separators=separators,
                           indent=indent)

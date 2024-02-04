@@ -13,6 +13,8 @@ from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
 from activitypy.activitystreams.models.properties import Subject, \
     Object as ObjectProp, Relationship as RelationshipProp
 
+from activitypy.jsonld import JSON_DATA_CONTEXT
+
 
 class Relationship(Object, RelationshipModel):
     """
@@ -21,20 +23,73 @@ class Relationship(Object, RelationshipModel):
     """
     type = "Relationship"
 
-    @ObjectProp.object.setter
+    # //// //// //// //// //// //// object //// //// //// //// //// ////
+    @ObjectProp.object.getter
+    @LinkManager().getter
+    def object(self):
+        """
+        Describes an object of any kind. The Object type serves as the base type
+        for most of the other kinds of objects defined in the Activity
+        Vocabulary, including other Core types such as Activity,
+        IntransitiveActivity, Collection and OrderedCollection.
+        :return:
+        """
+        return ObjectProp.object.fget(self)
+
+    @object.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def object(self):
+        return ObjectProp.object.fget(self)
+
+    @object.setter
     @LinkManager().setter
     def object(self, val):
         ObjectProp.object.fset(self, val)
 
-    @Subject.subject.setter
+    # //// //// //// //// //// //// subject //// //// //// //// //// ////
+    @Subject.subject.getter
+    @LinkManager().getter
+    def subject(self):
+        """
+        On a Relationship object, the subject property identifies one of the
+        connected individuals. For instance, for a Relationship object
+        describing "John is related to Sally", subject would refer to John.
+        :return: Link or Object
+        :raises ValueError: if non-Link or non-Object assignment is attempted
+        """
+        return Subject.subject.fget(self)
+
+    @subject.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def subject(self):
+        return Subject.subject.fget(self)
+
+    @subject.setter
     @LinkManager().setter
     def subject(self, val):
         Subject.subject.fset(self, val)
 
-    @RelationshipProp.relationship.setter
+    # //// //// //// //// //// //// relationship //// //// //// //// //// ////
+    @RelationshipProp.relationship.getter
+    @LinkManager().getter
+    def relationship(self):
+        """
+        On a Relationship object, the relationship property identifies the kind
+        of relationship that exists between subject and object.
+        :return: Object
+        :raises ValueError: if non-Object assignment is attempted
+        """
+        return RelationshipProp.relationship.fget(self)
+
+    @relationship.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def relationship(self):
+        return RelationshipProp.relationship.fget(self)
+
+    @relationship.setter
     @LinkManager().setter
     def relationship(self, val):
-        Relationship.relationship.fset(self, val)
+        RelationshipProp.relationship.fset(self, val)
 
 
 class Article(Object, ArticleModel):
