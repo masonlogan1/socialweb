@@ -127,8 +127,9 @@ class ContextualProperty(property):
         :param fget: new default getter function
         :return:
         """
-        self.__fget_contexts[None] = fget
-        return self
+        prop = copy(self)
+        prop.__fget_contexts[None] = fget
+        return prop
 
     def deleter(self, fdel):
         """
@@ -137,8 +138,9 @@ class ContextualProperty(property):
         :param fdel: new default deleter function
         :return:
         """
-        self.__fdel_contexts[None] = fdel
-        return self
+        prop = copy(self)
+        prop.__fdel_contexts[None] = fdel
+        return prop
 
     def setter_context(self, context):
         """

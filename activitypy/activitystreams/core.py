@@ -23,42 +23,14 @@ from activitypy.activitystreams.models.properties import Actor, \
 
 class LinkManager:
     """Class serving as a decorator that can convert strings into Links"""
-
-    global_contexts = {
-        None: lambda data, *args, **kwargs: LinkExpander.expand(data)
-    }
-
-    def __init__(self, convert_dicts: bool = False):
-        """
-        :param convert_dicts: Convert all untyped dicts to links
-        """
-        self.convert_dicts = convert_dicts
-
-    def getter(self, get_func=None, context_aware=True, context_functions=None,
-               *args, **kwargs):
+    def getter(self, get_func, *args, **kwargs):
         """
         Decorator for automatically expanding Link objects
         """
-        context_functions = context_functions or {}
+        def decorator(obj):
+            return LinkExpander.expand(get_func(obj))
 
-        def getter_context_unaware(self, *args, **kwargs):
-            """"""
-            def decorator(obj, *args, **kwargs):
-                """"""
-                return get_func(obj)
-            return decorator
-
-        def getter_context_aware(self, *args, **kwargs):
-            """"""
-            def decorator(obj, *args, **kwargs):
-                """"""
-                # merges globally recognized functions with decorator-specific
-                # functions, overriding global with instance-specific
-                funcs = {**self.global_contexts, **context_functions}
-                funcs.get(obj.__context__)(*args, **kwargs)
-            return decorator
-
-        return getter_context_aware if context_aware else getter_context_unaware
+        return decorator
 
     def setter(self, set_prop, *args, **kwargs):
         """
@@ -71,14 +43,6 @@ class LinkManager:
                 return Link(href=v)
             if isinstance(v, dict) and v.get('href', None) and validate_url(v.get('href', '')):
                 return Link(**v)
-            if isinstance(v, dict) and self.convert_dicts and \
-                    (not hasattr(v, 'type') or not getattr(v, 'type')):
-                # if convert_dicts is True, convert every untyped dict value to
-                # a link. If that fails try to convert it to an object instead
-                try:
-                    return Link(**v)
-                except Exception as e:
-                    return Object(**v)
             # if it's an iterable other than a string or dict, create many links
             if isinstance(v, (list, tuple, set)):
                 return [create_link(item) for item in v]
@@ -105,12 +69,19 @@ class Object(ObjectModel):
     def attachment(self, val):
         Attachment.attachment.fset(self, val)
 
-    @AttributedTo.attributedTo.setter
+    @AttributedTo.attributedTo.getter
+    @LinkManager().getter
+    def attributedTo(self):
+        return AttributedTo.attributedTo.fget(self)
+
+    @attributedTo.getter_context('stringify')
+    def attributedTo(self):
+        return AttributedTo.attributedTo.fget(self)
+
+    @attributedTo.setter
+    @LinkManager().setter
     def attributedTo(self, val):
-        with self.__context__('type_enforced'):
-            if isinstance(val, str) and validate_url(val):
-                val = Link(val)
-            AttributedTo.attributedTo.fset(self, val)
+        AttributedTo.attributedTo.fset(self, val)
 
     @Audience.audience.setter
     @LinkManager().setter
@@ -173,7 +144,7 @@ class Object(ObjectModel):
         Preview.preview.fset(self, val)
 
     @Tag.tag.setter
-    @LinkManager(convert_dicts=True).setter
+    @LinkManager().setter
     def tag(self, val):
         Tag.tag.fset(self, val)
 

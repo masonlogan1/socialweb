@@ -32,16 +32,11 @@ def update_stringify_map():
     from activitypy.activitystreams.utils import STRINGIFY_MAP
 
     def get_data(obj):
-        return obj.data(exclude=('acontext',))
-
-    def link_href(obj):
-        # Links will try to expand when accessed normally, so we have to get
-        # the href value directly from the object dictionary
-        return obj.__dict__.get('_Href__href', '')
+        return obj.data(exclude=('acontext',), context='stringify')
     
     STRINGIFY_MAP.update({
         Object: get_data,
-        Link: link_href,
+        Link: get_data,
         Activity: get_data,
         IntransitiveActivity: get_data,
         Collection: get_data,

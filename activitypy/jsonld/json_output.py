@@ -34,7 +34,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
 
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
-             reject_values: Iterable = ()) -> dict:
+             reject_values: Iterable = (), context = None) -> dict:
         """
         Returns the object's properties as a dictionary. Does not include values
         that are not a property of the object
@@ -46,7 +46,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        with self.__context__('data') as process_context:
+        with self.__context__(context) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
@@ -87,6 +87,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         separators = (',', ':') if minified else None
         return json.dumps(self.data(include=include, exclude=exclude,
                                     transforms=transforms, rename=rename,
-                                    include_none=include_none),
+                                    include_none=include_none,
+                                    context='stringify'),
                           separators=separators,
                           indent=indent)

@@ -98,14 +98,9 @@ class AttributedTo(JsonProperty):
 
     @contextualproperty
     def attributedTo(self):
-        return self.__attributedTo
+        return self.__attributedTo if self.__attributedTo else None
 
     @attributedTo.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
-    def attributedTo(self, val):
-        self.__attributedTo = val
-
-    @attributedTo.setter_context('type_enforced')
     @PropValidator(types=('ObjectModel', 'LinkModel')).check
     def attributedTo(self, val):
         self.__attributedTo = val
@@ -399,7 +394,7 @@ class Items(JsonProperty):
 
     @property
     def items(self):
-        return self.__items
+        return self.__items if self.__items else None
 
     @items.setter
     @PropValidator(types=('ObjectModel', 'LinkModel')).check
