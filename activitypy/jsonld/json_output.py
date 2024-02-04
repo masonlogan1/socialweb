@@ -47,7 +47,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        with self.__context__(JSON_DATA_CONTEXT) as process_context:
+        with self.switch_context(JSON_DATA_CONTEXT) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}

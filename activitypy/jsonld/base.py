@@ -304,6 +304,10 @@ class PropertyAwareObject:
                                              if isinstance(value, property)))
         return cls.__properties__
 
+    def switch_context(self, context):
+        self.__context__(context)
+        return self.__context__
+
 
 # These are separate methods to ensure existing types are not accidentally
 # overwritten; there are already so many that it's easy to mess up
