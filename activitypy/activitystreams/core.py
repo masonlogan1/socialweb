@@ -6,7 +6,6 @@ __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
     validate_url
-from activitypy.activitystreams.models.utils import LinkExpander
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -19,17 +18,53 @@ from activitypy.activitystreams.models.properties import Actor, \
     Current, First, Image, Last, Items, \
     OrderedItems, Next, Prev, Tag, To, \
     Url, PartOf
-from activitypy.jsonld import JSON_DATA_CONTEXT
+from activitypy.jsonld import JSON_DATA_CONTEXT, ApplicationActivityJson
+from activitypy.jsonld.utils import jsonld_get
+
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class LinkManager:
     """Class serving as a decorator that can convert strings into Links"""
+
+    def expand_link(self, data, *args, **kwargs):
+        # if LinkModel isn't registered or this isn't a Link, pass the data
+        # without expanding
+        if not isinstance(data, Link):
+            return data
+
+        link = data.__dict__.get('_Href__href', '')
+        # if we don't have an href, we can't expand; pass the data forward
+        if not link:
+            return data
+
+        try:
+            resp_data = jsonld_get(link)
+        except Exception as e:
+            # if we hit an error, pass the data through
+            logger.info(f'Encountered an error expanding url {link}' +
+                        f'\n{e}')
+            return data
+
+        try:
+            new_obj = ApplicationActivityJson.from_json(resp_data)
+        except Exception as e:
+            # if we fail to form the new object, pass the data through
+            logger.exception(f'Encountered an error forming object ' +
+                             f'from {link}\n{e}')
+            return data
+        return new_obj
+
     def getter(self, get_func, *args, **kwargs):
         """
         Decorator for automatically expanding Link objects
         """
+
         def decorator(obj):
-            return LinkExpander.expand(get_func(obj))
+            return self.expand_link(get_func(obj))
+
         return decorator
 
     def href_only(self, get_func):

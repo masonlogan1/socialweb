@@ -16,7 +16,6 @@ from activitypy.activitystreams.models import AcceptModel, TentativeAcceptModel,
     FlagModel, DislikeModel, QuestionModel
 from activitypy.activitystreams.models.properties import OneOf, \
     AnyOf, Closed
-from activitypy.activitystreams.utils import validate_url
 
 from activitypy.jsonld import JSON_DATA_CONTEXT
 

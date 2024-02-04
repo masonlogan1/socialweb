@@ -9,6 +9,7 @@ from activitypy.jsonld.base import PropertyAwareObject
 
 JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
 
+
 class PropertyJsonGenerator(PropertyAwareObject):
     """
     Base class for generating json output based on the @property attributes
@@ -35,7 +36,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
 
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
-             reject_values: Iterable = (), context = None) -> dict:
+             reject_values: Iterable = (), context = JSON_DATA_CONTEXT) -> dict:
         """
         Returns the object's properties as a dictionary. Does not include values
         that are not a property of the object
@@ -47,7 +48,7 @@ class PropertyJsonGenerator(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        with self.switch_context(JSON_DATA_CONTEXT) as process_context:
+        with self.switch_context(context) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}

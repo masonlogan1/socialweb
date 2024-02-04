@@ -1,18 +1,7 @@
 """
 Tools for working with json-ld data
 """
-import json
 import logging
-from collections.abc import Iterable
-from itertools import chain
-from numbers import Number
-from typing import Union
-
-from pyld.jsonld import expand
-
-from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
-    DEFAULT_TYPE, DEFAULT_CONTEXT
-from activitypy.jsonld.base import PropertyAwareObject
 from activitypy.jsonld.json_output import PropertyJsonGenerator
 from activitypy.jsonld.json_input import PropertyJsonIntake
 
