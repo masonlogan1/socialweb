@@ -1,1 +1,2 @@
 from activitypy.activitystreams.handlers.link_handlers import LinkHandler
+from activitypy.activitystreams.handlers.number_handler import NumberHandler

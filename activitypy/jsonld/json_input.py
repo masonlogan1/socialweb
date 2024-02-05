@@ -120,7 +120,7 @@ class PropertyJsonIntake(PropertyAwareObject):
         data = json.loads(data) if isinstance(data, str) else data.copy()
         context = data.get('@context', DEFAULT_CONTEXT)
         if not data.get('@context', None):
-            logger.warning(f"No '@context' provided, using '{DEFAULT_CONTEXT}'")
+            logger.debug(f"No '@context' provided, using '{DEFAULT_CONTEXT}'")
             data.update({'@context': DEFAULT_CONTEXT})
         object_class = cls._get_object_class(data, classmap=classmap)
 

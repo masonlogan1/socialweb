@@ -9,7 +9,7 @@
 "subject": "http://sally.example.org",
 "relationship": "IsContact",
 "object": "http://matt.example.org",
-"startTime": "2015-04-21T12:34:56"
+"startTime": "2015-04-21T12:34:56Z"
 }
 }
    

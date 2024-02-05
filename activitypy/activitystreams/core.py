@@ -5,7 +5,7 @@ vocabulary.
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
-    validate_url
+    validate_url, validate_acct_or_email
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -92,8 +92,10 @@ class LinkManager:
         various data types into Link objects as a default
         """
         def create_link(v):
-            # if it's a string, create a single link
-            if isinstance(v, str) and validate_url(v):
+            # if it's a string representing an email, url, or account ref,
+            # create a single link
+            if (isinstance(v, str) and
+                    (validate_url(v) or validate_acct_or_email(v))):
                 return Link(href=v)
             if isinstance(v, dict) and v.get('href', None) and validate_url(v.get('href', '')):
                 return Link(**v)

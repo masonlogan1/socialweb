@@ -1173,7 +1173,7 @@ class Relationship(JsonProperty):
         return self.__relationship
 
     @relationship.setter
-    @PropValidator(types=('ObjectModel',)).check
+    @PropValidator(types=('ObjectModel', str)).check
     def relationship(self, val):
         self.__relationship = val
 

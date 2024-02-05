@@ -7,11 +7,13 @@ the Like Type is a more specific form of the Activity type).
 __ref__ = "https://www.w3.org/TR/activitystreams-vocabulary/#object-types"
 
 from activitypy.activitystreams.core import Object, Link, LinkManager
+from activitypy.activitystreams.handlers import NumberHandler
 from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
 from activitypy.activitystreams.models.properties import Subject, \
-    Object as ObjectProp, Relationship as RelationshipProp
+    Object as ObjectProp, Relationship as RelationshipProp, Accuracy, Altitude,\
+    Latitude, Longitude, Radius, Units
 
 from activitypy.jsonld import JSON_DATA_CONTEXT
 
@@ -155,6 +157,124 @@ class Place(Object, PlaceModel):
     for additional information.
     """
     type = "Place"
+
+    @Accuracy.accuracy.getter
+    def accuracy(self):
+        """
+        Indicates the accuracy of position coordinates on a Place objects.
+        Expressed in properties of percentage. e.g. "94.0" means "94.0%
+        accurate".
+        :return: float
+        :raises ValueError: if a non-number less than 0 or greater than 100 is assigned
+        """
+        return Accuracy.accuracy.fget(self)
+
+    @accuracy.getter_context(JSON_DATA_CONTEXT)
+    def accuracy(self):
+        return Accuracy.accuracy.fget(self)
+
+    @accuracy.setter
+    @NumberHandler().str_to_number
+    def accuracy(self, val):
+        Accuracy.accuracy.fset(self, val)
+
+    @Altitude.altitude.getter
+    def altitude(self):
+        """
+        Indicates the altitude of a place. The measurement units is indicated
+        using the units property. If units is not specified, the default is
+        assumed to be "m" indicating meters.
+        :return: float
+        :raises ValueError: if a non-float value is assigned
+        """
+        return Altitude.altitude.fget(self)
+
+    @altitude.getter_context(JSON_DATA_CONTEXT)
+    def altitude(self):
+        return Altitude.altitude.fget(self)
+
+    @altitude.setter
+    @NumberHandler().str_to_number
+    def altitude(self, val):
+        Altitude.altitude.fset(self, val)
+
+    @Latitude.latitude.getter
+    def latitude(self):
+        """
+        The latitude of a place
+        :return: float
+        :raises ValueError: if a non-float value is assigned
+        """
+        return Latitude.latitude.fget(self)
+
+    @latitude.getter_context(JSON_DATA_CONTEXT)
+    def latitude(self):
+        return Latitude.latitude.fget(self)
+
+    @latitude.setter
+    @NumberHandler().str_to_number
+    def latitude(self, val):
+        Latitude.latitude.fset(self, val)
+
+    @Longitude.longitude.getter
+    def longitude(self):
+        """
+        The longitude of a place
+        :return: float
+        :raises ValueError: if a non-float value is assigned
+        """
+        return Longitude.longitude.fget(self)
+
+    @longitude.getter_context(JSON_DATA_CONTEXT)
+    def longitude(self):
+        return Longitude.longitude.fget(self)
+
+    @longitude.setter
+    @NumberHandler().str_to_number
+    def longitude(self, val):
+        Longitude.longitude.fset(self, val)
+
+    @Radius.radius.getter
+    def radius(self):
+        """
+        The radius from the given latitude and longitude for a Place. The \
+        units is expressed by the units property. If units is not specified, \
+        the default is assumed to be "m" indicating "meters".
+        :return: float
+        :raises ValueError: if non-float or value less than 0 is assigned
+        """
+        return Radius.radius.fget(self)
+
+    @radius.getter_context(JSON_DATA_CONTEXT)
+    def radius(self):
+        return Radius.radius.fget(self)
+
+    @radius.setter
+    @NumberHandler().str_to_number
+    def radius(self, val):
+        Radius.radius.fset(self, val)
+
+    @Units.units.getter
+    @LinkManager().getter
+    def units(self):
+        """
+        Specifies the measurement units for the radius and altitude properties \
+        on a Place object. If not specified, the default is assumed to be "m" \
+        for "meters".
+        :return: string
+        :raises ValueError: if assigned value is a list, tuple, dict, or set
+        """
+        return Units.units.fget(self)
+
+    @units.getter_context(JSON_DATA_CONTEXT)
+    @LinkManager().href_only
+    def units(self):
+        return Units.units.fget(self)
+
+    @units.setter
+    @LinkManager().setter
+    def units(self, val):
+        Units.units.fset(self, val)
 
 
 class Profile(Object, ProfileModel):
