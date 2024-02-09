@@ -281,6 +281,19 @@ class JsonLdPackageTests(TestCase):
         # tests that if there is an error with one pair, nothing is changed
         self.assertEqual(pkg2.transforms, sample_transforms)
 
+    def test_hash_gets_correct_values(self, *args):
+        namespace_0 = 'https://sample-namespace-0.org/ns/'
+        namespace_1 = 'https://sample-namespace-1.org/ns/'
+
+        expected_hash_0 = hash(namespace_0)
+        expected_hash_1 = hash(namespace_1)
+
+        pkg0 = package.JsonLdPackage(namespace_0)
+        pkg1 = package.JsonLdPackage(namespace_1)
+
+        self.assertEqual(expected_hash_0, hash(pkg0))
+        self.assertEqual(expected_hash_1, hash(pkg1))
+
 
 if __name__ == '__main__':
     unittest.main()

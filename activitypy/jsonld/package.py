@@ -4,6 +4,7 @@ engine can load
 """
 import logging
 from collections.abc import Iterable
+from hashlib import sha256
 
 from activitypy.jsonld.jsonld import ApplicationActivityJson
 from activitypy.jsonld.base import JsonProperty
@@ -139,6 +140,5 @@ class JsonLdPackage:
         raise NotImplementedError("Can't convert JsonLdPackage into a string")
 
     def __hash__(self):
-        # future work on the object persistence engine is dependent on the
-        # ability to hash a package
-        raise NotImplementedError("Can't hash JsonLdPackage objects")
+        # the hash should be derived from the namespace
+        return hash(self.namespace)
