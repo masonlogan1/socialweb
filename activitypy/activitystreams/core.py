@@ -5,7 +5,7 @@ vocabulary.
 __ref__ = 'https://www.w3.org/TR/activitystreams-vocabulary/#types'
 
 from activitypy.activitystreams.utils import PROPERTY_TRANSFORM_MAP, \
-    validate_url, validate_acct_or_email
+    validate_url, validate_acct_or_email, ACTIVITYSTREAMS_NS
 
 from activitypy.activitystreams.models import OrderedCollectionModel, \
     OrderedCollectionPageModel, CollectionModel, IntransitiveActivityModel, \
@@ -22,6 +22,7 @@ from activitypy.jsonld import JSON_DATA_CONTEXT, ApplicationActivityJson
 from activitypy.jsonld.utils import jsonld_get
 
 import logging
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -126,6 +127,11 @@ class Object(ObjectModel):
     """
     type = "Object"
     default_transforms = PROPERTY_TRANSFORM_MAP
+
+    @classmethod
+    def __get_namespace__(cls):
+        # provides namespacing logic for ALL derived children
+        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
 
     # //// //// //// //// attachment start //// //// //// ////
     @Attachment.attachment.getter
@@ -502,6 +508,10 @@ class Link(LinkModel):
     """
     type = "Link"
     default_transforms = PROPERTY_TRANSFORM_MAP
+
+    @classmethod
+    def __get_namespace__(cls):
+        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
 
     @Preview.preview.getter
     @LinkManager().getter

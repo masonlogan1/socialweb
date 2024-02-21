@@ -14,6 +14,8 @@ logger.setLevel(logging.INFO)
 
 VALID_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
 
+ACTIVITYSTREAMS_NS = 'https://www.w3.org/ns/activitystreams'
+
 
 def validate_url(url, secure: bool = False):
     """

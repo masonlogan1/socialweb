@@ -11,12 +11,20 @@ from datetime import datetime, timedelta
 from activitypy.jsonld import JsonProperty, contextualproperty
 from activitypy.activitystreams.models.utils import is_activity_datetime, \
     parse_activitystream_datetime, url_validator, is_nonnegative, \
-    PropValidator, LinkExpander
+    PropValidator
+from activitypy.activitystreams.utils import ACTIVITYSTREAMS_NS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 SECURE_URLS_ONLY = False
+
+
+class ActivityStreamsProperty(JsonProperty):
+    @classmethod
+    def __get_namespace__(cls):
+        # provides namespacing logic for ALL derived children
+        return f'{ACTIVITYSTREAMS_NS}#dfn-{cls.__get_property_name__()}'
 
 
 # "Why is this one big file? Shouldn't you break this into multiple modules?"
@@ -36,7 +44,7 @@ SECURE_URLS_ONLY = False
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
-class Id(JsonProperty):
+class Id(ActivityStreamsProperty):
     """
     Provides the globally unique identifier for an Object or Link.
     """
@@ -53,7 +61,7 @@ class Id(JsonProperty):
         self.__id = val
 
 
-class Type(JsonProperty):
+class Type(ActivityStreamsProperty):
     """
     Identifies the Object or Link type. Multiple values may be specified.
     """
@@ -69,7 +77,7 @@ class Type(JsonProperty):
         self.__type = val
 
 
-class Attachment(JsonProperty):
+class Attachment(ActivityStreamsProperty):
     """
     Identifies a resource attached or related to an object that potentially
     requires special handling. The intent is to provide a model that is at
@@ -87,7 +95,7 @@ class Attachment(JsonProperty):
         self.__attachment = val
 
 
-class AttributedTo(JsonProperty):
+class AttributedTo(ActivityStreamsProperty):
     """
     Identifies one or more entities to which this object is attributed. The
     attributed entities might not be Actors. For instance, an object might be
@@ -123,7 +131,7 @@ class Actor(AttributedTo):
         self.attributedTo = val
 
 
-class Audience(JsonProperty):
+class Audience(ActivityStreamsProperty):
     """
     Identifies one or more entities that represent the total population of
     entities for which the object can be considered to be relevant.
@@ -141,7 +149,7 @@ class Audience(JsonProperty):
         self.__audience = val
 
 
-class Bcc(JsonProperty):
+class Bcc(ActivityStreamsProperty):
     """
     Identifies one or more Objects that are part of the private secondary
     audience of this Object.
@@ -159,7 +167,7 @@ class Bcc(JsonProperty):
         self.__bcc = val
 
 
-class Bto(JsonProperty):
+class Bto(ActivityStreamsProperty):
     """
     Identifies an Object that is part of the private primary audience of this
     Object.
@@ -177,7 +185,7 @@ class Bto(JsonProperty):
         self.__bto = val
 
 
-class Cc(JsonProperty):
+class Cc(ActivityStreamsProperty):
     """
     Identifies an Object that is part of the public secondary audience of this
     Object.
@@ -195,7 +203,7 @@ class Cc(JsonProperty):
         self.__cc = val
 
 
-class Context(JsonProperty):
+class Context(ActivityStreamsProperty):
     """
     Identifies the context within which the object exists or an activity was
     performed.
@@ -218,7 +226,7 @@ class Context(JsonProperty):
         self.__context = val
 
 
-class Current(JsonProperty):
+class Current(ActivityStreamsProperty):
     """
     In a paged Collection, indicates the page that contains the most recently
     updated member items.
@@ -237,7 +245,7 @@ class Current(JsonProperty):
         self.__current = val
 
 
-class First(JsonProperty):
+class First(ActivityStreamsProperty):
     """
     In a paged Collection, indicates the furthest preceding page of items in
     the collection.
@@ -256,7 +264,7 @@ class First(JsonProperty):
         self.__first = val
 
 
-class Generator(JsonProperty):
+class Generator(ActivityStreamsProperty):
     """
     Identifies the entity (e.g. an application) that generated the object.
     """
@@ -273,7 +281,7 @@ class Generator(JsonProperty):
         self.__generator = val
 
 
-class Icon(JsonProperty):
+class Icon(ActivityStreamsProperty):
     """
     Indicates an entity that describes an icon for this object. The image
     should have an aspect ratio of one (horizontal) to one (vertical) and
@@ -292,7 +300,7 @@ class Icon(JsonProperty):
         self.__icon = val
 
 
-class Image(JsonProperty):
+class Image(ActivityStreamsProperty):
     """
     Indicates an entity that describes an image for this object. Unlike the
     icon property, there are no aspect ratio or display size limitations
@@ -311,7 +319,7 @@ class Image(JsonProperty):
         self.__image = val
 
 
-class InReplyTo(JsonProperty):
+class InReplyTo(ActivityStreamsProperty):
     """
     Indicates one or more entities for which this object is considered a
     response.
@@ -329,7 +337,7 @@ class InReplyTo(JsonProperty):
         self.__inReplyTo = val
 
 
-class Instrument(JsonProperty):
+class Instrument(ActivityStreamsProperty):
     """
     Identifies one or more objects used (or to be used) in the completion of an
     Activity.
@@ -347,7 +355,7 @@ class Instrument(JsonProperty):
         self.__instrument = val
 
 
-class Last(JsonProperty):
+class Last(ActivityStreamsProperty):
     """
     In a paged Collection, indicates the furthest proceeding page of the
     collection.
@@ -366,7 +374,7 @@ class Last(JsonProperty):
         self.__last = val
 
 
-class Location(JsonProperty):
+class Location(ActivityStreamsProperty):
     """
     Indicates one or more physical or logical locations associated with the
     object.
@@ -384,7 +392,7 @@ class Location(JsonProperty):
         self.__location = val
 
 
-class Items(JsonProperty):
+class Items(ActivityStreamsProperty):
     """
     Identifies the items contained in a collection. The items might be ordered
     or unordered.
@@ -419,7 +427,7 @@ class OrderedItems(Items):
         self.items = val
 
 
-class UnorderedItems(JsonProperty):
+class UnorderedItems(ActivityStreamsProperty):
     """
     Identifies the items contained in a collection. The items might be ordered
     or unordered.
@@ -437,7 +445,7 @@ class UnorderedItems(JsonProperty):
         self.__unorderedItems = val
 
 
-class OneOf(JsonProperty):
+class OneOf(ActivityStreamsProperty):
     """
     Identifies an exclusive option for a Question. Use of oneOf implies that
     the Question can have only a single answer. To indicate that a Question can
@@ -456,7 +464,7 @@ class OneOf(JsonProperty):
         self.__oneOf = val
 
 
-class AnyOf(JsonProperty):
+class AnyOf(ActivityStreamsProperty):
     """
     Identifies an inclusive option for a Question. Use of anyOf implies that
     the Question can have multiple answers. To indicate that a Question can
@@ -475,7 +483,7 @@ class AnyOf(JsonProperty):
         self.__anyOf = val
 
 
-class Closed(JsonProperty):
+class Closed(ActivityStreamsProperty):
     """
     Indicates that a question has been closed, and answers are no longer
     accepted.
@@ -493,7 +501,7 @@ class Closed(JsonProperty):
         self.__closed = val
 
 
-class Origin(JsonProperty):
+class Origin(ActivityStreamsProperty):
     """
     Describes an indirect object of the activity from which the activity is
     directed. The precise meaning of the origin is the object of the English
@@ -513,7 +521,7 @@ class Origin(JsonProperty):
         self.__origin = val
 
 
-class Next(JsonProperty):
+class Next(ActivityStreamsProperty):
     """
     In a paged Collection, indicates the next page of items.
     """
@@ -531,7 +539,7 @@ class Next(JsonProperty):
         self.__next = val
 
 
-class Object(JsonProperty):
+class Object(ActivityStreamsProperty):
     """
     When used within an Activity, describes the direct object of the activity.
     For instance, in the activity "John added a movie to his wishlist", the
@@ -553,7 +561,7 @@ class Object(JsonProperty):
         self.__object = val
 
 
-class Prev(JsonProperty):
+class Prev(ActivityStreamsProperty):
     """
     In a paged Collection, identifies the previous page of items.
     """
@@ -571,7 +579,7 @@ class Prev(JsonProperty):
         self.__prev = val
 
 
-class Preview(JsonProperty):
+class Preview(ActivityStreamsProperty):
     """
     Identifies an entity that provides a preview of this object.
     """
@@ -588,7 +596,7 @@ class Preview(JsonProperty):
         self.__preview = val
 
 
-class Result(JsonProperty):
+class Result(ActivityStreamsProperty):
     """
     Describes the result of the activity. For instance, if a particular action
     results in the creation of a new resource, the result property can be used
@@ -607,7 +615,7 @@ class Result(JsonProperty):
         self.__result = val
 
 
-class Replies(JsonProperty):
+class Replies(ActivityStreamsProperty):
     """
     Identifies a Collection containing objects considered to be responses to
     this object.
@@ -625,7 +633,7 @@ class Replies(JsonProperty):
         self.__replies = val
 
 
-class Tag(JsonProperty):
+class Tag(ActivityStreamsProperty):
     """
     One or more "tags" that have been associated with an objects. A tag can be
     any kind of Object. The key difference between attachment and tag is that
@@ -645,7 +653,7 @@ class Tag(JsonProperty):
         self.__tag = val
 
 
-class Target(JsonProperty):
+class Target(ActivityStreamsProperty):
     """
     Describes the indirect object, or target, of the activity. The precise
     meaning of the target is largely dependent on the type of action being
@@ -667,7 +675,7 @@ class Target(JsonProperty):
         self.__target = val
 
 
-class To(JsonProperty):
+class To(ActivityStreamsProperty):
     """
     Identifies an entity considered to be part of the public primary audience
     of an Object
@@ -685,7 +693,7 @@ class To(JsonProperty):
         self.__to = val
 
 
-class Url(JsonProperty):
+class Url(ActivityStreamsProperty):
     """
     Identifies one or more links to representations of the object
     """
@@ -702,7 +710,7 @@ class Url(JsonProperty):
         self.__url = val
 
 
-class Accuracy(JsonProperty):
+class Accuracy(ActivityStreamsProperty):
     """
     Indicates the accuracy of position coordinates on a Place objects.
     Expressed in properties of percentage. e.g. "94.0" means "94.0% accurate".
@@ -720,7 +728,7 @@ class Accuracy(JsonProperty):
         self.__accuracy = val
 
 
-class Altitude(JsonProperty):
+class Altitude(ActivityStreamsProperty):
     """
     Indicates the altitude of a place. The measurement units is indicated
     using the units property. If units is not specified, the default is
@@ -739,7 +747,7 @@ class Altitude(JsonProperty):
         self.__altitude = val
 
 
-class Content(JsonProperty):
+class Content(ActivityStreamsProperty):
     """
     The content or textual representation of the Object encoded as a JSON
     string. By default, the value of content is HTML. The mediaType property
@@ -760,7 +768,7 @@ class Content(JsonProperty):
         self.__content = val
 
 
-class Name(JsonProperty):
+class Name(ActivityStreamsProperty):
     """
     A simple, human-readable, plain-text name for the object. HTML markup
     MUST NOT be included. The name MAY be expressed using multiple
@@ -779,7 +787,7 @@ class Name(JsonProperty):
         self.__name = val
 
 
-class Duration(JsonProperty):
+class Duration(ActivityStreamsProperty):
     """
     When the object describes a time-bound resource, such as an audio or video,
     a meeting, etc., the duration property indicates the object's approximate
@@ -800,7 +808,7 @@ class Duration(JsonProperty):
         self.__duration = val
 
 
-class Height(JsonProperty):
+class Height(ActivityStreamsProperty):
     """
     On a Link, specifies a hint as to the rendering height in device-independent
     pixels of the linked resource.
@@ -819,7 +827,7 @@ class Height(JsonProperty):
         self.__height = val
 
 
-class Href(JsonProperty):
+class Href(ActivityStreamsProperty):
     """
     The target resource pointed to by a Link.
     """
@@ -836,7 +844,7 @@ class Href(JsonProperty):
         self.__href = val
 
 
-class HrefLang(JsonProperty):
+class HrefLang(ActivityStreamsProperty):
     """
     Hints as to the language used by the target resource. Value MUST be a
     [BCP47] Language-Tag.
@@ -854,7 +862,7 @@ class HrefLang(JsonProperty):
         self.__hrefLang = val
 
 
-class PartOf(JsonProperty):
+class PartOf(ActivityStreamsProperty):
     """
     Identifies the Collection to which a CollectionPage objects items belong.
     """
@@ -871,7 +879,7 @@ class PartOf(JsonProperty):
         self.__partOf = val
 
 
-class Latitude(JsonProperty):
+class Latitude(ActivityStreamsProperty):
     """
     The latitude of a place
     """
@@ -888,7 +896,7 @@ class Latitude(JsonProperty):
         self.__latitude = val
 
 
-class Longitude(JsonProperty):
+class Longitude(ActivityStreamsProperty):
     """
     The longitude of a place
     """
@@ -905,7 +913,7 @@ class Longitude(JsonProperty):
         self.__longitude = val
 
 
-class MediaType(JsonProperty):
+class MediaType(ActivityStreamsProperty):
     """
     When used on a Link, identifies the MIME media type of the referenced
     resource.
@@ -927,7 +935,7 @@ class MediaType(JsonProperty):
         self.__mediaType = val
 
 
-class EndTime(JsonProperty):
+class EndTime(ActivityStreamsProperty):
     """
     The date and time describing the actual or expected ending time of the
     object. When used with an Activity object, for instance, the endTime
@@ -948,7 +956,7 @@ class EndTime(JsonProperty):
         self.__endTime = parse_activitystream_datetime(val)
 
 
-class Published(JsonProperty):
+class Published(ActivityStreamsProperty):
     """
     The date and time at which the object was published
     """
@@ -966,7 +974,7 @@ class Published(JsonProperty):
         self.__published = parse_activitystream_datetime(val)
 
 
-class StartTime(JsonProperty):
+class StartTime(ActivityStreamsProperty):
     """
     The date and time describing the actual or expected starting time of the
     object. When used with an Activity object, for instance, the startTime
@@ -986,7 +994,7 @@ class StartTime(JsonProperty):
         self.__startTime = parse_activitystream_datetime(val)
 
 
-class Radius(JsonProperty):
+class Radius(ActivityStreamsProperty):
     """
     The radius from the given latitude and longitude for a Place. The units are
     expressed by the units property. If units is not specified, the default is
@@ -1006,7 +1014,7 @@ class Radius(JsonProperty):
         self.__radius = val
 
 
-class Rel(JsonProperty):
+class Rel(ActivityStreamsProperty):
     """
     A link relation associated with a Link. The value MUST conform to both the
     [HTML5] and [RFC5988] "link relation" definitions.
@@ -1028,7 +1036,7 @@ class Rel(JsonProperty):
         self.__rel = val
 
 
-class StartIndex(JsonProperty):
+class StartIndex(ActivityStreamsProperty):
     """
     A non-negative integer value identifying the relative position within the
     logical view of a strictly ordered collection.
@@ -1047,7 +1055,7 @@ class StartIndex(JsonProperty):
         self.__startIndex = val
 
 
-class Summary(JsonProperty):
+class Summary(ActivityStreamsProperty):
     """
     A natural language summarization of the object encoded as HTML. Multiple
     language tagged summaries MAY be provided.
@@ -1065,7 +1073,7 @@ class Summary(JsonProperty):
         self.__summary = val
 
 
-class TotalItems(JsonProperty):
+class TotalItems(ActivityStreamsProperty):
     """
     A non-negative integer specifying the total number of objects contained by
     the logical view of the collection. This number might not reflect the
@@ -1085,7 +1093,7 @@ class TotalItems(JsonProperty):
         self.__totalItems = val
 
 
-class Units(JsonProperty):
+class Units(ActivityStreamsProperty):
     """
     Specifies the measurement units for the radius and altitude properties on a
     Place object. If not specified, the default is assumed to be "m" for
@@ -1104,7 +1112,7 @@ class Units(JsonProperty):
         self.__units = val
 
 
-class Updated(JsonProperty):
+class Updated(ActivityStreamsProperty):
     """
     The date and time at which the object was updated
     """
@@ -1122,7 +1130,7 @@ class Updated(JsonProperty):
         self.__updated = parse_activitystream_datetime(val)
 
 
-class Width(JsonProperty):
+class Width(ActivityStreamsProperty):
     """
     On a Link, specifies a hint as to the rendering width in device-independent
     pixels of the linked resource.
@@ -1141,7 +1149,7 @@ class Width(JsonProperty):
         self.__width = val
 
 
-class Subject(JsonProperty):
+class Subject(ActivityStreamsProperty):
     """
     On a Relationship object, the subject property identifies one of the
     connected individuals. For instance, for a Relationship object describing
@@ -1160,7 +1168,7 @@ class Subject(JsonProperty):
         self.__subject = val
 
 
-class Relationship(JsonProperty):
+class Relationship(ActivityStreamsProperty):
     """
     On a Relationship object, the relationship property identifies the kind of
     relationship that exists between subject and object.
@@ -1178,7 +1186,7 @@ class Relationship(JsonProperty):
         self.__relationship = val
 
 
-class Describes(JsonProperty):
+class Describes(ActivityStreamsProperty):
     """
     On a Profile object, the describes property identifies the object described
     by the Profile.
@@ -1196,7 +1204,7 @@ class Describes(JsonProperty):
         self.__describes = val
 
 
-class FormerType(JsonProperty):
+class FormerType(ActivityStreamsProperty):
     """
     On a Tombstone object, the formerType property identifies the type of the
     object that was deleted.
@@ -1214,7 +1222,7 @@ class FormerType(JsonProperty):
         self.__formerType = val
 
 
-class Deleted(JsonProperty):
+class Deleted(ActivityStreamsProperty):
     """
     On a Tombstone object, the deleted property is a timestamp for when the
     object was deleted.

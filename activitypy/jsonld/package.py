@@ -50,21 +50,18 @@ class JsonLdPackage:
         return getattr(self, '_JsonLdPackage__classes', dict())
 
     @classes.setter
-    def classes(self, classes: dict):
-        # classes must always be a dict
-        if not isinstance(classes, dict):
-            raise TypeError(f"'classes' MUST be a dict or dict-like object")
+    def classes(self, classes: Iterable):
         # enforces type safety
-        if (bad_classes := [cls.__name__ for cls in classes.values()
+        if (bad_classes := [cls.__get_namespace__() for cls in classes
                             if not issubclass(cls, ApplicationActivityJson)]):
             raise ValueError(f'''cannot add "{'", "'.join(bad_classes)}" ''' +
                              f'to package "{self.namespace}", classes added ' +
                              'to package MUST inherit from activitypy.jsonld.' +
                              'ApplicationActivityJson')
         # logs changes to package
-        for id, cls in classes.items():
+        for cls in classes:
             # TODO: enforce type-safety by checking inheritance of base classes
-            logger.info(f'Setting "{id}" in package "{self.namespace}" ' +
+            logger.info(f'Setting "{cls.__get_namespace__()}" in package "{self.namespace}" ' +
                         f'to class "{cls.__name__}"')
         self.__classes = classes
 
@@ -74,19 +71,17 @@ class JsonLdPackage:
 
     @properties.setter
     def properties(self, properties: dict):
-        if not isinstance(properties, dict):
-            raise TypeError(f"'properties' MUST be a dict or dict-like object")
         # enforces type safety
-        if (bad_props := [cls.__name__ for cls in properties.values()
+        if (bad_props := [cls.__get_namespace__() for cls in properties
                           if not issubclass(cls, JsonProperty)]):
             raise ValueError(
                 f'''cannot add "{'", "'.join(bad_props)}" ''' +
                 f'to package "{self.namespace}", properties added ' +
                 'to package MUST inherit from activitypy.jsonld.' +
                 'JsonProperty')
-        for id, prop in properties.items():
+        for prop in properties:
             # TODO: enforce type-safety by checking inheritance of base classes
-            logger.info(f'Setting "{id}" in package "{self.namespace}" ' +
+            logger.info(f'Setting "{prop.__get_namespace__()}" in package "{self.namespace}" ' +
                         f'to property class "{prop.__name__}"')
         self.__properties = properties
 

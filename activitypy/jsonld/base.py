@@ -3,36 +3,14 @@ Module for splitting logic that allows objects to iterate and work with
 @property objects stored inside of them
 """
 import logging
+from collections.abc import Iterable
 from copy import copy
 from itertools import chain
 
-from activitypy.jsonld.utils import JSON_TYPE_MAP
+from activitypy.jsonld.utils import JSON_TYPE_MAP, JSON_DATA_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-class JsonContextAwareManager:
-    """
-    Class for managing the context in which a @property is being modified or
-    retrieved
-    """
-
-    def __init__(self):
-        self.context = None
-        self.active = False
-
-    def __call__(self, context=None, *args, **kwargs):
-        self.context = context
-        return self
-
-    def __enter__(self):
-        self.active = True
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.context = None
-        self.active = False
 
 
 class ContextualProperty(property):
@@ -200,7 +178,51 @@ def contextualproperty(fn) -> ContextualProperty:
     return ContextualProperty(fget=fn, doc=fn.__doc__)
 
 
-class JsonProperty:
+class NamespacedObject:
+    @contextualproperty
+    # we're making this a property exclusively because it makes it possible to
+    # have a one-time setter
+    def __namespace__(self):
+        return self.__class__.__get_namespace__()
+
+    @__namespace__.getter_context(JSON_DATA_CONTEXT)
+    def __namespace__(self):
+        # we don't want this to show up in the json output!!
+        return None
+
+    @classmethod
+    def __get_namespace__(cls):
+        # inheriting classes should override this method, preferably with
+        # something data-driven
+        return None
+
+
+class JsonContextAwareManager:
+    """
+    Class for managing the context in which a @property is being modified or
+    retrieved
+    """
+
+    def __init__(self):
+        self.__stack = list()
+        self.context = None
+        self.active = False
+
+    def __call__(self, context=None, *args, **kwargs):
+        self.__stack.append(self.context)
+        self.context = context
+        return self
+
+    def __enter__(self):
+        self.active = True
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.context = None if not self.__stack else self.__stack.pop()
+        self.active = False
+
+
+class JsonProperty(NamespacedObject):
     """
     Base object for managing properties that can be registered to a class.
     Supports one and only one property.
@@ -266,7 +288,7 @@ class JsonProperty:
         return cls.__registration__
 
 
-class PropertyAwareObject:
+class PropertyAwareObject(NamespacedObject):
     """
     Base object that provides tools for working with object properties.
     Provides a __get_properties__ method to produce a tuple for classes and a

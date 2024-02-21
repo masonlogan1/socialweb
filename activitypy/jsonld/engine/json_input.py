@@ -10,7 +10,7 @@ from typing import Union
 
 from pyld.jsonld import expand
 
-from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
+from activitypy.jsonld.engine.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
     DEFAULT_TYPE, DEFAULT_CONTEXT
 from activitypy.jsonld.base import PropertyAwareObject
 
@@ -18,17 +18,22 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class PropertyJsonIntake(PropertyAwareObject):
+class PropertyJsonIntake:
     """
     Base class for taking in jsonld data and populating relevant @property
     attributes with the content
     """
 
-    def __init__(self, *args, **kwargs):
-        PropertyAwareObject.__init__(self)
+    @property
+    def class_registry(self):
+        # object should not be directly set, rather it dict should be updated.
+        # the triple-underscore helps obscure this from some ides, which
+        # makes reading the debugger a lot easier
+        if not hasattr(self, '___class_registry___'):
+            self.___class_registry___ = dict()
+        return self.___class_registry___
 
-    @staticmethod
-    def _get_object_class(data, classmap=None):
+    def _get_object_class(self, data, classmap=None):
         """
         If the data has a recognized @type value (after json-ld expansion) then
         returns the class registered to the given @type. Returns None otherwise
@@ -47,7 +52,7 @@ class PropertyJsonIntake(PropertyAwareObject):
             logger.debug(f'No @type value provided:\n{expanded}')
 
         # check that the @type value is in the mapping
-        classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
+        classmap = {**self.class_registry, **(classmap if classmap else {})}
         if class_type not in classmap.keys():
             # if the class type is not in our mapping, use the default value
             logger.debug(f'@type value not in mapping: "{class_type}"')
@@ -59,8 +64,7 @@ class PropertyJsonIntake(PropertyAwareObject):
             ValueError(f'Provided data has invalid or missing "@type"')
         return object_class
 
-    @classmethod
-    def _unpack_objects(cls, data, context, classmap: dict = None):
+    def _unpack_objects(self, data, context, classmap: dict = None):
         """
         Recursively unpacks a piece of data into flat values, lists (arrays),
         and linked objects
@@ -82,19 +86,18 @@ class PropertyJsonIntake(PropertyAwareObject):
             # just supposed to be a regular dictionary
             type = expand(context_val)
             if len(type) < 1 or type[0].get('@type', None) is None:
-                return {key: cls._unpack_objects(val, context, classmap)
+                return {key: self._unpack_objects(val, context, classmap)
                         for key, val in data.items()}
 
-            if cls._get_object_class(context_val, classmap=classmap):
-                return cls.from_json(context_val)
+            if self._get_object_class(context_val, classmap=classmap):
+                return self.from_json(context_val)
             return None
         if isinstance(data, Iterable):
             # turn iterables into lists and evaluate everything inside
-            return [cls._unpack_objects(item, context, classmap)
+            return [self._unpack_objects(item, context, classmap)
                     for item in data]
 
-    @classmethod
-    def from_json(cls, data: Union[str, dict], classmap: dict = None):
+    def from_json(self, data: Union[str, dict], classmap: dict = None):
         """
         Extracts fields from the provided JSON. Uses the @type value to
         determine the type of object to be created.
@@ -108,12 +111,12 @@ class PropertyJsonIntake(PropertyAwareObject):
         if not data.get('@context', None):
             logger.debug(f"No '@context' provided, using '{DEFAULT_CONTEXT}'")
             data.update({'@context': DEFAULT_CONTEXT})
-        object_class = cls._get_object_class(data, classmap=classmap)
+        object_class = self._get_object_class(data, classmap=classmap)
 
         # only include values from the json that are properties of the class
         # unpack data structures and populate None values where appropriate
         filtered_data = {
-            key: cls._unpack_objects(data.get(key, None), context,
+            key: self._unpack_objects(data.get(key, None), context,
                                      classmap=classmap)
             for key in object_class.__get_properties__()
         }

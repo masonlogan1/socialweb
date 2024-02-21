@@ -43,7 +43,8 @@ class ObjectModel(ApplicationActivityJson):
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams',
+                 **kwargs):
         ApplicationActivityJson.__init__(self, acontext=acontext)
         self.id = id
         self.type = type or self.type
@@ -166,7 +167,7 @@ class ActivityModel(ObjectModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         # "this looks so bad" I KNOW, but it's the only way to make all the
         # params show up in tooltips! Yes it looks bad! But it makes it easier
         # to work with!!
@@ -180,7 +181,7 @@ class ActivityModel(ObjectModel):
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration, acontext=acontext)
+                         duration=duration, acontext=acontext, **kwargs)
         self.actor = actor
         self.object = object
         self.target = target
@@ -212,7 +213,7 @@ class IntransitiveActivityModel(ActivityModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -225,7 +226,7 @@ class IntransitiveActivityModel(ActivityModel):
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
-                         instrument=instrument, acontext=acontext)
+                         instrument=instrument, acontext=acontext, **kwargs)
 
 
 class CollectionModel(ObjectModel):
@@ -245,7 +246,7 @@ class CollectionModel(ObjectModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, totalItems=None, current=None,
                  first=None, last=None, items=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -256,7 +257,7 @@ class CollectionModel(ObjectModel):
                          startTime=startTime, summary=summary,
                          tag=tag, updated=updated, url=url, to=to, bto=bto,
                          cc=cc, bcc=bcc, mediaType=mediaType,
-                         duration=duration, acontext=acontext)
+                         duration=duration, acontext=acontext, **kwargs)
         self.current = current
         self.first = first
         self.last = last
@@ -292,7 +293,7 @@ class OrderedCollectionModel(CollectionModel):
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None, totalItems=None, current=None,
                  first=None, last=None, orderedItems=None, items=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -305,7 +306,7 @@ class OrderedCollectionModel(CollectionModel):
                          cc=cc, bcc=bcc, mediaType=mediaType, items=items,
                          duration=duration, totalItems=totalItems,
                          current=current, first=first, last=last,
-                         acontext=acontext)
+                         acontext=acontext, **kwargs)
         self.orderedItems = orderedItems
 
 
@@ -341,7 +342,7 @@ class CollectionPageModel(CollectionModel):
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, totalItems=totalItems,
                          current=current, first=first, last=last, items=items,
-                         acontext=acontext)
+                         acontext=acontext, **kwargs)
         self.partOf = partOf
         self.next = next
         self.prev = prev
@@ -368,7 +369,7 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel):
                  mediaType=None, duration=None, totalItems=None, current=None,
                  first=None, last=None, items=None, partOf=None, next=None,
                  prev=None, startIndex=None, orderedItems=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
         OrderedCollectionModel.__init__(self, orderedItems=orderedItems)
@@ -626,7 +627,7 @@ class QuestionModel(IntransitiveActivityModel):
                  mediaType=None, duration=None, actor=None, object=None,
                  target=None, result=None, origin=None, instrument=None,
                  oneOf=None, anyOf=None, closed=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         super().__init__(id=id, type=type, attachment=attachment,
                          attributedTo=attributedTo, audience=audience,
                          content=content, context=context, name=name,
@@ -639,7 +640,7 @@ class QuestionModel(IntransitiveActivityModel):
                          cc=cc, bcc=bcc, mediaType=mediaType,
                          duration=duration, actor=actor, object=object,
                          target=target, result=result, origin=origin,
-                         instrument=instrument, acontext=acontext)
+                         instrument=instrument, acontext=acontext, **kwargs)
         self.oneOf = oneOf
         self.anyOf = anyOf
         self.closed = closed

@@ -3,6 +3,7 @@ Utility functions and constants for jsonld package
 """
 import requests
 
+JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
 
 JSON_LD_KEYMAP = {
     'abase': '@base',
