@@ -57,15 +57,18 @@ class PropertyJsonLD(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
+        # TODO: reimplement automatic unpacking of iterables
+        #   Special handling during json unpacking should be written in a
+        #   getter function, with the exception of iterables (which we should
+        #   handle here, putting "isinstance(obj, (list, tuple,...))" in each
+        #   property will get messy FAST)
         with self.switch_context(context) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
             data = {
                 # change name of property, if provided in mapping
-                rename.get(prop, prop):
-                # change value (BY UNMAPPED NAME) with function, if provided
-                    transforms.get(prop, lambda o: getattr(o, prop))(self)
+                rename.get(prop, prop): getattr(self, prop, None)
                 for prop in self.__properties__
                 # if include_null is True or the property is not None
                 if (include_none or getattr(self, prop) is not None)

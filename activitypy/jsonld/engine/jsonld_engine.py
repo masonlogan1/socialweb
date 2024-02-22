@@ -10,6 +10,10 @@ from activitypy.jsonld.engine.json_input import PropertyJsonIntake
 from activitypy.jsonld.package import JsonLdPackage
 
 
+# TODO: needs to be immutable
+#   o combine packages IN ORDER into single package
+#   o unpack package into engine and make properties read-only
+#       - i.e. "read any/write ONCE"
 class JsonLdEngine(PropertyJsonIntake):
 
     def __init__(self, engine_ns,
@@ -53,9 +57,9 @@ class JsonLdEngine(PropertyJsonIntake):
         for cls in classes:
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
-                self.register_property(cls.__get_namespace__(), cls)
+                self.register_class(cls.__get_namespace__(), cls)
                 continue
-            self.update_property(cls.__get_namespace__(), cls)
+            self.update_class(cls.__get_namespace__(), cls)
 
     def __load_properties(self, properties) -> None:
         """
@@ -65,9 +69,9 @@ class JsonLdEngine(PropertyJsonIntake):
         for cls in properties:
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
-                self.register_class(cls.__get_namespace__(), cls)
+                self.register_property(cls.__get_namespace__(), cls)
                 continue
-            self.update_class(cls.__get_namespace__(), cls)
+            self.update_property(cls.__get_namespace__(), cls)
 
     def register_class(self, name, cls):
         """
