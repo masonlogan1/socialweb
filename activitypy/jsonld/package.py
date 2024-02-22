@@ -85,3 +85,34 @@ class JsonLdPackage:
     def __str__(self):
         # this should probably return the name of the package
         return f'JsonLdPackage {self.namespace}'
+
+    def __add__(self, other):
+        if not isinstance(other, JsonLdPackage):
+            raise TypeError(f'Cannot combine JsonLdPackage with {type(other)}')
+        class_namespaces = [cls.__get_namespace__() for cls in self.classes]
+        new_classes = [cls for cls in other.classes
+                       if cls.__get_namespace__() not in class_namespaces]
+        new_classes = tuple(list(self.classes) + new_classes)
+
+        prop_namespaces = [prp.__get_namespace__() for prp in self.properties]
+        new_props = [prp for prp in other.properties
+                     if prp.__get_namespace__() not in prop_namespaces]
+        new_props = tuple(list(self.properties) + new_props)
+
+        return JsonLdPackage(namespace=self.namespace, classes=new_classes,
+                             properties=new_props)
+
+    def __sub__(self, other):
+        if not isinstance(other, JsonLdPackage):
+            raise TypeError(f'Cannot subtract {type(other)} from JsonLdPackage')
+        removed_cls_ns = [cls.__get_namespace__() for cls in other.classes]
+        remaining_cls = tuple(cls for cls in self.classes
+                              if cls.__get_namespace__() not in removed_cls_ns)
+
+        removed_prp_ns = [cls.__get_namespace__() for cls in other.classes]
+        remaining_prps = tuple(prp for prp in other.properties
+                               if prp.__get_namespace__() not in removed_prp_ns)
+
+        return JsonLdPackage(namespace=self.namespace,
+                             classes=remaining_cls,
+                             properties=remaining_prps)
