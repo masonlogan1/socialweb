@@ -33,6 +33,12 @@ class PropertyJsonIntake:
             self.___class_registry___ = dict()
         return self.___class_registry___
 
+    @property
+    def property_registry(self):
+        if not hasattr(self, '___property_registry___'):
+            self.___property_registry___ = dict()
+        return self.___property_registry___
+
     def _get_object_class(self, data, classmap=None):
         """
         If the data has a recognized @type value (after json-ld expansion) then

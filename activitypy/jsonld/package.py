@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# TODO: should be immutable, add/sub should return a NEW package
 class JsonLdPackage:
     """
     A discrete package of classes, properties, and transformation functions
@@ -89,18 +88,18 @@ class JsonLdPackage:
     def __add__(self, other):
         if not isinstance(other, JsonLdPackage):
             raise TypeError(f'Cannot combine JsonLdPackage with {type(other)}')
-        class_namespaces = [cls.__get_namespace__() for cls in self.classes]
-        new_classes = [cls for cls in other.classes
-                       if cls.__get_namespace__() not in class_namespaces]
-        new_classes = tuple(list(self.classes) + new_classes)
+        new_namespaces = [cls.__get_namespace__() for cls in other.classes]
+        kept_classes = tuple(cls for cls in self.classes
+                             if cls.__get_namespace__() not in new_namespaces)
+        classes = kept_classes + other.classes
 
-        prop_namespaces = [prp.__get_namespace__() for prp in self.properties]
-        new_props = [prp for prp in other.properties
-                     if prp.__get_namespace__() not in prop_namespaces]
-        new_props = tuple(list(self.properties) + new_props)
+        new_namespaces = [prp.__get_namespace__() for prp in other.properties]
+        kept_props = tuple(prp for prp in self.properties
+                           if prp.__get_namespace__() not in new_namespaces)
+        properties = kept_props + other.properties
 
-        return JsonLdPackage(namespace=self.namespace, classes=new_classes,
-                             properties=new_props)
+        return JsonLdPackage(namespace=self.namespace, classes=classes,
+                             properties=properties)
 
     def __sub__(self, other):
         if not isinstance(other, JsonLdPackage):

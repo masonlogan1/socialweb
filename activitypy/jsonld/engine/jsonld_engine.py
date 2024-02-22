@@ -16,57 +16,50 @@ from activitypy.jsonld.package import JsonLdPackage
 #       - i.e. "read any/write ONCE"
 class JsonLdEngine(PropertyJsonIntake):
 
-    def __init__(self, engine_ns,
-                 package: JsonLdPackage | typeIterable[JsonLdPackage]):
+    def __init__(self, packages: JsonLdPackage | typeIterable[JsonLdPackage]):
         """
-        :param engine_ns: fully-qualified URI namespace for the engine
-        :param package: the package to load into the engine
+        :param packages: the packages to load into the engine
         """
-        self.namespace = engine_ns
-        self.packages = (package,) if package is not Iterable else package
-        self.logger = logging.getLogger(f'JsonLdEngine_{engine_ns}')
+        # keeps a copy of all the packages provided
+        packages = (packages,) if packages is not Iterable else packages
+        self.___packages___ = packages
+        if not self.packages:
+            raise ValueError(f'No packages provided!')
 
-        for package in self.packages:
-            self.add_package(package)
+        self.logger = logging.getLogger(f'JsonLdEngine')
+
+        # combines all packages into a single package before unpacking
+        self.package = self.packages[0]
+        for package in self.packages[1:]:
+            self.package += package
+
+        self.__load_classes()
+        self.__load_properties()
 
     @property
-    def property_registry(self):
-        if not hasattr(self, '___property_registry___'):
-            self.___property_registry___ = dict()
-        return self.___property_registry___
+    def packages(self):
+        if not hasattr(self, '___packages___'):
+            self.__packages___ = tuple()
+        return self.___packages___
 
-    @property
-    def transform_registry(self):
-        if not hasattr(self, '___transform_registry___'):
-            self.___transform_registry___ = dict()
-        return self.___transform_registry___
-
-    def add_package(self, package: JsonLdPackage):
-        """
-        Adds the contents of the new package to the engine
-        :param package:
-        :return:
-        """
-        self.__load_classes(package.classes)
-
-    def __load_classes(self, classes) -> None:
+    def __load_classes(self) -> None:
         """
         Unpacks the contents of the package into a usable format
         :param package: the package to unpack
         """
-        for cls in classes:
+        for cls in self.package.classes:
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
                 self.register_class(cls.__get_namespace__(), cls)
                 continue
             self.update_class(cls.__get_namespace__(), cls)
 
-    def __load_properties(self, properties) -> None:
+    def __load_properties(self) -> None:
         """
         Unpacks the contents of the package into a usable format
         :param package: the package to unpack
         """
-        for cls in properties:
+        for cls in self.package.properties:
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
                 self.register_property(cls.__get_namespace__(), cls)
@@ -93,9 +86,8 @@ class JsonLdEngine(PropertyJsonIntake):
         """
         self.logger.info(f'Updating jsonld type "{name}" to {cls.__name__}')
         if name not in self.class_registry.keys():
-            self.logger.warning(f'registration update for type "{name}" ' +
-                                f'made but type does not exist; adding instead')
-            return self.register_class(name, cls)
+            self.logger.info(f'registration update for type "{name}" ' +
+                                f'made but type does not exist')
         self.class_registry.update({name: cls})
 
     def remove_class(self, name, cls):
@@ -126,9 +118,8 @@ class JsonLdEngine(PropertyJsonIntake):
         """
         self.logger.info(f'Updating jsonld type "{name}" to {cls.__name__}')
         if name not in self.property_registry.keys():
-            self.logger.warning(f'registration update for type "{name}" ' +
+            self.logger.info(f'registration update for type "{name}" ' +
                                 f'made but type does not exist; adding instead')
-            return self.register_class(name, cls)
         self.property_registry.update({name: cls})
 
     def remove_property(self, name, cls):
@@ -139,35 +130,11 @@ class JsonLdEngine(PropertyJsonIntake):
         self.logger.info(f'removing registry for type "{name}"')
         self.property_registry.pop(name)
 
-    def register_transform(self, name, cls):
-        """
-        Adds a name-class mapping to the engine's transform mapping
-        :param name: the fully qualified namespace id to associate with the class
-        :param cls: the new object class
-        """
-        self.logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
-        if name in self.property_registry.keys():
-            raise ValueError(
-                f'"{name}" already exists in mapping, cannot add new')
-        self.property_registry.update(**{name: cls})
+    def __add__(self, other):
+        if isinstance(other, JsonLdPackage):
+            return JsonLdEngine(self.packages + other)
 
-    def update_transform(self, name, cls):
-        """
-        Adds a name-class mapping to the engine's transform mapping
-        :param name: the fully qualified namespace id to associate with the class
-        :param cls: the new object class
-        """
-        self.logger.info(f'Updating jsonld type "{name}" to {cls.__name__}')
-        if name not in self.property_registry.keys():
-            self.logger.warning(f'registration update for type "{name}" ' +
-                                f'made but type does not exist; adding instead')
-            return self.register_class(name, cls)
-        self.property_registry.update({name: cls})
-
-    def remove_transform(self, name, cls):
-        if name not in self.property_registry.keys():
-            self.logger.warning(f'no registration update for type "{name}"; ' +
-                                f'no action taken, remediate if possible')
-            return
-        self.logger.info(f'removing registry for type "{name}"')
-        self.property_registry.pop(name)
+        if isinstance(other, JsonLdEngine):
+            # combine packages from both engines with the second engine's
+            # packages layered on top of this engine's
+            return JsonLdEngine(self.packages + other.packages)
