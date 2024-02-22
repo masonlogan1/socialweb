@@ -138,3 +138,16 @@ class JsonLdEngine(PropertyJsonIntake):
             # combine packages from both engines with the second engine's
             # packages layered on top of this engine's
             return JsonLdEngine(self.packages + other.packages)
+
+        raise TypeError(f'Can only add "JsonLdPackage" and "JsonLdEngine" to ' +
+                        'JsonLdEngine objects')
+
+    def __sub__(self, other):
+        if isinstance(other, JsonLdPackage):
+            return JsonLdEngine(self.packages - other)
+
+        if isinstance(other, JsonLdEngine):
+            return JsonLdEngine(self.packages - other.packages)
+
+        raise TypeError(f'Can only subtract "JsonLdPackage" and ' +
+                        f'"JsonLdEngine" from JsonLdEngine objects')
