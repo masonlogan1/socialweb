@@ -5,8 +5,8 @@ import unittest.main
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, call
 
-from activitypy.jsonld import package
-from activitypy.jsonld import ApplicationActivityJson, JsonProperty
+from jsonld import package
+from jsonld import ApplicationActivityJson, JsonProperty
 
 
 class JsonLdPackageTests(TestCase):

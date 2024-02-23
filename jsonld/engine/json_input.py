@@ -10,7 +10,7 @@ from typing import Union
 
 from pyld.jsonld import expand
 
-from activitypy.jsonld.engine.utils import DEFAULT_CONTEXT
+from jsonld.utils import DEFAULT_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

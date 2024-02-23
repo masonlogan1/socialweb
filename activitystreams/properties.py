@@ -8,15 +8,15 @@ handled correctly.
 # abstraction from the spec
 import logging
 from datetime import datetime, timedelta
-from activitypy.jsonld import JsonProperty, contextualproperty, \
+from jsonld import JsonProperty, contextualproperty, \
     JSON_DATA_CONTEXT
-from activitypy.jsonld.tools.url import url_validator
-from activitypy.jsonld.tools.datetime import is_activity_datetime, \
+from jsonld.tools import validate_url
+from jsonld.tools import is_activity_datetime, \
     parse_activitystream_datetime, datetime_str, timedelta_str
-from activitypy.jsonld.tools.number import is_nonnegative
-from activitypy.jsonld.tools.type import SetterValidator
+from jsonld.tools import is_nonnegative
+from jsonld.tools import SetterValidator
 
-from activitypy.activitystreams.models import Object, Link, Collection, \
+from activitystreams.models import Object, Link, Collection, \
     CollectionPage, ACTIVITYSTREAMS_NS
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class Id(ActivityStreamsProperty):
         return self.__id
 
     @id.setter
-    @SetterValidator(types=(str,), functional=True, additional=(url_validator,),
+    @SetterValidator(types=(str,), functional=True, additional=(validate_url,),
                      secure=SECURE_URLS_ONLY, skip_none=True).check
     def id(self, val):
         self.__id = val

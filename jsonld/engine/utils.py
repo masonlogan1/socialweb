@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from validate_email import validate_email
 
-from activitypy.jsonld.base import JsonProperty, PropertyAwareObject
+from jsonld.base import JsonProperty, PropertyAwareObject
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

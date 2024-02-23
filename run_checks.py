@@ -1,5 +1,5 @@
-from activitypy.jsonld import CachedRequestsJsonLoader
-from activitypy.jsonld import ApplicationActivityJson
+from jsonld import CachedRequestsJsonLoader
+from jsonld import ApplicationActivityJson
 from pyld import jsonld
 import os
 import logging

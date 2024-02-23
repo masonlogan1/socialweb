@@ -1,35 +1,24 @@
 """
-Tools for working with json-ld data
+Module for separating out logic for generating json text output
 """
-import logging
 import json
 from collections.abc import Iterable
 
-from activitypy.jsonld.base import PropertyAwareObject
-from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_DATA_CONTEXT
+from jsonld.utils import JSON_LD_KEYMAP
+from jsonld.base import PropertyAwareObject
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
 
 
-class PropertyJsonLD(PropertyAwareObject):
+class PropertyJsonGenerator(PropertyAwareObject):
     """
-    Class for representing JSON-LD data. Utilizes @property objects for pulling
-    instance data into JSON text representation
+    Base class for generating json output based on the @property attributes
+    of implementing objects
     """
-    # overridable dict for mapping a transformation function to a property
     default_transforms = {}
-    # overridable dict for mapping class types to a function for loading them
-    # as objects
-    type_constructor_map = {}
+    __acontext = None
 
-    def __init__(self, acontext):
-        PropertyAwareObject.__init__(self)
-        self.acontext = acontext
-
-    def __str__(self):
-        return self.json()
-
+    # jsonld requires an @context attribute
     @property
     def acontext(self):
         """
@@ -41,9 +30,13 @@ class PropertyJsonLD(PropertyAwareObject):
     def acontext(self, value):
         self.__acontext = value
 
+    def __init__(self, acontext, *args, **kwargs):
+        PropertyAwareObject.__init__(self)
+        self.acontext = acontext
+
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
-             reject_values: Iterable = (), context=JSON_DATA_CONTEXT) -> dict:
+             reject_values: Iterable = (), context = JSON_DATA_CONTEXT) -> dict:
         """
         Returns the object's properties as a dictionary. Does not include values
         that are not a property of the object
@@ -55,18 +48,15 @@ class PropertyJsonLD(PropertyAwareObject):
         :param reject_values: values to refuse to include
         :return: dictionary of properties
         """
-        # TODO: reimplement automatic unpacking of iterables
-        #   Special handling during json unpacking should be written in a
-        #   getter function, with the exception of iterables (which we should
-        #   handle here, putting "isinstance(obj, (list, tuple,...))" in each
-        #   property will get messy FAST)
         with self.switch_context(context) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
             data = {
                 # change name of property, if provided in mapping
-                rename.get(prop, prop): getattr(self, prop, None)
+                rename.get(prop, prop):
+                # change value (BY UNMAPPED NAME) with function, if provided
+                    transforms.get(prop, lambda o: getattr(o, prop))(self)
                 for prop in self.__properties__
                 # if include_null is True or the property is not None
                 if (include_none or getattr(self, prop) is not None)
@@ -103,16 +93,3 @@ class PropertyJsonLD(PropertyAwareObject):
                                     context=JSON_DATA_CONTEXT),
                           separators=separators,
                           indent=indent)
-
-
-class ApplicationActivityJson(PropertyJsonLD):
-    """
-    Base class for representing application/activity+json type objects
-    """
-    # an object's namespace determines what engine it should be processed by.
-    # generally speaking, an engine should stamp objects it generates with the
-    # namespaces that were used to generate it; objects themselves should NOT
-    # be messing with this, it could cause an object to become unusable
-
-    def __init__(self, acontext):
-        super().__init__(acontext=acontext)

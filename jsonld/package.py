@@ -4,7 +4,7 @@ engine can load
 """
 import logging
 from collections.abc import Iterable
-from activitypy.jsonld.base import JsonProperty, PropertyAwareObject
+from jsonld.base import JsonProperty, PropertyAwareObject
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

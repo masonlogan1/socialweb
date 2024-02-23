@@ -6,7 +6,7 @@ import logging
 from copy import copy
 from itertools import chain
 
-from activitypy.jsonld.utils import JSON_DATA_CONTEXT
+from jsonld.utils import JSON_DATA_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

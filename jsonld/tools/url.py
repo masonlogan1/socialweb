@@ -73,31 +73,3 @@ def validate_acct_or_email(val):
     if val.startswith('acct:'):
         val = val[5:]
     return validate_email(val)
-
-def url_validator(url, secure: bool = False, skip_none=False, **kwargs):
-    """
-    Checks a provided URL to ensure it meets a handful of basic criteria for
-    being a valid internet URL
-    :param url: URL to validate
-    :param secure: whether to accept only HTTPS urls
-    :return: url if valid
-    """
-    if url is None and skip_none:
-        return url
-    pieces = parse.urlparse(url)
-    if not pieces.scheme or pieces.scheme not in ['http', 'https']:
-        raise ValueError('Cannot dereference url without valid scheme; add ' +
-                         f'''{'"http://" or' if not secure else ''} ''' +
-                         '"https://" to url')
-    # urls must have a body
-    if not pieces.netloc:
-        raise ValueError('Cannot dereference url without body')
-    # urls can only have certain characters
-    if re.match(VALID_URL_REGEX, pieces.netloc):
-        raise ValueError('url cannot contain characters outside of' +
-                         'alphanumeric (a-Z, 0-9), "-", "_", ":", and "."')
-    # secure connections MUST use https
-    if secure and pieces.scheme != 'https':
-        raise ValueError('Cannot dereference non-"https://" url when ' +
-                         'secure=True; set secure=False or change scheme')
-    return url

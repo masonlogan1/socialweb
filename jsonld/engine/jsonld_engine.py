@@ -6,8 +6,8 @@ import logging
 from collections.abc import Iterable
 from typing import Iterable as typeIterable
 
-from activitypy.jsonld.engine.json_input import PropertyJsonIntake
-from activitypy.jsonld.package import JsonLdPackage
+from jsonld.engine.json_input import PropertyJsonIntake
+from jsonld.package import JsonLdPackage
 
 
 class JsonLdEngine(PropertyJsonIntake):
@@ -47,6 +47,15 @@ class JsonLdEngine(PropertyJsonIntake):
             if cls.__get_namespace__() not in self.class_registry.keys():
                 self.register_class(cls.__get_namespace__(), cls)
 
+        for name, cls in self.class_registry.items():
+            # adds the object classes as attributes on the engine
+            if hasattr(self, cls.__name__):
+                self.logger.warning(
+                    f'Name {cls.__name__} conflicts with existing attribute, ' +
+                    f'engine may be become unstable!'
+                )
+            setattr(self, cls.__name__, cls)
+
     def register_class(self, name, cls):
         """
         Adds a name-class mapping to the engine's class registry
@@ -55,8 +64,8 @@ class JsonLdEngine(PropertyJsonIntake):
         """
         self.logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
         if name in self.class_registry.keys():
-            raise ValueError(
-                f'"{name}" already exists in mapping, cannot add')
+            raise ValueError(f'"{name}" already exists in mapping, cannot add')
+        self.class_registry.update({name: cls})
 
     # TODO: set up method that handles queues and connect to __getitem__ for
     #   easy handling of a data queue (vital for multithreading!)

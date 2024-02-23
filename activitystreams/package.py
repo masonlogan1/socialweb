@@ -1,7 +1,7 @@
-from activitypy.jsonld.engine.jsonld_engine import JsonLdEngine
-from activitypy.jsonld.package import JsonLdPackage
-from activitypy.activitystreams import models, properties
-from activitypy.activitystreams.models import ACTIVITYSTREAMS_NS
+from jsonld import JsonLdEngine
+from jsonld import JsonLdPackage
+from activitystreams import models, properties
+from activitystreams.models import ACTIVITYSTREAMS_NS
 
 pkg_classes = (
     models.Object,

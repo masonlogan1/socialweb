@@ -9,9 +9,9 @@ handled correctly.
 import logging
 from collections.abc import Sized
 
-from activitypy.jsonld import ApplicationActivityJson
-from activitypy.jsonld.tools.url import jsonld_get, validate_url, \
-    validate_acct_or_email
+from jsonld import ApplicationActivityJson
+from jsonld import jsonld_get
+from jsonld.tools import validate_url, validate_acct_or_email
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
