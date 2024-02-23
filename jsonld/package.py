@@ -21,6 +21,8 @@ class JsonLdPackage:
     def __init__(self, namespace: str, objects: Iterable = tuple(),
                  properties: Iterable = tuple(), property_mapping: dict = None):
 
+        # TODO: save original objects as "templates" to be used when
+        #   combining packages (immutable structure must be rebuilt each time)
         objects = self.__clone_classes(objects)
         properties = self.__clone_classes(properties)
 
@@ -136,6 +138,14 @@ class JsonLdPackage:
         :param classes:
         :return:
         """
+        # TODO: create cyclical function that builds dependency tree and uses
+        #   dependencies to clone classes
+        dependencies = {cls: {obj: {}
+                              for obj in classes
+                              if cls in obj.mro()
+                                and cls != obj}
+                        for cls in classes}
+
         new_classes = list()
         for cls in classes:
             new_classes.append(type(
