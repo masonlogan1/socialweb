@@ -17,6 +17,17 @@ class JsonLdPackage:
 
     All packages MUST have a unique namespace
     """
+    def __init__(self, namespace: str, classes: Iterable = tuple(),
+                 properties: Iterable = tuple(), property_mapping: dict = None,
+                 *args, **kwargs):
+        # namespace has to be set BEFORE ANYTHING ELSE HAPPENS, do not move it!
+        self.namespace = namespace
+        # classes are objects that the engine will produce from incoming data
+        self.classes = classes
+        # properties are managed attributes for classes
+        self.properties = properties
+        # property_mapping connects properties to classes on instantiation
+        self.property_mapping = property_mapping
 
     @property
     def namespace(self):
@@ -66,20 +77,19 @@ class JsonLdPackage:
                         f'"{self.namespace}" to property "{prop.__name__}"')
         self.___properties___ = properties
 
-    def __init__(self, namespace: str, classes: Iterable = tuple(),
-                 properties: Iterable = tuple(), *args, **kwargs):
-        # namespace has to be set BEFORE ANYTHING ELSE HAPPENS, do not move it!
-        self.namespace = namespace
-
-        # classes are objects that the engine will produce from incoming data
-        self.classes = classes
-        # properties are managed attributes for classes
-        self.properties = properties
-
-    def __getitem__(self, key):
-        # need to decide what the return format should look like and how slicing
-        # would work here
-        raise NotImplementedError("Cannot get item from JsonLdPackage objects")
+    def __getitem__(self, keys):
+        return_one = False
+        if isinstance(keys, str):
+            return_one = True
+            keys = [keys]
+        if any(not isinstance(key, str) for key in keys):
+            raise ValueError('JsonLdPackage getitem can only accept strings')
+        found = {item.__get_namespace__(): item
+                 for item in self.classes + self.properties
+                 if item.__get_namespace__() in keys}
+        if return_one:
+            return found.get(keys[0], None)
+        return [found.get(key, None) for key in keys]
 
     def __str__(self):
         # this should probably return the name of the package

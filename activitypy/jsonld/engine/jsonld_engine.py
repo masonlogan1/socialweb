@@ -10,10 +10,6 @@ from activitypy.jsonld.engine.json_input import PropertyJsonIntake
 from activitypy.jsonld.package import JsonLdPackage
 
 
-# TODO: needs to be immutable
-#   o combine packages IN ORDER into single package
-#   o unpack package into engine and make properties read-only
-#       - i.e. "read any/write ONCE"
 class JsonLdEngine(PropertyJsonIntake):
 
     def __init__(self, packages: JsonLdPackage | typeIterable[JsonLdPackage]):
@@ -129,6 +125,25 @@ class JsonLdEngine(PropertyJsonIntake):
             return
         self.logger.info(f'removing registry for type "{name}"')
         self.property_registry.pop(name)
+
+    # TODO: set up method that handles queues and connect to __getitem__ for
+    #   easy handling of a data queue (vital for multithreading!)
+    def __getitem__(self, keys):
+        # allows for the creation of json objects by passing in json text with
+        # a syntax similar to list item selection
+        return_one = False
+        if isinstance(keys, str):
+            return_one = True
+            keys = [keys]
+        if not isinstance(keys, (list, tuple)):
+            raise TypeError('JsonLdEngine list accepts json-formatted text ' +
+                            f'or a list/tuple of strings, not {type(keys)}')
+        if any(not isinstance(key, str) for key in keys):
+            raise TypeError(f'JsonLdEngine list provided with {type(keys)} ' +
+                            'must contain only json-format strings')
+        if return_one:
+            return self.from_json(keys[0])
+        return [self.from_json(key) for key in keys]
 
     def __add__(self, other):
         if isinstance(other, JsonLdPackage):

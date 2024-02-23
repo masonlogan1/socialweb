@@ -10,7 +10,7 @@ import logging
 from collections.abc import Sized
 
 from activitypy.jsonld import ApplicationActivityJson, register_property
-from activitypy.activitystreams.models import properties
+from activitypy.activitystreams import properties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

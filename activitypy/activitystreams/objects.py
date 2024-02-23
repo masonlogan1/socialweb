@@ -11,7 +11,7 @@ from activitypy.activitystreams.handlers import NumberHandler
 from activitypy.activitystreams.models import RelationshipModel, ArticleModel, \
     DocumentModel, AudioModel, ImageModel, VideoModel, NoteModel, PageModel, \
     EventModel, PlaceModel, ProfileModel, TombstoneModel, MentionModel
-from activitypy.activitystreams.models.properties import Subject, \
+from activitypy.activitystreams.properties import Subject, \
     Object as ObjectProp, Relationship as RelationshipProp, Accuracy, Altitude,\
     Latitude, Longitude, Radius, Units
 
