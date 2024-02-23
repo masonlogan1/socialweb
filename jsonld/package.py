@@ -18,20 +18,23 @@ class JsonLdPackage:
 
     All packages MUST have a unique namespace
     """
-    def __init__(self, namespace: str, classes: Iterable = tuple(),
-                 properties: Iterable = tuple(), property_mapping: dict = None,
-                 *args, **kwargs):
+    def __init__(self, namespace: str, objects: Iterable = tuple(),
+                 properties: Iterable = tuple(), property_mapping: dict = None):
+
+        objects = self.__clone_classes(objects)
+        properties = self.__clone_classes(properties)
+
         # namespace has to be set BEFORE ANYTHING ELSE HAPPENS, do not move it!
         self.namespace = namespace
         # classes are objects that the engine will produce from incoming data
-        self.classes = classes
+        self.objects = objects
         # properties are managed attributes for classes
         self.properties = properties
         # property_mapping connects properties to classes on instantiation
         self.property_mapping = property_mapping
 
         self.__ref = {obj.__get_namespace__(): obj
-                      for obj in self.classes + self.properties}
+                      for obj in self.objects + self.properties}
 
         self.__perform_mapping()
 
@@ -54,21 +57,21 @@ class JsonLdPackage:
         self.___namespace___ = ns
 
     @property
-    def classes(self):
+    def objects(self):
         """
         Classes registered to this package
         :return: tuple of Class objects
         """
-        return getattr(self, '___classes___', tuple())
+        return getattr(self, '___objects___', tuple())
 
-    @classes.setter
-    def classes(self, classes: Iterable):
-        if self.classes:
+    @objects.setter
+    def objects(self, objects: Iterable):
+        if self.objects:
             raise AttributeError(f'JsonLdPackage classes are immutable')
-        for cls in classes:
-            logger.info(f'Setting "{cls.__get_namespace__()}" in package ' +
-                        f'"{self.namespace}" to class "{cls.__name__}"')
-        self.___classes___ = classes
+        for obj in objects:
+            logger.info(f'Setting "{obj.__get_namespace__()}" in package ' +
+                        f'"{self.namespace}" to class "{obj.__name__}"')
+        self.___objects___ = objects
 
     @property
     def properties(self):
@@ -123,6 +126,24 @@ class JsonLdPackage:
     def remove_property_link(self, property_name: str,
                              object_class: PropertyAwareObject):
         delattr(object_class, property_name)
+
+    def __clone_classes(self, classes):
+        """
+        Clones the base objects used to create the package. Copying the classes
+        allows the base objects to remain unchanged (i.e. the original objects
+        do not have their properties linked or functionality altered outside
+        the package)
+        :param classes:
+        :return:
+        """
+        new_classes = list()
+        for cls in classes:
+            new_classes.append(type(
+                cls.__name__,
+                (cls,),
+                dict(cls.__dict__))
+            )
+        return new_classes
 
     def __getitem__(self, keys):
         if isinstance(keys, str):

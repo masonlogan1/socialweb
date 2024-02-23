@@ -200,7 +200,7 @@ def create_package():
     """
     return JsonLdPackage(
         namespace=ACTIVITYSTREAMS_NS,
-        classes=pkg_classes,
+        objects=pkg_classes,
         properties=pkg_properties,
         property_mapping=property_mapping
     )

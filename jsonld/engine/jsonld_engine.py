@@ -29,7 +29,7 @@ class JsonLdEngine(PropertyJsonIntake):
         for package in self.packages[1:]:
             self.package += package
 
-        self.__load_classes()
+        self.__load_objects()
 
     @property
     def packages(self):
@@ -37,12 +37,12 @@ class JsonLdEngine(PropertyJsonIntake):
             self.__packages___ = tuple()
         return self.___packages___
 
-    def __load_classes(self) -> None:
+    def __load_objects(self) -> None:
         """
         Unpacks the contents of the package into a usable format
         :param package: the package to unpack
         """
-        for cls in self.package.classes:
+        for cls in self.package.objects:
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
                 self.register_class(cls.__get_namespace__(), cls)
