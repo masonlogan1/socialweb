@@ -8,11 +8,16 @@ handled correctly.
 # abstraction from the spec
 import logging
 from datetime import datetime, timedelta
-from activitypy.jsonld import JsonProperty, contextualproperty
-from activitypy.activitystreams.models.utils import is_activity_datetime, \
-    parse_activitystream_datetime, url_validator, is_nonnegative, \
-    PropValidator
-from activitypy.activitystreams.utils import ACTIVITYSTREAMS_NS
+from activitypy.jsonld import JsonProperty, contextualproperty, \
+    JSON_DATA_CONTEXT
+from activitypy.jsonld.tools.url import url_validator
+from activitypy.jsonld.tools.datetime import is_activity_datetime, \
+    parse_activitystream_datetime, datetime_str, timedelta_str
+from activitypy.jsonld.tools.number import is_nonnegative
+from activitypy.jsonld.tools.type import SetterValidator
+
+from activitypy.activitystreams.models import Object, Link, Collection, \
+    CollectionPage, ACTIVITYSTREAMS_NS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -55,8 +60,8 @@ class Id(ActivityStreamsProperty):
         return self.__id
 
     @id.setter
-    @PropValidator(types=(str,), functional=True, additional=(url_validator,),
-                   secure=SECURE_URLS_ONLY, skip_none=True).check
+    @SetterValidator(types=(str,), functional=True, additional=(url_validator,),
+                     secure=SECURE_URLS_ONLY, skip_none=True).check
     def id(self, val):
         self.__id = val
 
@@ -72,7 +77,7 @@ class Type(ActivityStreamsProperty):
         return self.__type
 
     @type.setter
-    @PropValidator(types=(str,)).check
+    @SetterValidator(types=(str,)).check
     def type(self, val):
         self.__type = val
 
@@ -83,16 +88,21 @@ class Attachment(ActivityStreamsProperty):
     requires special handling. The intent is to provide a model that is at
     least semantically similar to attachments in email.
     """
-    __attachment = None
 
     @contextualproperty
     def attachment(self):
-        return self.__attachment
+        return getattr(self, '___attachment___', None)
+
+    @attachment.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def attachment(self):
+        return getattr(self, '___attachment___', None)
 
     @attachment.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def attachment(self, val):
-        self.__attachment = val
+        self.___attachment___ = val
 
 
 class AttributedTo(ActivityStreamsProperty):
@@ -102,33 +112,44 @@ class AttributedTo(ActivityStreamsProperty):
     attributed to the completion of another activity.
     """
 
-    __attributedTo = None
-
     @contextualproperty
     def attributedTo(self):
-        return self.__attributedTo if self.__attributedTo else None
+        return getattr(self, '___attributed_to___', None)
+
+    @attributedTo.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def attributedTo(self):
+        return getattr(self, '___attributed_to___', None)
 
     @attributedTo.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def attributedTo(self, val):
-        self.__attributedTo = val
+        self.___attributedTo___ = val
 
 
-class Actor(AttributedTo):
+class Actor(ActivityStreamsProperty):
     """
     Describes one or more entities that either performed or are expected to
     perform the activity. Any single activity can have multiple actors. The
     actor MAY be specified using an indirect Link.
     """
 
+    # TODO: FIND A WAY TO DISABLE ATTRIBUTEDTO WHEN ACTOR IS PRESENT
     @contextualproperty
     def actor(self):
-        return self.attributedTo
+        return getattr(self, '___actor___', None)
+
+    @actor.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def actor(self):
+        return getattr(self, '___attributed_to___', None)
 
     @actor.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def actor(self, val):
-        self.attributedTo = val
+        self.___actor___ = val
 
 
 class Audience(ActivityStreamsProperty):
@@ -137,16 +158,20 @@ class Audience(ActivityStreamsProperty):
     entities for which the object can be considered to be relevant.
     """
 
-    __audience = None
-
     @contextualproperty
     def audience(self):
-        return self.__audience
+        return getattr(self, '___audience___', None)
+
+    @audience.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def audience(self):
+        return getattr(self, '___audience___', None)
 
     @audience.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def audience(self, val):
-        self.__audience = val
+        self.___audience___ = val
 
 
 class Bcc(ActivityStreamsProperty):
@@ -155,16 +180,20 @@ class Bcc(ActivityStreamsProperty):
     audience of this Object.
     """
 
-    __bcc = None
-
     @contextualproperty
     def bcc(self):
-        return self.__bcc
+        return getattr(self, '___bcc___', None)
+
+    @bcc.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def bcc(self):
+        return getattr(self, '___bcc___', None)
 
     @bcc.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def bcc(self, val):
-        self.__bcc = val
+        self.___bcc___ = val
 
 
 class Bto(ActivityStreamsProperty):
@@ -173,16 +202,20 @@ class Bto(ActivityStreamsProperty):
     Object.
     """
 
-    __bto = None
-
     @contextualproperty
     def bto(self):
-        return self.__bto
+        return getattr(self, '___bto___', None)
+
+    @bto.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def bto(self):
+        return getattr(self, '___bto___', None)
 
     @bto.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def bto(self, val):
-        self.__bto = val
+        self.___bto___ = val
 
 
 class Cc(ActivityStreamsProperty):
@@ -191,16 +224,20 @@ class Cc(ActivityStreamsProperty):
     Object.
     """
 
-    __cc = None
-
     @contextualproperty
     def cc(self):
-        return self.__cc
+        return getattr(self, '___cc___', None)
+
+    @cc.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def cc(self):
+        return getattr(self, '___cc___', None)
 
     @cc.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def cc(self, val):
-        self.__cc = val
+        self.___cc___ = val
 
 
 class Context(ActivityStreamsProperty):
@@ -214,16 +251,20 @@ class Context(ActivityStreamsProperty):
     relating to a common project or event.
     """
 
-    __context = None
-
     @contextualproperty
     def context(self):
-        return self.__context
+        return getattr(self, '___context___', None)
+
+    @context.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def context(self):
+        return getattr(self, '___context___', None)
 
     @context.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def context(self, val):
-        self.__context = val
+        self.___context___ = val
 
 
 class Current(ActivityStreamsProperty):
@@ -232,17 +273,20 @@ class Current(ActivityStreamsProperty):
     updated member items.
     """
 
-    __current = None
-
     @contextualproperty
     def current(self):
-        return self.__current
+        return getattr(self, '___current___', None)
+
+    @current.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def current(self):
+        return getattr(self, '___current___', None)
 
     @current.setter
-    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
-                   functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(CollectionPage, Link), functional=True).check
     def current(self, val):
-        self.__current = val
+        self.___current___ = val
 
 
 class First(ActivityStreamsProperty):
@@ -251,17 +295,20 @@ class First(ActivityStreamsProperty):
     the collection.
     """
 
-    __first = None
-
     @contextualproperty
     def first(self):
-        return self.__first
+        return getattr(self, '___first___', None)
+
+    @first.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def first(self):
+        return getattr(self, '___first___', None)
 
     @first.setter
-    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
-                   functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(CollectionPage, Link), functional=True).check
     def first(self, val):
-        self.__first = val
+        self.___first___ = val
 
 
 class Generator(ActivityStreamsProperty):
@@ -269,16 +316,20 @@ class Generator(ActivityStreamsProperty):
     Identifies the entity (e.g. an application) that generated the object.
     """
 
-    __generator = None
-
     @contextualproperty
     def generator(self):
-        return self.__generator
+        return getattr(self, '___generator___', None)
+
+    @generator.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def generator(self):
+        return getattr(self, '___generator___', None)
 
     @generator.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def generator(self, val):
-        self.__generator = val
+        self.___generator___ = val
 
 
 class Icon(ActivityStreamsProperty):
@@ -288,16 +339,20 @@ class Icon(ActivityStreamsProperty):
     should be suitable for presentation at a small size.
     """
 
-    __icon = None
-
     @contextualproperty
     def icon(self):
-        return self.__icon
+        return getattr(self, '___icon___', None)
+
+    @icon.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def icon(self):
+        return getattr(self, '___icon___', None)
 
     @icon.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def icon(self, val):
-        self.__icon = val
+        self.___icon___ = val
 
 
 class Image(ActivityStreamsProperty):
@@ -307,16 +362,20 @@ class Image(ActivityStreamsProperty):
     assumed.
     """
 
-    __image = None
-
     @contextualproperty
     def image(self):
-        return self.__image
+        return getattr(self, '___image___', None)
+
+    @image.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def image(self):
+        return getattr(self, '___image___', None)
 
     @image.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def image(self, val):
-        self.__image = val
+        self.___image___ = val
 
 
 class InReplyTo(ActivityStreamsProperty):
@@ -325,16 +384,20 @@ class InReplyTo(ActivityStreamsProperty):
     response.
     """
 
-    __inReplyTo = None
-
     @contextualproperty
     def inReplyTo(self):
-        return self.__inReplyTo
+        return getattr(self, '___inReplyTo___', None)
+
+    @inReplyTo.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def inReplyTo(self):
+        return getattr(self, '___inReplyTo___', None)
 
     @inReplyTo.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def inReplyTo(self, val):
-        self.__inReplyTo = val
+        self.___inReplyTo___ = val
 
 
 class Instrument(ActivityStreamsProperty):
@@ -343,16 +406,20 @@ class Instrument(ActivityStreamsProperty):
     Activity.
     """
 
-    __instrument = None
-
     @contextualproperty
     def instrument(self):
-        return self.__instrument
+        return getattr(self, '___instrument___', None)
+
+    @instrument.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def instrument(self):
+        return getattr(self, '___instrument___', None)
 
     @instrument.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def instrument(self, val):
-        self.__instrument = val
+        self.___instrument___ = val
 
 
 class Last(ActivityStreamsProperty):
@@ -361,17 +428,20 @@ class Last(ActivityStreamsProperty):
     collection.
     """
 
-    __last = None
-
     @contextualproperty
     def last(self):
-        return self.__last
+        return getattr(self, '___last___', None)
+
+    @last.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def last(self):
+        return getattr(self, '___last___', None)
 
     @last.setter
-    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
-                   functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(CollectionPage, Link), functional=True).check
     def last(self, val):
-        self.__last = val
+        self.___last___ = val
 
 
 class Location(ActivityStreamsProperty):
@@ -380,16 +450,20 @@ class Location(ActivityStreamsProperty):
     object.
     """
 
-    __location = None
-
     @contextualproperty
     def location(self):
-        return self.__location
+        return getattr(self, '___location___', None)
+
+    @location.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def location(self):
+        return getattr(self, '___location___', None)
 
     @location.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def location(self, val):
-        self.__location = val
+        self.___location___ = val
 
 
 class Items(ActivityStreamsProperty):
@@ -398,16 +472,22 @@ class Items(ActivityStreamsProperty):
     or unordered.
     """
 
-    __items = None
-
     @contextualproperty
     def items(self):
-        return self.__items if self.__items else None
+        return getattr(self, '___items___', None)
+
+    @items.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def items(self):
+        return getattr(self, '___items___', None)
 
     @items.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def items(self, val):
-        self.__items = val
+        self.___items___ = val
+        if val:
+            self.totalItems = len(val)
 
 
 class OrderedItems(Items):
@@ -416,15 +496,20 @@ class OrderedItems(Items):
     or unordered.
     """
 
-    # this is essentially just a wrapper for "items"
     @contextualproperty
     def orderedItems(self):
-        return self.items
+        return getattr(self, '___orderedItems___', None)
+
+    @orderedItems.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def orderedItems(self):
+        return getattr(self, '___orderedItems___', None)
 
     @orderedItems.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def orderedItems(self, val):
-        self.items = val
+        self.___orderedItems___ = val
 
 
 class UnorderedItems(ActivityStreamsProperty):
@@ -433,16 +518,20 @@ class UnorderedItems(ActivityStreamsProperty):
     or unordered.
     """
 
-    __unorderedItems = None
-
     @contextualproperty
     def unorderedItems(self):
-        return self.__unorderedItems
+        return getattr(self, '___unorderedItems___', None)
+
+    @unorderedItems.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def unorderedItems(self):
+        return getattr(self, '___unorderedItems___', None)
 
     @unorderedItems.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def unorderedItems(self, val):
-        self.__unorderedItems = val
+        self.___unorderedItems___ = val
 
 
 class OneOf(ActivityStreamsProperty):
@@ -452,16 +541,20 @@ class OneOf(ActivityStreamsProperty):
     have multiple answers, use anyOf.
     """
 
-    __oneOf = None
-
     @contextualproperty
     def oneOf(self):
-        return self.__oneOf
+        return getattr(self, '___oneOf___', None)
+
+    @oneOf.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def oneOf(self):
+        return getattr(self, '___oneOf___', None)
 
     @oneOf.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def oneOf(self, val):
-        self.__oneOf = val
+        self.___oneOf___ = val
 
 
 class AnyOf(ActivityStreamsProperty):
@@ -471,16 +564,20 @@ class AnyOf(ActivityStreamsProperty):
     have only one answer, use oneOf.
     """
 
-    __anyOf = None
-
     @contextualproperty
     def anyOf(self):
-        return self.__anyOf
+        return getattr(self, '___anyOf___', None)
+
+    @anyOf.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def anyOf(self):
+        return getattr(self, '___anyOf___', None)
 
     @anyOf.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def anyOf(self, val):
-        self.__anyOf = val
+        self.___anyOf___ = val
 
 
 class Closed(ActivityStreamsProperty):
@@ -489,16 +586,23 @@ class Closed(ActivityStreamsProperty):
     accepted.
     """
 
-    __closed = None
-
     @contextualproperty
     def closed(self):
-        return self.__closed
+        return getattr(self, '___closed___', None)
+
+    @closed.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def closed(self):
+        val = getattr(self, '___closed___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @closed.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel', datetime, bool)).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link, datetime, bool)).check
     def closed(self, val):
-        self.__closed = val
+        self.___closed___ = val
 
 
 class Origin(ActivityStreamsProperty):
@@ -509,16 +613,20 @@ class Origin(ActivityStreamsProperty):
     List B from List A", the origin of the activity is "List A".
     """
 
-    __origin = None
-
     @contextualproperty
     def origin(self):
-        return self.__origin
+        return getattr(self, '___origin___', None)
+
+    @origin.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def origin(self):
+        return getattr(self, '___origin___', None)
 
     @origin.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def origin(self, val):
-        self.__origin = val
+        self.___origin___ = val
 
 
 class Next(ActivityStreamsProperty):
@@ -526,17 +634,20 @@ class Next(ActivityStreamsProperty):
     In a paged Collection, indicates the next page of items.
     """
 
-    __next = None
-
     @contextualproperty
     def next(self):
-        return self.__next
+        return getattr(self, '___next___', None)
+
+    @next.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def next(self):
+        return getattr(self, '___next___', None)
 
     @next.setter
-    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
-                   functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(CollectionPage, Link), functional=True).check
     def next(self, val):
-        self.__next = val
+        self.___next___ = val
 
 
 class Object(ActivityStreamsProperty):
@@ -549,16 +660,20 @@ class Object(ActivityStreamsProperty):
     is related.
     """
 
-    __object = None
-
     @contextualproperty
     def object(self):
-        return self.__object
+        return getattr(self, '___object___', None)
+
+    @object.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def object(self):
+        return getattr(self, '___object___', None)
 
     @object.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def object(self, val):
-        self.__object = val
+        self.___object___ = val
 
 
 class Prev(ActivityStreamsProperty):
@@ -566,17 +681,20 @@ class Prev(ActivityStreamsProperty):
     In a paged Collection, identifies the previous page of items.
     """
 
-    __prev = None
-
     @contextualproperty
     def prev(self):
-        return self.__prev
+        return getattr(self, '___prev___', None)
+
+    @prev.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def prev(self):
+        return getattr(self, '___prev___', None)
 
     @prev.setter
-    @PropValidator(types=('CollectionPageModel', 'LinkModel'),
-                   functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(CollectionPage, Link), functional=True).check
     def prev(self, val):
-        self.__prev = val
+        self.___prev___ = val
 
 
 class Preview(ActivityStreamsProperty):
@@ -584,16 +702,20 @@ class Preview(ActivityStreamsProperty):
     Identifies an entity that provides a preview of this object.
     """
 
-    __preview = None
-
     @contextualproperty
     def preview(self):
-        return self.__preview
+        return getattr(self, '___preview___', None)
+
+    @preview.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def preview(self):
+        return getattr(self, '___preview___', None)
 
     @preview.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def preview(self, val):
-        self.__preview = val
+        self.___preview___ = val
 
 
 class Result(ActivityStreamsProperty):
@@ -603,16 +725,20 @@ class Result(ActivityStreamsProperty):
     to describe that new resource.
     """
 
-    __result = None
-
     @contextualproperty
     def result(self):
-        return self.__result
+        return getattr(self, '___result___', None)
+
+    @result.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def result(self):
+        return getattr(self, '___result___', None)
 
     @result.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def result(self, val):
-        self.__result = val
+        self.___result___ = val
 
 
 class Replies(ActivityStreamsProperty):
@@ -621,16 +747,20 @@ class Replies(ActivityStreamsProperty):
     this object.
     """
 
-    __replies = None
-
     @contextualproperty
     def replies(self):
-        return self.__replies
+        return getattr(self, '___replies___', None)
+
+    @replies.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def replies(self):
+        return getattr(self, '___replies___', None)
 
     @replies.setter
-    @PropValidator(types=('CollectionModel',), functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(Collection,), functional=True).check
     def replies(self, val):
-        self.__replies = val
+        self.___replies___ = val
 
 
 class Tag(ActivityStreamsProperty):
@@ -641,16 +771,20 @@ class Tag(ActivityStreamsProperty):
     associated by reference.
     """
 
-    __tag = None
-
     @contextualproperty
     def tag(self):
-        return self.__tag
+        return getattr(self, '___tag___', None)
+
+    @tag.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def tag(self):
+        return getattr(self, '___tag___', None)
 
     @tag.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel', dict)).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link, dict)).check
     def tag(self, val):
-        self.__tag = val
+        self.___tag___ = val
 
 
 class Target(ActivityStreamsProperty):
@@ -663,16 +797,20 @@ class Target(ActivityStreamsProperty):
     target.
     """
 
-    __target = None
-
     @contextualproperty
     def target(self):
-        return self.__target
+        return getattr(self, '___target___', None)
+
+    @target.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def target(self):
+        return getattr(self, '___target___', None)
 
     @target.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def target(self, val):
-        self.__target = val
+        self.___target___ = val
 
 
 class To(ActivityStreamsProperty):
@@ -681,16 +819,20 @@ class To(ActivityStreamsProperty):
     of an Object
     """
 
-    __to = None
-
     @contextualproperty
     def to(self):
-        return self.__to
+        return getattr(self, '___to___', None)
+
+    @to.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def to(self):
+        return getattr(self, '___to___', None)
 
     @to.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel')).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link)).check
     def to(self, val):
-        self.__to = val
+        self.___to___ = val
 
 
 class Url(ActivityStreamsProperty):
@@ -698,16 +840,20 @@ class Url(ActivityStreamsProperty):
     Identifies one or more links to representations of the object
     """
 
-    __url = None
-
     @contextualproperty
     def url(self):
-        return self.__url
+        return getattr(self, '___url___', None)
+
+    @url.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def url(self):
+        return getattr(self, '___url___', None)
 
     @url.setter
-    @PropValidator(types=('LinkModel', str)).check
+    @Link.from_str
+    @SetterValidator(types=(Link, str)).check
     def url(self, val):
-        self.__url = val
+        self.___url___ = val
 
 
 class Accuracy(ActivityStreamsProperty):
@@ -716,16 +862,14 @@ class Accuracy(ActivityStreamsProperty):
     Expressed in properties of percentage. e.g. "94.0" means "94.0% accurate".
     """
 
-    __accuracy = None
-
     @contextualproperty
     def accuracy(self):
-        return self.__accuracy
+        return getattr(self, '___accuracy___', None)
 
     @accuracy.setter
-    @PropValidator(types=(float, int), functional=True).check
+    @SetterValidator(types=(float, int), functional=True).check
     def accuracy(self, val):
-        self.__accuracy = val
+        self.___accuracy___ = val
 
 
 class Altitude(ActivityStreamsProperty):
@@ -735,16 +879,14 @@ class Altitude(ActivityStreamsProperty):
     assumed to be "m" indicating meters.
     """
 
-    __altitude = None
-
     @contextualproperty
     def altitude(self):
-        return self.__altitude
+        return getattr(self, '___altitude___', None)
 
     @altitude.setter
-    @PropValidator(types=(float, int), functional=True).check
+    @SetterValidator(types=(float, int), functional=True).check
     def altitude(self, val):
-        self.__altitude = val
+        self.___altitude___ = val
 
 
 class Content(ActivityStreamsProperty):
@@ -756,16 +898,14 @@ class Content(ActivityStreamsProperty):
     The content MAY be expressed using multiple language-tagged values.
     """
 
-    __content = None
-
     @contextualproperty
     def content(self):
-        return self.__content
+        return getattr(self, '___content___', None)
 
     @content.setter
-    @PropValidator(types=(str,)).check
+    @SetterValidator(types=(str,)).check
     def content(self, val):
-        self.__content = val
+        self.___content___ = val
 
 
 class Name(ActivityStreamsProperty):
@@ -775,16 +915,14 @@ class Name(ActivityStreamsProperty):
     language-tagged values.
     """
 
-    __name = None
-
     @contextualproperty
     def name(self):
-        return self.__name
+        return getattr(self, '___name___', None)
 
     @name.setter
-    @PropValidator(types=(str, dict)).check
+    @SetterValidator(types=(str, dict)).check
     def name(self, val):
-        self.__name = val
+        self.___name___ = val
 
 
 class Duration(ActivityStreamsProperty):
@@ -796,16 +934,21 @@ class Duration(ActivityStreamsProperty):
     as "PT5S").
     """
 
-    __duration = None
-
     @contextualproperty
     def duration(self):
-        return self.__duration
+        return getattr(self, '___duration___', None)
+
+    @duration.getter_context(JSON_DATA_CONTEXT)
+    def duration(self):
+        val = getattr(self, '___duration___', None)
+        if isinstance(val, timedelta):
+            return timedelta_str(val)
+        return val
 
     @duration.setter
-    @PropValidator(types=(timedelta, str), functional=True).check
+    @SetterValidator(types=(timedelta, str), functional=True).check
     def duration(self, val):
-        self.__duration = val
+        self.___duration___ = val
 
 
 class Height(ActivityStreamsProperty):
@@ -821,8 +964,8 @@ class Height(ActivityStreamsProperty):
         return self.__height
 
     @height.setter
-    @PropValidator(types=(int,), functional=True,
-                   additional=(is_nonnegative,)).check
+    @SetterValidator(types=(int,), functional=True,
+                     additional=(is_nonnegative,)).check
     def height(self, val):
         self.__height = val
 
@@ -832,16 +975,14 @@ class Href(ActivityStreamsProperty):
     The target resource pointed to by a Link.
     """
 
-    __href = None
-
     @contextualproperty
     def href(self):
-        return self.__href
+        return getattr(self, '___href___', None)
 
     @href.setter
-    @PropValidator(types=(str,), functional=True).check
+    @SetterValidator(types=(str,), functional=True).check
     def href(self, val):
-        self.__href = val
+        self.___href___ = val
 
 
 class HrefLang(ActivityStreamsProperty):
@@ -850,14 +991,12 @@ class HrefLang(ActivityStreamsProperty):
     [BCP47] Language-Tag.
     """
 
-    __hrefLang = None
-
     @contextualproperty
     def hreflang(self):
-        return self.__hrefLang
+        return getattr(self, '___hreflang___', None)
 
     @hreflang.setter
-    @PropValidator(types=(str,), functional=True).check
+    @SetterValidator(types=(str,), functional=True).check
     def hreflang(self, val):
         self.__hrefLang = val
 
@@ -867,16 +1006,20 @@ class PartOf(ActivityStreamsProperty):
     Identifies the Collection to which a CollectionPage objects items belong.
     """
 
-    __partOf = None
-
     @contextualproperty
     def partOf(self):
-        return self.__partOf
+        return getattr(self, '___partOf___', None)
+
+    @partOf.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def partOf(self):
+        return getattr(self, '___partOf___', None)
 
     @partOf.setter
-    @PropValidator(types=('CollectionModel', 'LinkModel'), functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(Collection, Link), functional=True).check
     def partOf(self, val):
-        self.__partOf = val
+        self.___partOf___ = val
 
 
 class Latitude(ActivityStreamsProperty):
@@ -884,16 +1027,14 @@ class Latitude(ActivityStreamsProperty):
     The latitude of a place
     """
 
-    __latitude = None
-
     @contextualproperty
     def latitude(self):
-        return self.__latitude
+        return getattr(self, '___latitude___', None)
 
     @latitude.setter
-    @PropValidator(types=(float, int), functional=True).check
+    @SetterValidator(types=(float, int), functional=True).check
     def latitude(self, val):
-        self.__latitude = val
+        self.___latitude___ = val
 
 
 class Longitude(ActivityStreamsProperty):
@@ -901,16 +1042,14 @@ class Longitude(ActivityStreamsProperty):
     The longitude of a place
     """
 
-    __longitude = None
-
     @contextualproperty
     def longitude(self):
-        return self.__longitude
+        return getattr(self, '___longitude___', None)
 
     @longitude.setter
-    @PropValidator(types=(float, int), functional=True).check
+    @SetterValidator(types=(float, int), functional=True).check
     def longitude(self, val):
-        self.__longitude = val
+        self.___longitude___ = val
 
 
 class MediaType(ActivityStreamsProperty):
@@ -923,16 +1062,14 @@ class MediaType(ActivityStreamsProperty):
     contain text/html content.
     """
 
-    __mediaType = 'text/html'
-
     @contextualproperty
     def mediaType(self):
-        return self.__mediaType
+        return getattr(self, '___mediaType___', None)
 
     @mediaType.setter
-    @PropValidator(types=(str,), functional=True).check
+    @SetterValidator(types=(str,), functional=True).check
     def mediaType(self, val):
-        self.__mediaType = val
+        self.___mediaType___ = val
 
 
 class EndTime(ActivityStreamsProperty):
@@ -943,17 +1080,22 @@ class EndTime(ActivityStreamsProperty):
     conclude.
     """
 
-    __endTime = None
-
     @contextualproperty
     def endTime(self):
-        return self.__endTime
+        return getattr(self, '___endTime___', None)
+
+    @endTime.getter_context(JSON_DATA_CONTEXT)
+    def endTime(self):
+        val = getattr(self, '___endTime___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @endTime.setter
-    @PropValidator(types=(datetime, str), functional=True,
-                   additional=(is_activity_datetime,)).check
+    @SetterValidator(types=(datetime, str), functional=True,
+                     additional=(is_activity_datetime,)).check
     def endTime(self, val):
-        self.__endTime = parse_activitystream_datetime(val)
+        self.___endTime___ = parse_activitystream_datetime(val)
 
 
 class Published(ActivityStreamsProperty):
@@ -961,17 +1103,22 @@ class Published(ActivityStreamsProperty):
     The date and time at which the object was published
     """
 
-    __published = None
-
     @contextualproperty
     def published(self):
-        return self.__published
+        return getattr(self, '___published___', None)
+
+    @published.getter_context(JSON_DATA_CONTEXT)
+    def published(self):
+        val = getattr(self, '___published___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @published.setter
-    @PropValidator(types=(datetime, str), functional=True,
-                   additional=(is_activity_datetime,)).check
+    @SetterValidator(types=(datetime, str), functional=True,
+                     additional=(is_activity_datetime,)).check
     def published(self, val):
-        self.__published = parse_activitystream_datetime(val)
+        self.___published___ = parse_activitystream_datetime(val)
 
 
 class StartTime(ActivityStreamsProperty):
@@ -981,17 +1128,22 @@ class StartTime(ActivityStreamsProperty):
     property specifies the moment the activity began or is scheduled to begin.
     """
 
-    __startTime = None
-
     @contextualproperty
     def startTime(self):
-        return self.__startTime
+        return getattr(self, '___startTime___', None)
+
+    @startTime.getter_context(JSON_DATA_CONTEXT)
+    def startTime(self):
+        val = getattr(self, '___startTime___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @startTime.setter
-    @PropValidator(types=(datetime, str), functional=True,
-                   additional=(is_activity_datetime,)).check
+    @SetterValidator(types=(datetime, str), functional=True,
+                     additional=(is_activity_datetime,)).check
     def startTime(self, val):
-        self.__startTime = parse_activitystream_datetime(val)
+        self.___startTime___ = parse_activitystream_datetime(val)
 
 
 class Radius(ActivityStreamsProperty):
@@ -1001,17 +1153,15 @@ class Radius(ActivityStreamsProperty):
     assumed to be "m" indicating "meters".
     """
 
-    __radius = None
-
     @contextualproperty
     def radius(self):
-        return self.__radius
+        return getattr(self, '___radius___', None)
 
     @radius.setter
-    @PropValidator(types=(float, int), functional=True,
-                   additional=(is_nonnegative,)).check
+    @SetterValidator(types=(float, int), functional=True,
+                     additional=(is_nonnegative,)).check
     def radius(self, val):
-        self.__radius = val
+        self.___radius___ = val
 
 
 class Rel(ActivityStreamsProperty):
@@ -1024,16 +1174,14 @@ class Rel(ActivityStreamsProperty):
     characters can be used as a valid link relation.
     """
 
-    __rel = None
-
     @contextualproperty
     def rel(self):
-        return self.__rel
+        return getattr(self, '___rel___', None)
 
     @rel.setter
-    @PropValidator(types=(str,)).check
+    @SetterValidator(types=(str,)).check
     def rel(self, val):
-        self.__rel = val
+        self.___rel___ = val
 
 
 class StartIndex(ActivityStreamsProperty):
@@ -1042,17 +1190,15 @@ class StartIndex(ActivityStreamsProperty):
     logical view of a strictly ordered collection.
     """
 
-    __startIndex = None
-
     @contextualproperty
     def startIndex(self):
-        return self.__startIndex
+        return getattr(self, '___startIndex___', None)
 
     @startIndex.setter
-    @PropValidator(types=(int,), functional=True,
-                   additional=(is_nonnegative,)).check
+    @SetterValidator(types=(int,), functional=True,
+                     additional=(is_nonnegative,)).check
     def startIndex(self, val):
-        self.__startIndex = val
+        self.___startIndex___ = val
 
 
 class Summary(ActivityStreamsProperty):
@@ -1061,16 +1207,14 @@ class Summary(ActivityStreamsProperty):
     language tagged summaries MAY be provided.
     """
 
-    __summary = None
-
     @contextualproperty
     def summary(self):
-        return self.__summary
+        return getattr(self, '___summary___', None)
 
     @summary.setter
-    @PropValidator(types=(str,)).check
+    @SetterValidator(types=(str,)).check
     def summary(self, val):
-        self.__summary = val
+        self.___summary___ = val
 
 
 class TotalItems(ActivityStreamsProperty):
@@ -1080,17 +1224,15 @@ class TotalItems(ActivityStreamsProperty):
     actual number of items serialized within the Collection object instance.
     """
 
-    __totalItems = None
-
     @contextualproperty
     def totalItems(self):
-        return self.__totalItems
+        return getattr(self, '___totalItems___', None)
 
     @totalItems.setter
-    @PropValidator(types=(int,), functional=True,
-                   additional=(is_nonnegative,)).check
+    @SetterValidator(types=(int,), functional=True,
+                     additional=(is_nonnegative,)).check
     def totalItems(self, val):
-        self.__totalItems = val
+        self.___totalItems___ = val
 
 
 class Units(ActivityStreamsProperty):
@@ -1100,16 +1242,14 @@ class Units(ActivityStreamsProperty):
     "meters".
     """
 
-    __units = None
-
     @contextualproperty
     def units(self):
-        return self.__units
+        return getattr(self, '___units___', None)
 
     @units.setter
-    @PropValidator(types=(str,), functional=True).check
+    @SetterValidator(types=(str,), functional=True).check
     def units(self, val):
-        self.__units = val
+        self.___units___ = val
 
 
 class Updated(ActivityStreamsProperty):
@@ -1117,17 +1257,22 @@ class Updated(ActivityStreamsProperty):
     The date and time at which the object was updated
     """
 
-    __updated = None
-
     @contextualproperty
     def updated(self):
-        return self.__updated
+        return getattr(self, '___updated___', None)
+
+    @updated.getter_context(JSON_DATA_CONTEXT)
+    def updated(self):
+        val = getattr(self, '___updated___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @updated.setter
-    @PropValidator(types=(datetime, str), functional=True,
-                   additional=(is_activity_datetime,)).check
+    @SetterValidator(types=(datetime, str), functional=True,
+                     additional=(is_activity_datetime,)).check
     def updated(self, val):
-        self.__updated = parse_activitystream_datetime(val)
+        self.___updated___ = parse_activitystream_datetime(val)
 
 
 class Width(ActivityStreamsProperty):
@@ -1136,17 +1281,15 @@ class Width(ActivityStreamsProperty):
     pixels of the linked resource.
     """
 
-    __width = None
-
     @contextualproperty
     def width(self):
-        return self.__width
+        return getattr(self, '___width___', None)
 
     @width.setter
-    @PropValidator(types=(int,), functional=True,
-                   additional=(is_nonnegative,)).check
+    @SetterValidator(types=(int,), functional=True,
+                     additional=(is_nonnegative,)).check
     def width(self, val):
-        self.__width = val
+        self.___width___ = val
 
 
 class Subject(ActivityStreamsProperty):
@@ -1156,16 +1299,20 @@ class Subject(ActivityStreamsProperty):
     "John is related to Sally", subject would refer to John.
     """
 
-    __subject = None
-
     @contextualproperty
     def subject(self):
-        return self.__subject
+        return getattr(self, '___subject___', None)
+
+    @subject.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def subject(self):
+        return getattr(self, '___subject___', None)
 
     @subject.setter
-    @PropValidator(types=('ObjectModel', 'LinkModel'), functional=True).check
+    @Link.from_str
+    @SetterValidator(types=(Object, Link), functional=True).check
     def subject(self, val):
-        self.__subject = val
+        self.___subject___ = val
 
 
 class Relationship(ActivityStreamsProperty):
@@ -1174,16 +1321,14 @@ class Relationship(ActivityStreamsProperty):
     relationship that exists between subject and object.
     """
 
-    __relationship = None
-
     @contextualproperty
     def relationship(self):
-        return self.__relationship
+        return getattr(self, '___relationship___', None)
 
     @relationship.setter
-    @PropValidator(types=('ObjectModel', str)).check
+    @SetterValidator(types=(Object, str)).check
     def relationship(self, val):
-        self.__relationship = val
+        self.___relationship___ = val
 
 
 class Describes(ActivityStreamsProperty):
@@ -1192,16 +1337,14 @@ class Describes(ActivityStreamsProperty):
     by the Profile.
     """
 
-    __describes = None
-
     @contextualproperty
     def describes(self):
-        return self.__describes
+        return getattr(self, '___describes___', None)
 
     @describes.setter
-    @PropValidator(types=('ObjectModel',), functional=True).check
+    @SetterValidator(types=(Object,), functional=True).check
     def describes(self, val):
-        self.__describes = val
+        self.___describes___ = val
 
 
 class FormerType(ActivityStreamsProperty):
@@ -1210,16 +1353,14 @@ class FormerType(ActivityStreamsProperty):
     object that was deleted.
     """
 
-    __formerType = None
-
     @contextualproperty
     def formerType(self):
-        return self.__formerType
+        return getattr(self, '___formerType___', None)
 
     @formerType.setter
-    @PropValidator(types=('ObjectModel',)).check
+    @SetterValidator(types=(Object,)).check
     def formerType(self, val):
-        self.__formerType = val
+        self.___formerType___ = val
 
 
 class Deleted(ActivityStreamsProperty):
@@ -1228,14 +1369,19 @@ class Deleted(ActivityStreamsProperty):
     object was deleted.
     """
 
-    __deleted = None
-
     @contextualproperty
     def deleted(self):
-        return self.__deleted
+        return getattr(self, '___deleted___', None)
+
+    @deleted.getter_context(JSON_DATA_CONTEXT)
+    def deleted(self):
+        val = getattr(self, '___deleted___', None)
+        if isinstance(val, datetime):
+            return datetime_str(val)
+        return val
 
     @deleted.setter
-    @PropValidator(types=(datetime,), functional=True,
-                   additional=(is_activity_datetime,)).check
+    @SetterValidator(types=(datetime,), functional=True,
+                     additional=(is_activity_datetime,)).check
     def deleted(self, val):
-        self.__deleted = val
+        self.___deleted___ = val

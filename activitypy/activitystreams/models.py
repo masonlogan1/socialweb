@@ -9,12 +9,14 @@ handled correctly.
 import logging
 from collections.abc import Sized
 
-from activitypy.jsonld import ApplicationActivityJson, register_property
-from activitypy.activitystreams import properties
+from activitypy.jsonld import ApplicationActivityJson
+from activitypy.jsonld.tools.url import jsonld_get, validate_url, \
+    validate_acct_or_email
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+ACTIVITYSTREAMS_NS = 'https://www.w3.org/ns/activitystreams'
 SECURE_URLS_ONLY = False
 
 
@@ -28,13 +30,19 @@ SECURE_URLS_ONLY = False
 
 # this insane cluster of inheritance might look bad, but it's actually a lot
 # easier to manage the properties if we make them their own classes
-class ObjectModel(ApplicationActivityJson):
+class Object(ApplicationActivityJson):
     """
     Describes an object of any kind. The Object type serves as the base type
     for most of the other kinds of objects defined in the Activity
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
+    type = "Object"
+
+    @classmethod
+    def __get_namespace__(cls):
+        # provides namespacing logic for ALL derived children
+        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -47,7 +55,7 @@ class ObjectModel(ApplicationActivityJson):
                  **kwargs):
         ApplicationActivityJson.__init__(self, acontext=acontext)
         self.id = id
-        self.type = type or self.type
+        self.type = getattr(self, 'type', type)
         self.attachment = attachment
         self.attributedTo = attributedTo
         self.audience = audience
@@ -76,37 +84,7 @@ class ObjectModel(ApplicationActivityJson):
         self.duration = duration
 
 
-register_property(properties.Id, ObjectModel)
-register_property(properties.Type, ObjectModel)
-register_property(properties.Attachment, ObjectModel)
-register_property(properties.AttributedTo, ObjectModel)
-register_property(properties.Audience, ObjectModel)
-register_property(properties.Content, ObjectModel)
-register_property(properties.Context, ObjectModel)
-register_property(properties.Name, ObjectModel)
-register_property(properties.EndTime, ObjectModel)
-register_property(properties.Generator, ObjectModel)
-register_property(properties.Icon, ObjectModel)
-register_property(properties.Image, ObjectModel)
-register_property(properties.InReplyTo, ObjectModel)
-register_property(properties.Location, ObjectModel)
-register_property(properties.Preview, ObjectModel)
-register_property(properties.Published, ObjectModel)
-register_property(properties.Replies, ObjectModel)
-register_property(properties.StartTime, ObjectModel)
-register_property(properties.Summary, ObjectModel)
-register_property(properties.Tag, ObjectModel)
-register_property(properties.Updated, ObjectModel)
-register_property(properties.Url, ObjectModel)
-register_property(properties.To, ObjectModel)
-register_property(properties.Bto, ObjectModel)
-register_property(properties.Cc, ObjectModel)
-register_property(properties.Bcc, ObjectModel)
-register_property(properties.MediaType, ObjectModel)
-register_property(properties.Duration, ObjectModel)
-
-
-class LinkModel(ApplicationActivityJson):
+class Link(ApplicationActivityJson):
     """
     A Link is an indirect, qualified reference to a resource identified by a
     URL. The fundamental model for links is established by [RFC5988]. Many
@@ -116,6 +94,12 @@ class LinkModel(ApplicationActivityJson):
     resource identified by the href. Properties of the Link are properties of
     the reference as opposed to properties of the resource
     """
+    type = "Link"
+
+    @classmethod
+    def __get_namespace__(cls):
+        # provides namespacing logic for ALL derived children
+        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
 
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None,
@@ -134,22 +118,101 @@ class LinkModel(ApplicationActivityJson):
         self.width = width
         self.preview = preview
         self.context = context
-        self.type = type or self.type
+        self.type = getattr(self, 'type', type)
+
+    @staticmethod
+    def expand_link(data, *args, **kwargs):
+        # if LinkModel isn't registered or this isn't a Link, pass the data
+        # without expanding
+        if not isinstance(data, Link):
+            return data
+
+        link = data.__dict__.get('_Href__href', '')
+        # if we don't have an href, we can't expand; pass the data forward
+        if not link:
+            return data
+
+        try:
+            resp_data = jsonld_get(link)
+        except Exception as e:
+            # if we hit an error, pass the data through
+            logger.info(f'Encountered an error expanding url {link}' +
+                        f'\n{e}')
+            return data
+
+        try:
+            new_obj = ApplicationActivityJson.from_json(resp_data)
+        except Exception as e:
+            # if we fail to form the new object, pass the data through
+            logger.exception(f'Encountered an error forming object ' +
+                             f'from {link}\n{e}')
+            return data
+        return new_obj
+
+    @classmethod
+    def getter(cls, get_func, *args, **kwargs):
+        """
+        Decorator for automatically expanding Link objects
+        """
+
+        def decorator(obj):
+            return cls.expand_link(get_func(obj))
+
+        return decorator
+
+    @classmethod
+    def href_only(cls, get_func):
+        """
+        Decorator for getting only the href value back from a link
+        :param get_func: getter function being decorated
+        :return: the href of the link
+        """
+
+        def decorator(obj):
+            val = get_func(obj)
+            # if it's a single link, return the href
+            if isinstance(val, Link):
+                return val.href
+            # if it's a list, return either the href or the item (if no href)
+            if isinstance(val, list):
+                return [item.href if isinstance(item, Link) else item
+                        for item in val]
+            # if we don't have a handler, just give back what we found
+            return val
+
+        return decorator
+
+    @classmethod
+    def from_str(cls, set_prop):
+        """
+        Decorator that allows the setter of a JsonProperty object to convert
+        various data types into Link objects as a default
+        """
+
+        def create_link(v):
+            # if it's a string representing an email, url, or account ref,
+            # create a single link
+            if (isinstance(v, str) and
+                    (validate_url(v) or validate_acct_or_email(v))):
+                return Link(href=v)
+            if isinstance(v, dict) and v.get('href', None) and validate_url(
+                    v.get('href', '')):
+                return Link(**v)
+            # if it's an iterable other than a string or dict, create many links
+            if isinstance(v, (list, tuple, set)):
+                return [create_link(item) for item in v]
+            return v
+
+        def linkify(obj, val):
+            val = create_link(val)
+            set_prop(obj, val)
+
+            return set_prop
+
+        return linkify
 
 
-register_property(properties.Href, LinkModel)
-register_property(properties.Rel, LinkModel)
-register_property(properties.MediaType, LinkModel)
-register_property(properties.Name, LinkModel)
-register_property(properties.HrefLang, LinkModel)
-register_property(properties.Height, LinkModel)
-register_property(properties.Width, LinkModel)
-register_property(properties.Preview, LinkModel)
-register_property(properties.Context, LinkModel)
-register_property(properties.Type, LinkModel)
-
-
-class ActivityModel(ObjectModel):
+class Activity(Object):
     """
     An Activity is a subtype of Object that describes some form of action
     that may happen, is currently happening, or has already happened. The
@@ -158,6 +221,7 @@ class ActivityModel(ObjectModel):
     not carry any specific semantics about the kind of action being taken.
     :arg actor:
     """
+    type = "Activity"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -190,20 +254,13 @@ class ActivityModel(ObjectModel):
         self.instrument = instrument
 
 
-register_property(properties.Actor, ActivityModel)
-register_property(properties.Object, ActivityModel)
-register_property(properties.Target, ActivityModel)
-register_property(properties.Result, ActivityModel)
-register_property(properties.Origin, ActivityModel)
-register_property(properties.Instrument, ActivityModel)
-
-
-class IntransitiveActivityModel(ActivityModel):
+class IntransitiveActivity(Activity):
     """
     Instances of IntransitiveActivity are a subtype of Activity representing
     intransitive actions (actions that do not require an object to make sense).
     The object property is therefore inappropriate for these activities.
     """
+    type = "IntransitiveActivity"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -229,7 +286,7 @@ class IntransitiveActivityModel(ActivityModel):
                          instrument=instrument, acontext=acontext, **kwargs)
 
 
-class CollectionModel(ObjectModel):
+class Collection(Object):
     """
     A Collection is a subtype of Object that represents ordered or unordered
     sets of Object or Link instances.
@@ -237,6 +294,7 @@ class CollectionModel(ObjectModel):
     Refer to the Activity Streams 2.0 Core specification for a complete
     description of the Collection type.
     """
+    type = "Collection"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -263,7 +321,7 @@ class CollectionModel(ObjectModel):
         self.last = last
         # some inheritors may override this with more specific orderings,
         # they should be given precedence
-        self.items = items if not hasattr(self, 'items') else self.items
+        self.items = getattr(self, 'items', items)
 
         # supplied value takes priority, followed by size of items if they are
         # sizeable, defaulting to 0 if not
@@ -271,19 +329,19 @@ class CollectionModel(ObjectModel):
             0 if not isinstance(self.items, Sized) else len(self.items)
         )
 
+    def __iter__(self):
+        if not self.items:
+            yield
+        for item in self.items:
+            yield item
 
-register_property(properties.Current, CollectionModel)
-register_property(properties.First, CollectionModel)
-register_property(properties.Last, CollectionModel)
-register_property(properties.Items, CollectionModel)
-register_property(properties.TotalItems, CollectionModel)
 
-
-class OrderedCollectionModel(CollectionModel):
+class OrderedCollection(Collection):
     """
     A subtype of Collection in which members of the logical collection are
     assumed to always be strictly ordered.
     """
+    type = "OrderedCollection"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -310,15 +368,13 @@ class OrderedCollectionModel(CollectionModel):
         self.orderedItems = orderedItems
 
 
-register_property(properties.OrderedItems, OrderedCollectionModel)
-
-
-class CollectionPageModel(CollectionModel):
+class CollectionPage(Collection):
     """
     Used to represent distinct subsets of items from a Collection. Refer to the
     Activity Streams 2.0 Core for a complete description of the CollectionPage
     object.
     """
+    type = "CollectionPage"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -348,17 +404,13 @@ class CollectionPageModel(CollectionModel):
         self.prev = prev
 
 
-register_property(properties.PartOf, CollectionPageModel)
-register_property(properties.Next, CollectionPageModel)
-register_property(properties.Prev, CollectionPageModel)
-
-
-class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel):
+class OrderedCollectionPage(OrderedCollection, CollectionPage):
     """
     Used to represent ordered subsets of items from an OrderedCollection.
     Refer to the Activity Streams 2.0 Core for a complete description of the
     OrderedCollectionPage object.
     """
+    type = "OrderedCollectionPage"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -372,30 +424,27 @@ class OrderedCollectionPageModel(OrderedCollectionModel, CollectionPageModel):
                  acontext='https://www.w3.org/ns/activitystreams', **kwargs):
         # OrderedCollection has no special handling in its init that
         # CollectionPage doesn't already do
-        OrderedCollectionModel.__init__(self, orderedItems=orderedItems)
-        CollectionPageModel.__init__(self, id=id, type=type,
-                                     attachment=attachment,
-                                     attributedTo=attributedTo,
-                                     audience=audience,
-                                     content=content, context=context,
-                                     name=name,
-                                     endTime=endTime, generator=generator,
-                                     icon=icon,
-                                     image=image, inReplyTo=inReplyTo,
-                                     location=location, preview=preview,
-                                     published=published, replies=replies,
-                                     startTime=startTime, summary=summary,
-                                     tag=tag, updated=updated, url=url, to=to,
-                                     bto=bto,
-                                     cc=cc, bcc=bcc, mediaType=mediaType,
-                                     duration=duration, totalItems=totalItems,
-                                     current=current, first=first, last=last,
-                                     partOf=partOf, next=next, prev=prev,
-                                     acontext=acontext)
+        OrderedCollection.__init__(self, orderedItems=orderedItems)
+        CollectionPage.__init__(self, id=id, type=type,
+                                attachment=attachment,
+                                attributedTo=attributedTo,
+                                audience=audience,
+                                content=content, context=context,
+                                name=name,
+                                endTime=endTime, generator=generator,
+                                icon=icon,
+                                image=image, inReplyTo=inReplyTo,
+                                location=location, preview=preview,
+                                published=published, replies=replies,
+                                startTime=startTime, summary=summary,
+                                tag=tag, updated=updated, url=url, to=to,
+                                bto=bto,
+                                cc=cc, bcc=bcc, mediaType=mediaType,
+                                duration=duration, totalItems=totalItems,
+                                current=current, first=first, last=last,
+                                partOf=partOf, next=next, prev=prev,
+                                acontext=acontext)
         self.startIndex = startIndex if startIndex else 0
-
-
-register_property(properties.StartIndex, OrderedCollectionPageModel)
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -406,122 +455,138 @@ register_property(properties.StartIndex, OrderedCollectionPageModel)
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
-class AcceptModel(ActivityModel):
+class Accept(Activity):
     """
     Indicates that the actor accepts the object. The target property can be
     used in certain circumstances to indicate the context into which the
     object has been accepted.
     """
+    type = "Accept"
 
 
-class TentativeAcceptModel(AcceptModel):
+class TentativeAccept(Accept):
     """
     A specialization of Accept indicating that the acceptance is tentative.
     """
+    type = "TentativeAccept"
 
 
-class AddModel(ActivityModel):
+class Add(Activity):
     """
     Indicates that the actor has added the object to the target. If the
     target property is not explicitly specified, the target would need to be
     determined implicitly by context. The origin can be used to identify the
     context from which the object originated.
     """
+    type = "Add"
 
 
-class ArriveModel(IntransitiveActivityModel):
+class Arrive(IntransitiveActivity):
     """
     An IntransitiveActivity that indicates that the actor has arrived at the
     location. The origin can be used to identify the context from which the
     actor originated. The target typically has no defined meaning.
     """
+    type = "Arrive"
 
 
-class CreateModel(ActivityModel):
+class Create(Activity):
     """
     Indicates that the actor has created the object.
     """
+    type = "Create"
 
 
-class DeleteModel(ActivityModel):
+class Delete(Activity):
     """
     Indicates that the actor has deleted the object. If specified, the origin
     indicates the context from which the object was deleted.
     """
+    type = "Delete"
 
 
-class FollowModel(ActivityModel):
+class Follow(Activity):
     """
     Indicates that the actor is "following" the object. Following is defined
     in the sense typically used within Social systems in which the actor is
     interested in any activity performed by or on the object. The target and
     origin typically have no defined meaning.
     """
+    type = "Follow"
 
 
-class IgnoreModel(ActivityModel):
+class Ignore(Activity):
     """
     Indicates that the actor is ignoring the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Ignore"
 
 
-class JoinModel(ActivityModel):
+class Join(Activity):
     """
     Indicates that the actor has joined the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Join"
 
 
-class LeaveModel(ActivityModel):
+class Leave(Activity):
     """
     Indicates that the actor has left the object. The target and origin
     typically have no meaning.
     """
+    type = "Leave"
 
 
-class LikeModel(ActivityModel):
+class Like(Activity):
     """
     Indicates that the actor likes, recommends or endorses the object. The
     target and origin typically have no defined meaning.
     """
+    type = "Like"
 
 
-class OfferModel(ActivityModel):
+class Offer(Activity):
     """
     Indicates that the actor is offering the object. If specified, the target
     indicates the entity to which the object is being offered.
     """
+    type = "Offer"
 
 
-class InviteModel(OfferModel):
+class Invite(Offer):
     """
     A specialization of Offer in which the actor is extending an invitation
     for the object to the target.
     """
+    type = "Invite"
 
 
-class RejectModel(ActivityModel):
+class Reject(Activity):
     """
     Indicates that the actor is rejecting the object. The target and origin
     typically have no defined meaning.
     """
+    type = "Reject"
 
 
-class TentativeRejectModel(RejectModel):
+class TentativeReject(Reject):
     """
     A specialization of Reject in which the rejection is considered tentative.
     """
+    type = "TentativeReject"
 
 
-class RemoveModel(ActivityModel):
+class Remove(Activity):
     """
     Indicates that the actor is removing the object. If specified,
     the origin indicates the context from which the object is being removed.
     """
+    type = "Remove"
 
 
-class UndoModel(ActivityModel):
+class Undo(Activity):
     """
     Indicates that the actor is undoing the object. In most cases, the object
     will be an Activity describing some previously performed action (for
@@ -531,9 +596,10 @@ class UndoModel(ActivityModel):
 
     The target and origin typically have no defined meaning.
     """
+    type = "Undo"
 
 
-class UpdateModel(ActivityModel):
+class Update(Activity):
     """
     Indicates that the actor has updated the object. Note, however, that this
     vocabulary does not define a mechanism for describing the actual set of
@@ -541,73 +607,83 @@ class UpdateModel(ActivityModel):
 
     The target and origin typically have no defined meaning.
     """
+    type = "Update"
 
 
-class ViewModel(ActivityModel):
+class View(Activity):
     """
     Indicates that the actor has viewed the object.
     """
+    type = "View"
 
 
-class ListenModel(ActivityModel):
+class Listen(Activity):
     """
     Indicates that the actor has listened to the object.
     """
+    type = "Listen"
 
 
-class ReadModel(ActivityModel):
+class Read(Activity):
     """
     Indicates that the actor has read the object.
     """
+    type = "Read"
 
 
-class MoveModel(ActivityModel):
+class Move(Activity):
     """
     Indicates that the actor has moved object from origin to target. If the
     origin or target are not specified, either can be determined by context.
     """
+    type = "Move"
 
 
-class TravelModel(IntransitiveActivityModel):
+class Travel(IntransitiveActivity):
     """
     Indicates that the actor is traveling to target from origin. Travel is an
     IntransitiveObject whose actor specifies the direct object. If the target
     or origin are not specified, either can be determined by context.
     """
+    type = "Travel"
 
 
-class AnnounceModel(ActivityModel):
+class Announce(Activity):
     """
     Indicates that the actor is calling the target's attention the object.
 
     The origin typically has no defined meaning.
     """
+    type = "Announce"
 
 
-class BlockModel(IgnoreModel):
+class Block(Ignore):
     """
     Indicates that the actor is blocking the object. Blocking is a stronger
     form of Ignore. The typical use is to support social systems that allow
     one user to block activities or content of other users. The target and
     origin typically have no defined meaning.
     """
+    type = "Block"
 
 
-class FlagModel(ActivityModel):
+class Flag(Activity):
     """
     Indicates that the actor is "flagging" the object. Flagging is defined in
     the sense common to many social platforms as reporting content as being
     inappropriate for any number of reasons.
     """
+    type = "Flag"
 
 
-class DislikeModel(ActivityModel):
+class Dislike(Activity):
     """
     Indicates that the actor dislikes the object.
     """
+    type = "Dislike"
 
 
-class QuestionModel(IntransitiveActivityModel):
+class Question(IntransitiveActivity):
     """
     Represents a question being asked. Question objects are an extension of
     IntransitiveActivity. That is, the Question object is an Activity,
@@ -617,6 +693,7 @@ class QuestionModel(IntransitiveActivityModel):
     Either of the anyOf and oneOf properties MAY be used to express possible
     answers, but a Question object MUST NOT have both properties.
     """
+    type = "Question"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -646,11 +723,6 @@ class QuestionModel(IntransitiveActivityModel):
         self.closed = closed
 
 
-register_property(properties.OneOf, QuestionModel)
-register_property(properties.AnyOf, QuestionModel)
-register_property(properties.Closed, QuestionModel)
-
-
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 # ACTOR TYPES
 #   REF: https://www.w3.org/TR/activitystreams-vocabulary/#actor-types
@@ -660,34 +732,39 @@ register_property(properties.Closed, QuestionModel)
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
-class ApplicationModel(ObjectModel):
+class Application(Object):
     """
     Describes a software application.
     """
+    type = "Application"
 
 
-class GroupModel(ObjectModel):
+class Group(Object):
     """
     Represents a formal or informal collective of Actors.
     """
+    type = "Group"
 
 
-class OrganizationModel(ObjectModel):
+class Organization(Object):
     """
     Represents an organization.
     """
+    type = "Organization"
 
 
-class PersonModel(ObjectModel):
+class Person(Object):
     """
     Represents an individual person.
     """
+    type = "Person"
 
 
-class ServiceModel(ObjectModel):
+class Service(Object):
     """
     Represents a service of any kind.
     """
+    type = "Service"
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -698,11 +775,12 @@ class ServiceModel(ObjectModel):
 #
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
-class RelationshipModel(ObjectModel):
+class Relationship(Object):
     """
     Describes a relationship between two individuals. The subject and object
     properties are used to identify the connected individuals.
     """
+    type = "Relationship"
 
     def __init__(self, id, subject=None, object=None, relationship=None,
                  **kwargs):
@@ -712,65 +790,69 @@ class RelationshipModel(ObjectModel):
         self.relationship = relationship
 
 
-register_property(properties.Subject, RelationshipModel)
-register_property(properties.Object, RelationshipModel)
-register_property(properties.Relationship, RelationshipModel)
-
-
-class ArticleModel(ObjectModel):
+class Article(Object):
     """
     Represents any kind of multi-paragraph written work.
     """
+    type = "Article"
 
 
-class DocumentModel(ObjectModel):
+class Document(Object):
     """
     Represents a document of any kind.
     """
+    type = "Document"
 
 
-class AudioModel(DocumentModel):
+class Audio(Document):
     """
     Represents an audio document of any kind.
     """
+    type = "Audio"
 
 
-class ImageModel(DocumentModel):
+class Image(Document):
     """
     An image document of any kind
     """
+    type = "Image"
 
 
-class VideoModel(DocumentModel):
+class Video(Document):
     """
     Represents a video document of any kind.
     """
+    type = "Video"
 
 
-class NoteModel(ObjectModel):
+class Note(Object):
     """
     Represents a short written work typically less than a single paragraph in
     length.
     """
+    type = "Note"
 
 
-class PageModel(DocumentModel):
+class Page(Document):
     """
     Represents a Web Page.
     """
+    type = "Page"
 
 
-class EventModel(ObjectModel):
+class Event(Object):
     """
     Represents any kind of event.
     """
+    type = "Event"
 
 
-class PlaceModel(ObjectModel):
+class Place(Object):
     """
     Represents a logical or physical location. See 5.3 Representing Places
     for additional information.
     """
+    type = "Place"
 
     def __init__(self, id, accuracy=None, altitude=None, latitude=None,
                  longitude=None, radius=None, units=None, **kwargs):
@@ -783,35 +865,26 @@ class PlaceModel(ObjectModel):
         self.units = units
 
 
-register_property(properties.Accuracy, PlaceModel)
-register_property(properties.Altitude, PlaceModel)
-register_property(properties.Latitude, PlaceModel)
-register_property(properties.Longitude, PlaceModel)
-register_property(properties.Radius, PlaceModel)
-register_property(properties.Units, PlaceModel)
-
-
-class ProfileModel(ObjectModel):
+class Profile(Object):
     """
     A Profile is a content object that describes another Object, typically
     used to describe Actor Type objects. The describes property is used to
     reference the object being described by the profile.
     """
+    type = "Profile"
 
     def __init__(self, id, describes=None, **kwargs):
         super().__init__(id, **kwargs)
         self.describes = describes
 
 
-register_property(properties.Describes, ProfileModel)
-
-
-class TombstoneModel(ObjectModel):
+class Tombstone(Object):
     """
     A Tombstone represents a content object that has been deleted. It can be
     used in Collections to signify that there used to be an object at this
     position, but it has been deleted.
     """
+    type = "Tombstone"
 
     def __init__(self, id, former_type=None, deleted=None, **kwargs):
         super().__init__(id, **kwargs)
@@ -819,11 +892,8 @@ class TombstoneModel(ObjectModel):
         self.deleted = deleted
 
 
-register_property(properties.FormerType, TombstoneModel)
-register_property(properties.Deleted, TombstoneModel)
-
-
-class MentionModel(LinkModel):
+class Mention(Link):
     """
     A specialized Link that represents a @mention.
     """
+    type = "Mention"

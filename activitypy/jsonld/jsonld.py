@@ -5,10 +5,8 @@ import logging
 import json
 from collections.abc import Iterable
 
-from activitypy.jsonld.base import PropertyAwareObject, contextualproperty
+from activitypy.jsonld.base import PropertyAwareObject
 from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_DATA_CONTEXT
-from activitypy.jsonld.json_output import PropertyJsonGenerator
-from activitypy.jsonld.json_input import PropertyJsonIntake
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

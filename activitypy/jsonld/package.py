@@ -4,6 +4,7 @@ engine can load
 """
 import logging
 from collections.abc import Iterable
+from activitypy.jsonld.base import JsonProperty, PropertyAwareObject
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -28,6 +29,11 @@ class JsonLdPackage:
         self.properties = properties
         # property_mapping connects properties to classes on instantiation
         self.property_mapping = property_mapping
+
+        self.__ref = {obj.__get_namespace__(): obj
+                      for obj in self.classes + self.properties}
+
+        self.__perform_mapping()
 
     @property
     def namespace(self):
@@ -77,19 +83,53 @@ class JsonLdPackage:
                         f'"{self.namespace}" to property "{prop.__name__}"')
         self.___properties___ = properties
 
+    def __perform_mapping(self):
+        """
+        Connects all properties to an object
+        :return:
+        """
+        for object_namespace, property_classes in self.property_mapping.items():
+            self.link_properties(property_classes, object_namespace)
+            self[object_namespace].__get_properties__(refresh=True)
+
+    def link_property(self, property_class: JsonProperty,
+                      object_class: PropertyAwareObject):
+        """
+        Connects a given property to the specified class. Extracts the property
+        details from the JsonProperty's registration and adds it to the
+        PropertyAwareObject in a way that allows it to function as a normally
+        added @property (or @contextualproperty) structure
+        :param property_class: JsonProperty to add to a PropertyAwareObject
+        :param object_class: PropertyAwareObject to accept the new property
+        :return:
+        """
+        setattr(object_class, property_class.__get_property_name__(),
+                property(*property_class.__get_registration__()))
+
+    def link_properties(self, property_classes: Iterable[JsonProperty],
+                        object_namespace: str):
+        object_class = self[object_namespace]
+        if not object_class:
+            raise ValueError(f'No such object "{object_namespace}" in package' +
+                             f' "{self.namespace}"')
+        for property_class in property_classes:
+            self.link_property(property_class, object_class)
+
+    def update_property_link(self, property_class: JsonProperty,
+                             object_class: PropertyAwareObject):
+        setattr(object_class, property_class.__get_property_name__(),
+                property(*property_class.__get_registration__()))
+
+    def remove_property_link(self, property_name: str,
+                             object_class: PropertyAwareObject):
+        delattr(object_class, property_name)
+
     def __getitem__(self, keys):
-        return_one = False
         if isinstance(keys, str):
-            return_one = True
-            keys = [keys]
+            return self.__ref.get(keys, None)
         if any(not isinstance(key, str) for key in keys):
             raise ValueError('JsonLdPackage getitem can only accept strings')
-        found = {item.__get_namespace__(): item
-                 for item in self.classes + self.properties
-                 if item.__get_namespace__() in keys}
-        if return_one:
-            return found.get(keys[0], None)
-        return [found.get(key, None) for key in keys]
+        return [self.__ref.get(key, None) for key in keys]
 
     def __str__(self):
         # this should probably return the name of the package

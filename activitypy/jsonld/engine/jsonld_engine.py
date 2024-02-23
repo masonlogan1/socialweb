@@ -30,7 +30,6 @@ class JsonLdEngine(PropertyJsonIntake):
             self.package += package
 
         self.__load_classes()
-        self.__load_properties()
 
     @property
     def packages(self):
@@ -47,20 +46,6 @@ class JsonLdEngine(PropertyJsonIntake):
             # registers/updates each type by its namespace id
             if cls.__get_namespace__() not in self.class_registry.keys():
                 self.register_class(cls.__get_namespace__(), cls)
-                continue
-            self.update_class(cls.__get_namespace__(), cls)
-
-    def __load_properties(self) -> None:
-        """
-        Unpacks the contents of the package into a usable format
-        :param package: the package to unpack
-        """
-        for cls in self.package.properties:
-            # registers/updates each type by its namespace id
-            if cls.__get_namespace__() not in self.class_registry.keys():
-                self.register_property(cls.__get_namespace__(), cls)
-                continue
-            self.update_property(cls.__get_namespace__(), cls)
 
     def register_class(self, name, cls):
         """
@@ -71,60 +56,7 @@ class JsonLdEngine(PropertyJsonIntake):
         self.logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
         if name in self.class_registry.keys():
             raise ValueError(
-                f'"{name}" already exists in mapping, cannot add new')
-        self.class_registry.update(**{name: cls})
-
-    def update_class(self, name, cls):
-        """
-        Adds a name-class mapping to the engine's class registry
-        :param name: the fully qualified namespace id to associate with the class
-        :param cls: the new object class
-        """
-        self.logger.info(f'Updating jsonld type "{name}" to {cls.__name__}')
-        if name not in self.class_registry.keys():
-            self.logger.info(f'registration update for type "{name}" ' +
-                                f'made but type does not exist')
-        self.class_registry.update({name: cls})
-
-    def remove_class(self, name, cls):
-        if name not in self.class_registry.keys():
-            self.logger.warning(f'no registration update for type "{name}"; ' +
-                                f'no action taken, remediate if possible')
-            return
-        self.logger.info(f'removing registry for type "{name}"')
-        self.class_registry.pop(name)
-
-    def register_property(self, name, cls):
-        """
-        Adds a name-class mapping to the engine's property registry
-        :param name: the fully qualified namespace id to associate with the class
-        :param cls: the new object class
-        """
-        self.logger.info(f'Registering jsonld type "{name}" as {cls.__name__}')
-        if name in self.property_registry.keys():
-            raise ValueError(
-                f'"{name}" already exists in mapping, cannot add new')
-        self.property_registry.update(**{name: cls})
-
-    def update_property(self, name, cls):
-        """
-        Adds a name-class mapping to the engine's property registry
-        :param name: the fully qualified namespace id to associate with the class
-        :param cls: the new object class
-        """
-        self.logger.info(f'Updating jsonld type "{name}" to {cls.__name__}')
-        if name not in self.property_registry.keys():
-            self.logger.info(f'registration update for type "{name}" ' +
-                                f'made but type does not exist; adding instead')
-        self.property_registry.update({name: cls})
-
-    def remove_property(self, name, cls):
-        if name not in self.property_registry.keys():
-            self.logger.warning(f'no registration update for type "{name}"; ' +
-                                f'no action taken, remediate if possible')
-            return
-        self.logger.info(f'removing registry for type "{name}"')
-        self.property_registry.pop(name)
+                f'"{name}" already exists in mapping, cannot add')
 
     # TODO: set up method that handles queues and connect to __getitem__ for
     #   easy handling of a data queue (vital for multithreading!)

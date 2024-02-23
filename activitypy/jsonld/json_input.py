@@ -4,14 +4,12 @@ Module for separating logic for generating objects from JSON-LD input
 import json
 import logging
 from collections.abc import Iterable
-from itertools import chain
 from numbers import Number
 from typing import Union
 
 from pyld.jsonld import expand
 
-from activitypy.jsonld.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
-    DEFAULT_TYPE, DEFAULT_CONTEXT
+from activitypy.jsonld.utils import DEFAULT_CONTEXT
 from activitypy.jsonld.base import PropertyAwareObject
 
 logger = logging.getLogger(__name__)
@@ -47,7 +45,7 @@ class PropertyJsonIntake(PropertyAwareObject):
             logger.debug(f'No @type value provided:\n{expanded}')
 
         # check that the @type value is in the mapping
-        classmap = {**JSON_TYPE_MAP, **(classmap if classmap else {})}
+        classmap = classmap if classmap else dict()
         if class_type not in classmap.keys():
             # if the class type is not in our mapping, use the default value
             logger.debug(f'@type value not in mapping: "{class_type}"')

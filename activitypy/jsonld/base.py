@@ -3,11 +3,10 @@ Module for splitting logic that allows objects to iterate and work with
 @property objects stored inside of them
 """
 import logging
-from collections.abc import Iterable
 from copy import copy
 from itertools import chain
 
-from activitypy.jsonld.utils import JSON_TYPE_MAP, JSON_DATA_CONTEXT
+from activitypy.jsonld.utils import JSON_DATA_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

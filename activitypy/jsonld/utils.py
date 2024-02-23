@@ -31,12 +31,6 @@ JSON_LD_KEYMAP = {
     'avocab': '@vocab',
 }
 
-# keys are "type" attributes on incoming json, values are classes they map to
-# the __init__ file should be used to populate this to avoid circular imports
-JSON_TYPE_MAP = {
-
-}
-
 DEFAULT_TYPE = 'https://www.w3.org/ns/activitystreams#Object'
 DEFAULT_CONTEXT = "http://www.w3.org/ns/activitystreams#"
 

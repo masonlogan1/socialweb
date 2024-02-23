@@ -10,9 +10,7 @@ from typing import Union
 
 from pyld.jsonld import expand
 
-from activitypy.jsonld.engine.utils import JSON_LD_KEYMAP, JSON_TYPE_MAP, \
-    DEFAULT_TYPE, DEFAULT_CONTEXT
-from activitypy.jsonld.base import PropertyAwareObject
+from activitypy.jsonld.engine.utils import DEFAULT_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
