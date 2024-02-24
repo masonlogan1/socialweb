@@ -18,6 +18,7 @@ class JsonLdPackage:
 
     All packages MUST have a unique namespace
     """
+
     def __init__(self, namespace: str, objects: Iterable = tuple(),
                  properties: Iterable = tuple(), property_mapping: dict = None):
 
@@ -138,22 +139,29 @@ class JsonLdPackage:
         :param classes:
         :return:
         """
-        # TODO: create cyclical function that builds dependency tree and uses
-        #   dependencies to clone classes
-        dependencies = {cls: {obj: {}
-                              for obj in classes
-                              if cls in obj.mro()
-                                and cls != obj}
-                        for cls in classes}
-
-        new_classes = list()
+        # creates a dictionary that organizes classes based on how many
+        # package-internal dependencies they have
+        ordered = {}
         for cls in classes:
-            new_classes.append(type(
-                cls.__name__,
-                (cls,),
-                dict(cls.__dict__))
-            )
-        return new_classes
+            deps = [c for c in classes if c in cls.mro() and c != cls]
+            ordered[len(deps)] = ordered.get(len(deps), []) + [cls]
+
+        # creates a list where classes are sorted by their number of deps
+        classes = []
+        for val in sorted(ordered.keys()):
+            classes += ordered[val]
+
+        class_ref = {cls: None for cls in classes}
+
+        for cls in classes:
+            # IF there is a cloned class for a dependency (root will not have!)
+            # THEN have the dependent cloned class inherit from it
+            inherits = [val for obj, val in class_ref.items()
+                        if obj in cls.mro() and val is not None]
+            inherits = (cls,) if not inherits else (inherits[-1], cls)
+            class_ref[cls] = type(cls.__name__, inherits, dict(cls.__dict__))
+
+        return list(class_ref.values())
 
     def __getitem__(self, keys):
         if isinstance(keys, str):
