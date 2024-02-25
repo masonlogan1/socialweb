@@ -24,6 +24,11 @@ class JsonLdPackage:
 
         # TODO: save original objects as "templates" to be used when
         #   combining packages (immutable structure must be rebuilt each time)
+
+        # TODO: cloned property classes need to be wrapped in such a way that
+        #   any time a method (or property) returns a class that is in the,
+        #   package, it should use the PACKAGE version of that class, not the
+        #   CODE version of the class
         objects = self.__clone_classes(objects)
         properties = self.__clone_classes(properties)
 

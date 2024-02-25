@@ -490,7 +490,7 @@ class Items(ActivityStreamsProperty):
             self.totalItems = len(val)
 
 
-class OrderedItems(Items):
+class OrderedItems(ActivityStreamsProperty):
     """
     Identifies the items contained in a collection. The items might be ordered
     or unordered.

@@ -51,7 +51,7 @@ class Object(ApplicationActivityJson):
                  replies=None, startTime=None, summary=None, tag=None,
                  updated=None, url=None, to=None, bto=None, cc=None, bcc=None,
                  mediaType=None, duration=None,
-                 acontext='https://www.w3.org/ns/activitystreams',
+                 acontext=ACTIVITYSTREAMS_NS,
                  **kwargs):
         ApplicationActivityJson.__init__(self, acontext=acontext)
         self.id = id
@@ -104,7 +104,8 @@ class Link(ApplicationActivityJson):
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None,
                  context=None, type=None,
-                 acontext='https://www.w3.org/ns/activitystreams'):
+                 acontext=ACTIVITYSTREAMS_NS,
+                 **kwargs):
         # grants the ability to access all @property objects associated with the
         # model via __properties__ on instantiated objects and
         # __get_properties__ on classes
