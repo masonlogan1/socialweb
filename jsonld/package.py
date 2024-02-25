@@ -5,6 +5,7 @@ engine can load
 import logging
 from collections.abc import Iterable
 from jsonld.base import JsonProperty, PropertyAwareObject
+from jsonld.utils import CLASS_CHANGE_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -21,7 +22,7 @@ class JsonLdPackage:
 
     def __init__(self, namespace: str, objects: Iterable = tuple(),
                  properties: Iterable = tuple(), property_mapping: dict = None):
-
+        self.logger = logging.getLogger(f'JsonLdPackage_{namespace}')
         # TODO: save original objects as "templates" to be used when
         #   combining packages (immutable structure must be rebuilt each time)
 
@@ -29,15 +30,14 @@ class JsonLdPackage:
         #   any time a method (or property) returns a class that is in the,
         #   package, it should use the PACKAGE version of that class, not the
         #   CODE version of the class
-        objects = self.__clone_classes(objects)
-        properties = self.__clone_classes(properties)
-
         # namespace has to be set BEFORE ANYTHING ELSE HAPPENS, do not move it!
         self.namespace = namespace
         # classes are objects that the engine will produce from incoming data
-        self.objects = objects
+        self.object_ref = self.__clone_classes(objects)
+        self.objects = tuple(self.object_ref.values())
         # properties are managed attributes for classes
-        self.properties = properties
+        self.property_ref = self.__clone_classes(properties)
+        self.properties = tuple(self.object_ref.values())
         # property_mapping connects properties to classes on instantiation
         self.property_mapping = property_mapping
 
@@ -135,6 +135,45 @@ class JsonLdPackage:
                              object_class: PropertyAwareObject):
         delattr(object_class, property_name)
 
+    def __wrap_callables(self, cls):
+        """
+        Wraps anything callable for a class with a function that changes the
+        type of return values if the class of the value is in the package.
+        """
+        def wrapper(fn):
+            def wrap_return(*args, **kwargs):
+                if (val := fn(*args, **kwargs)).__class__ not in self.object_ref.keys():
+                    return val
+                with val.switch_context(CLASS_CHANGE_CONTEXT):
+                    return self.__change_class(val, self.object_ref.get(val.__class__))
+            return wrap_return
+        # locate anything callable and wrap it so output values will be mapped,
+        # when applicable
+        for name, method in cls.__dict__.items():
+            if callable(method):
+                setattr(cls, name, wrapper(method))
+
+    def __change_class(self, obj, new_class):
+        # fetch the property values, if any, that are applicable; then
+        # fetch the current property values, if any, so that if the new class
+        # does not implement the same properties, the values will be transferred
+        # to the new class as attributes to avoid data loss when handling
+        # the same data in different packages
+        props = {name: getattr(obj, name, None)
+                 for name in getattr(new_class, '__properties__', ())}
+        attrs = {name: getattr(obj, name, None)
+                 for name in getattr(obj, '__properties__', ())}
+        # merge both for simplicity and to avoid setting the same values twice
+        data = {**props, **attrs}
+        obj.__class__ = new_class
+        obj.__properties__ = obj.__get_properties__(refresh=True)
+        for name, val in data.items():
+            try:
+                setattr(obj, name, val)
+            except AttributeError as e:
+                self.logger.exception(f'Could not set {name}')
+        return obj
+
     def __clone_classes(self, classes):
         """
         Clones the base objects used to create the package. Copying the classes
@@ -164,9 +203,9 @@ class JsonLdPackage:
             inherits = [val for obj, val in class_ref.items()
                         if obj in cls.mro() and val is not None]
             inherits = (cls,) if not inherits else (inherits[-1], cls)
-            class_ref[cls] = type(cls.__name__, inherits, dict(cls.__dict__))
-
-        return list(class_ref.values())
+            class_ref[cls] = type(cls.__name__, inherits, cls.__dict__.copy())
+            self.__wrap_callables(class_ref[cls])
+        return class_ref
 
     def __getitem__(self, keys):
         if isinstance(keys, str):

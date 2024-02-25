@@ -6,7 +6,7 @@ import logging
 from copy import copy
 from itertools import chain
 
-from jsonld.utils import JSON_DATA_CONTEXT
+from jsonld.utils import JSON_DATA_CONTEXT, CLASS_CHANGE_CONTEXT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -183,6 +183,10 @@ class NamespacedObject:
     # have a one-time setter
     def __namespace__(self):
         return self.__class__.__get_namespace__()
+
+    @__namespace__.setter_context(CLASS_CHANGE_CONTEXT)
+    def __namespace__(self, new_ns):
+        self.__class__.__get_namespace__ = lambda: new_ns
 
     @__namespace__.getter_context(JSON_DATA_CONTEXT)
     def __namespace__(self):

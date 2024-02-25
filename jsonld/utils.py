@@ -4,6 +4,7 @@ Utility functions and constants for jsonld package
 import requests
 
 JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
+CLASS_CHANGE_CONTEXT = 'CLASS_CHANGE_CONTEXT'
 
 JSON_LD_KEYMAP = {
     'abase': '@base',
