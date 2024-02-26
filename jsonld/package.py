@@ -5,13 +5,13 @@ engine can load
 import logging
 from collections.abc import Iterable
 from jsonld.base import JsonProperty, PropertyAwareObject
-from jsonld.utils import CLASS_CHANGE_CONTEXT
+from jsonld.kamino import ClassCloner
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class JsonLdPackage:
+class JsonLdPackage(ClassCloner):
     """
     A discrete package of classes, properties, and transformation functions
     that can be given to the JSON-LD engine and used to process new and existing
@@ -19,25 +19,17 @@ class JsonLdPackage:
 
     All packages MUST have a unique namespace
     """
-
     def __init__(self, namespace: str, objects: Iterable = tuple(),
                  properties: Iterable = tuple(), property_mapping: dict = None):
-        self.logger = logging.getLogger(f'JsonLdPackage_{namespace}')
-        # TODO: save original objects as "templates" to be used when
-        #   combining packages (immutable structure must be rebuilt each time)
-
-        # TODO: cloned property classes need to be wrapped in such a way that
-        #   any time a method (or property) returns a class that is in the,
-        #   package, it should use the PACKAGE version of that class, not the
-        #   CODE version of the class
         # namespace has to be set BEFORE ANYTHING ELSE HAPPENS, do not move it!
         self.namespace = namespace
+        self.logger = logging.getLogger(f'JsonLdPackage_{namespace}')
         # classes are objects that the engine will produce from incoming data
-        self.object_ref = self.__clone_classes(objects)
+        self.object_ref = self.clone_classes(objects)
         self.objects = tuple(self.object_ref.values())
         # properties are managed attributes for classes
-        self.property_ref = self.__clone_classes(properties)
-        self.properties = tuple(self.object_ref.values())
+        self.property_ref = self.clone_classes(properties)
+        self.properties = tuple(self.property_ref.values())
         # property_mapping connects properties to classes on instantiation
         self.property_mapping = property_mapping
 
@@ -99,8 +91,8 @@ class JsonLdPackage:
         Connects all properties to an object
         :return:
         """
-        for object_namespace, property_classes in self.property_mapping.items():
-            self.link_properties(property_classes, object_namespace)
+        for object_namespace, property_namespaces in self.property_mapping.items():
+            self.link_properties(property_namespaces, object_namespace)
             self[object_namespace].__get_properties__(refresh=True)
 
     def link_property(self, property_class: JsonProperty,
@@ -117,13 +109,17 @@ class JsonLdPackage:
         setattr(object_class, property_class.__get_property_name__(),
                 property(*property_class.__get_registration__()))
 
-    def link_properties(self, property_classes: Iterable[JsonProperty],
+    def link_properties(self, property_namespaces: Iterable[str],
                         object_namespace: str):
         object_class = self[object_namespace]
         if not object_class:
             raise ValueError(f'No such object "{object_namespace}" in package' +
                              f' "{self.namespace}"')
-        for property_class in property_classes:
+        for property_namespace in property_namespaces:
+            property_class = self[property_namespace]
+            if not property_class:
+                raise ValueError(f'No such property "{property_namespace}" ' +
+                                 f'in package "{self.namespace}"')
             self.link_property(property_class, object_class)
 
     def update_property_link(self, property_class: JsonProperty,
@@ -134,78 +130,6 @@ class JsonLdPackage:
     def remove_property_link(self, property_name: str,
                              object_class: PropertyAwareObject):
         delattr(object_class, property_name)
-
-    def __wrap_callables(self, cls):
-        """
-        Wraps anything callable for a class with a function that changes the
-        type of return values if the class of the value is in the package.
-        """
-        def wrapper(fn):
-            def wrap_return(*args, **kwargs):
-                if (val := fn(*args, **kwargs)).__class__ not in self.object_ref.keys():
-                    return val
-                with val.switch_context(CLASS_CHANGE_CONTEXT):
-                    return self.__change_class(val, self.object_ref.get(val.__class__))
-            return wrap_return
-        # locate anything callable and wrap it so output values will be mapped,
-        # when applicable
-        for name, method in cls.__dict__.items():
-            if callable(method):
-                setattr(cls, name, wrapper(method))
-
-    def __change_class(self, obj, new_class):
-        # fetch the property values, if any, that are applicable; then
-        # fetch the current property values, if any, so that if the new class
-        # does not implement the same properties, the values will be transferred
-        # to the new class as attributes to avoid data loss when handling
-        # the same data in different packages
-        props = {name: getattr(obj, name, None)
-                 for name in getattr(new_class, '__properties__', ())}
-        attrs = {name: getattr(obj, name, None)
-                 for name in getattr(obj, '__properties__', ())}
-        # merge both for simplicity and to avoid setting the same values twice
-        data = {**props, **attrs}
-        obj.__class__ = new_class
-        obj.__properties__ = obj.__get_properties__(refresh=True)
-        for name, val in data.items():
-            try:
-                setattr(obj, name, val)
-            except AttributeError as e:
-                self.logger.exception(f'Could not set {name}')
-        return obj
-
-    def __clone_classes(self, classes):
-        """
-        Clones the base objects used to create the package. Copying the classes
-        allows the base objects to remain unchanged (i.e. the original objects
-        do not have their properties linked or functionality altered outside
-        the package)
-        :param classes:
-        :return:
-        """
-        # creates a dictionary that organizes classes based on how many
-        # package-internal dependencies they have
-        ordered = {}
-        for cls in classes:
-            deps = [c for c in classes if c in cls.mro() and c != cls]
-            ordered[len(deps)] = ordered.get(len(deps), []) + [cls]
-
-        # creates a list where classes are sorted by their number of deps
-        classes = []
-        for val in sorted(ordered.keys()):
-            classes += ordered[val]
-
-        class_ref = {cls: None for cls in classes}
-
-        for cls in classes:
-            # IF there is a cloned class for a dependency (root will not have!)
-            # THEN have the dependent cloned class inherit from it
-            inherits = [val for obj, val in class_ref.items()
-                        if obj in cls.mro() and val is not None]
-            inherits = (cls,) if not inherits else (inherits[-1], cls)
-            class_ref[cls] = type(cls.__name__, inherits, cls.__dict__.copy())
-            self.__wrap_callables(class_ref[cls])
-        return class_ref
 
     def __getitem__(self, keys):
         if isinstance(keys, str):
