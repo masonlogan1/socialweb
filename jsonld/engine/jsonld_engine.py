@@ -66,6 +66,8 @@ class JsonLdEngine(PropertyJsonIntake):
         if name in self.class_registry.keys():
             raise ValueError(f'"{name}" already exists in mapping, cannot add')
         self.class_registry.update({name: cls})
+        # give registered classes a reference back to their engine
+        setattr(cls, '__jsonld_engine__', self)
 
     # TODO: set up method that handles queues and connect to __getitem__ for
     #   easy handling of a data queue (vital for multithreading!)

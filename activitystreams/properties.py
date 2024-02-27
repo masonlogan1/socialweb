@@ -635,6 +635,7 @@ class Next(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def next(self):
         return getattr(self, '___next___', None)
 

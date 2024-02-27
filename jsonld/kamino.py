@@ -42,6 +42,8 @@ class ClassCloner:
             # change the return value for callables in class and properties
             self.wrap_callables(class_ref[cls])
             self.wrap_properties(class_ref[cls])
+            # give cloned classes a reference back to their creator
+            setattr(class_ref[cls], '__jsonld_package__', self)
         return class_ref
 
     def change_class(self, obj, new_class):
@@ -88,13 +90,23 @@ class ClassCloner:
         Wraps the fget of a property with a function that changes the return
         value if the class of the return value is in the package
         """
-        def wrapper(fn):
+        def get_wrapper(fn):
             def wrap_return(*args, **kwargs):
                 if (val := fn(*args, **kwargs)).__class__ not in self.object_ref.keys():
                     return val
                 with val.switch_context(CLASS_CHANGE_CONTEXT):
                     return self.change_class(val, self.object_ref.get(val.__class__))
             return wrap_return
+
+        def set_wrapper(fn):
+            def wrap_input(val, *args, **kwargs):
+                if val.__class__ not in self.object_ref.keys():
+                    fn(val, *args, **kwargs)
+                    return
+                with val.switch_context(CLASS_CHANGE_CONTEXT):
+                    fn(self.change_class(val, self.object_ref.get(val.__class__)),
+                       *args, **kwargs)
+            return wrap_input
 
         props = dict()
         # considers both PropertyAwareObject and JsonProperty objects
@@ -114,6 +126,7 @@ class ClassCloner:
             if not isinstance(prop, property):
                 # failsafe in case something unexpected comes in!
                 continue
-            wrapped = property(fget=wrapper(prop.fget), fset=prop.fset,
+            wrapped = property(fget=get_wrapper(prop.fget),
+                               fset=set_wrapper(prop.fset),
                                fdel=prop.fdel, doc=prop.__doc__)
             setattr(cls, name, wrapped)

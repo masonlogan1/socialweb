@@ -121,43 +121,62 @@ class Link(ApplicationActivityJson):
         self.context = context
         self.type = getattr(self, 'type', type)
 
-    @staticmethod
-    def expand_link(data, *args, **kwargs):
-        # if LinkModel isn't registered or this isn't a Link, pass the data
-        # without expanding
-        if not isinstance(data, Link):
-            return data
+    @classmethod
+    def get(cls, data, *args, **kwargs):
+        """
+        Takes an object, extracts its href value, attempts to load
+        application/activity+json data from the uri, and then converts the
+        value into an object either defined by either the engine of the
+        incoming object or the engine of this object, respectively. If there is
+        no engine or the method fails, the original value is returned
+        """
+        # if neither the class nor the data have an engine, do not proceed
+        if not hasattr(cls, '__jsonld_package__') and \
+                not hasattr(data, '__jsonld_package__'):
+            return None
 
-        link = data.__dict__.get('_Href__href', '')
         # if we don't have an href, we can't expand; pass the data forward
-        if not link:
-            return data
+        if not (link := data.href):
+            return None
 
         try:
             resp_data = jsonld_get(link)
         except Exception as e:
             # if we hit an error, pass the data through
-            logger.info(f'Encountered an error expanding url {link}' +
-                        f'\n{e}')
-            return data
+            logger.exception(f'Encountered an error expanding url {link}')
+            return None
 
         try:
-            new_obj = ApplicationActivityJson.from_json(resp_data)
+            # prefer the engine from the external object, otherwise default
+            # to our object's engine
+            if hasattr(data, '__jsonld_package__'):
+                new_obj = data.__class__.__jsonld_engine__.from_json(resp_data)
+            else:
+                new_obj = cls.__jsonld_engine__.from_json(resp_data)
         except Exception as e:
             # if we fail to form the new object, pass the data through
             logger.exception(f'Encountered an error forming object ' +
                              f'from {link}\n{e}')
-            return data
+            return None
         return new_obj
 
     @classmethod
-    def getter(cls, get_func, *args, **kwargs):
+    def expand(cls, get_func, *args, **kwargs):
         """
         Decorator for automatically expanding Link objects
         """
+        def get_class(obj):
+            # if obj has an associated engine
+            if hasattr(obj, '__jsonld_package__'):
+                pkg = obj.__jsonld_package__
+                # if the engine's package has something with the Link namespace
+                if pkg[cls.__get_namespace__()]:
+                    return pkg[cls.__get_namespace__()]
+            return cls
 
         def decorator(obj):
-            return cls.expand_link(get_func(obj))
+            new_obj = get_class(obj).get(get_func(obj))
+            return new_obj if new_obj else obj
 
         return decorator
 
@@ -189,25 +208,32 @@ class Link(ApplicationActivityJson):
         Decorator that allows the setter of a JsonProperty object to convert
         various data types into Link objects as a default
         """
+        def get_class(obj):
+            # if obj has an associated engine
+            if hasattr(obj, '__jsonld_package__'):
+                pkg = obj.__jsonld_package__
+                # if the engine's package has something with the Link namespace
+                if pkg[cls.__get_namespace__()]:
+                    return pkg[cls.__get_namespace__()]
+            return cls
 
-        def create_link(v):
+        def create_link(v, link_cls = cls):
             # if it's a string representing an email, url, or account ref,
             # create a single link
             if (isinstance(v, str) and
                     (validate_url(v) or validate_acct_or_email(v))):
-                return Link(href=v)
+                return link_cls(href=v)
             if isinstance(v, dict) and v.get('href', None) and validate_url(
                     v.get('href', '')):
-                return Link(**v)
+                return link_cls(**v)
             # if it's an iterable other than a string or dict, create many links
             if isinstance(v, (list, tuple, set)):
-                return [create_link(item) for item in v]
+                return [create_link(item, link_cls) for item in v]
             return v
 
         def linkify(obj, val):
-            val = create_link(val)
+            val = create_link(val, link_cls=get_class(obj))
             set_prop(obj, val)
-
             return set_prop
 
         return linkify
