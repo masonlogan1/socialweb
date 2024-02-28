@@ -130,6 +130,10 @@ class Link(ApplicationActivityJson):
         incoming object or the engine of this object, respectively. If there is
         no engine or the method fails, the original value is returned
         """
+        if not data:
+            return None
+        if not getattr(data, '__namespace__', None) == cls.__get_namespace__():
+            return None
         # if neither the class nor the data have an engine, do not proceed
         if not hasattr(cls, '__jsonld_package__') and \
                 not hasattr(data, '__jsonld_package__'):
@@ -176,7 +180,7 @@ class Link(ApplicationActivityJson):
 
         def decorator(obj):
             new_obj = get_class(obj).get(get_func(obj))
-            return new_obj if new_obj else obj
+            return new_obj if new_obj else get_func(obj)
 
         return decorator
 

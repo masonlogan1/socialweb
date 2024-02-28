@@ -90,6 +90,7 @@ class Attachment(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def attachment(self):
         return getattr(self, '___attachment___', None)
 
@@ -113,6 +114,7 @@ class AttributedTo(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def attributedTo(self):
         return getattr(self, '___attributed_to___', None)
 
@@ -137,6 +139,7 @@ class Actor(ActivityStreamsProperty):
 
     # TODO: FIND A WAY TO DISABLE ATTRIBUTEDTO WHEN ACTOR IS PRESENT
     @contextualproperty
+    @Link.expand
     def actor(self):
         return getattr(self, '___actor___', None)
 
@@ -159,6 +162,7 @@ class Audience(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def audience(self):
         return getattr(self, '___audience___', None)
 
@@ -181,6 +185,7 @@ class Bcc(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def bcc(self):
         return getattr(self, '___bcc___', None)
 
@@ -203,6 +208,7 @@ class Bto(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def bto(self):
         return getattr(self, '___bto___', None)
 
@@ -225,6 +231,7 @@ class Cc(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def cc(self):
         return getattr(self, '___cc___', None)
 
@@ -252,6 +259,7 @@ class Context(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def context(self):
         return getattr(self, '___context___', None)
 
@@ -274,6 +282,7 @@ class Current(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def current(self):
         return getattr(self, '___current___', None)
 
@@ -296,6 +305,7 @@ class First(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def first(self):
         return getattr(self, '___first___', None)
 
@@ -317,6 +327,7 @@ class Generator(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def generator(self):
         return getattr(self, '___generator___', None)
 
@@ -340,6 +351,7 @@ class Icon(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def icon(self):
         return getattr(self, '___icon___', None)
 
@@ -363,6 +375,7 @@ class Image(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def image(self):
         return getattr(self, '___image___', None)
 
@@ -385,6 +398,7 @@ class InReplyTo(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def inReplyTo(self):
         return getattr(self, '___inReplyTo___', None)
 
@@ -407,6 +421,7 @@ class Instrument(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def instrument(self):
         return getattr(self, '___instrument___', None)
 
@@ -429,6 +444,7 @@ class Last(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def last(self):
         return getattr(self, '___last___', None)
 
@@ -451,6 +467,7 @@ class Location(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def location(self):
         return getattr(self, '___location___', None)
 
@@ -473,6 +490,7 @@ class Items(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def items(self):
         return getattr(self, '___items___', None)
 
@@ -486,8 +504,6 @@ class Items(ActivityStreamsProperty):
     @SetterValidator(types=(Object, Link)).check
     def items(self, val):
         self.___items___ = val
-        if val:
-            self.totalItems = len(val)
 
 
 class OrderedItems(ActivityStreamsProperty):
@@ -497,6 +513,7 @@ class OrderedItems(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def orderedItems(self):
         return getattr(self, '___orderedItems___', None)
 
@@ -519,6 +536,7 @@ class UnorderedItems(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def unorderedItems(self):
         return getattr(self, '___unorderedItems___', None)
 
@@ -542,6 +560,7 @@ class OneOf(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def oneOf(self):
         return getattr(self, '___oneOf___', None)
 
@@ -565,6 +584,7 @@ class AnyOf(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def anyOf(self):
         return getattr(self, '___anyOf___', None)
 
@@ -587,6 +607,7 @@ class Closed(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def closed(self):
         return getattr(self, '___closed___', None)
 
@@ -614,6 +635,7 @@ class Origin(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def origin(self):
         return getattr(self, '___origin___', None)
 
@@ -662,6 +684,7 @@ class Object(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def object(self):
         return getattr(self, '___object___', None)
 
@@ -683,6 +706,7 @@ class Prev(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def prev(self):
         return getattr(self, '___prev___', None)
 
@@ -704,6 +728,7 @@ class Preview(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def preview(self):
         return getattr(self, '___preview___', None)
 
@@ -727,6 +752,7 @@ class Result(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def result(self):
         return getattr(self, '___result___', None)
 
@@ -749,6 +775,7 @@ class Replies(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def replies(self):
         return getattr(self, '___replies___', None)
 
@@ -773,6 +800,7 @@ class Tag(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def tag(self):
         return getattr(self, '___tag___', None)
 
@@ -799,6 +827,7 @@ class Target(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def target(self):
         return getattr(self, '___target___', None)
 
@@ -821,6 +850,7 @@ class To(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def to(self):
         return getattr(self, '___to___', None)
 
@@ -842,6 +872,7 @@ class Url(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def url(self):
         return getattr(self, '___url___', None)
 
@@ -1008,6 +1039,7 @@ class PartOf(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def partOf(self):
         return getattr(self, '___partOf___', None)
 
@@ -1301,6 +1333,7 @@ class Subject(ActivityStreamsProperty):
     """
 
     @contextualproperty
+    @Link.expand
     def subject(self):
         return getattr(self, '___subject___', None)
 
