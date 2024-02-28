@@ -323,10 +323,10 @@ class PropertyAwareObject(NamespacedObject):
         """
         if not hasattr(cls, '__properties__') or refresh:
             # we cache a copy
-            cls.__properties__ = tuple(chain(key for kls in cls.mro()
+            cls.__properties__ = tuple(set(chain(key for kls in cls.mro()
                                              for key, value in
                                              kls.__dict__.items()
-                                             if isinstance(value, property)))
+                                             if isinstance(value, property))))
         return cls.__properties__
 
     def switch_context(self, context):

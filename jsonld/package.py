@@ -93,7 +93,8 @@ class JsonLdPackage(ClassCloner):
         """
         for object_namespace, property_namespaces in self.property_mapping.items():
             self.link_properties(property_namespaces, object_namespace)
-            self[object_namespace].__get_properties__(refresh=True)
+        for object in self.objects:
+            object.__get_properties__(refresh=True)
 
     def link_property(self, property_class: JsonProperty,
                       object_class: PropertyAwareObject):
