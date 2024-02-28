@@ -30,7 +30,7 @@ def jsonld_get(url, headers: dict = None, json=True):
     return resp if not json else resp.json()
 
 # TODO: ONE OF THESE NEEDS TO GO!
-def validate_url(url, secure: bool = False):
+def validate_url(url, secure: bool = False, **kwargs):
     """
     Checks a provided URL to ensure it meets a handful of basic criteria for
     being a valid internet URL
@@ -61,7 +61,7 @@ def validate_url(url, secure: bool = False):
     return True
 
 
-def validate_acct_or_email(val):
+def validate_acct_or_email(val, **kwargs):
     """
     Validates whether the value is a valid email address or account link.
     Account links are formatted the same as email addresses, they just start

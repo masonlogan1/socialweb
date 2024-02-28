@@ -128,7 +128,8 @@ pkg_properties = (
 )
 
 property_mapping = {
-    models.Object.__get_namespace__(): (properties.Attachment.__get_namespace__(),
+    models.Object.__get_namespace__(): (properties.Id.__get_namespace__(),
+                                        properties.Attachment.__get_namespace__(),
                                         properties.AttributedTo.__get_namespace__(),
                                         properties.Audience.__get_namespace__(),
                                         properties.Content.__get_namespace__(),
@@ -153,7 +154,8 @@ property_mapping = {
                                         properties.Bcc.__get_namespace__(),
                                         properties.MediaType.__get_namespace__(),
                                         properties.Duration.__get_namespace__(),),
-    models.Link.__get_namespace__(): (properties.Href.__get_namespace__(),
+    models.Link.__get_namespace__(): (properties.Id.__get_namespace__(),
+                                      properties.Href.__get_namespace__(),
                                       properties.Rel.__get_namespace__(),
                                       properties.MediaType.__get_namespace__(),
                                       properties.Name.__get_namespace__(),
