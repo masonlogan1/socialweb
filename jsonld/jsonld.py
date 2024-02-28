@@ -4,6 +4,7 @@ Tools for working with json-ld data
 import logging
 import json
 from collections.abc import Iterable
+from numbers import Number
 
 from jsonld.base import PropertyAwareObject
 from jsonld.utils import JSON_LD_KEYMAP, JSON_DATA_CONTEXT
@@ -41,6 +42,27 @@ class PropertyJsonLD(PropertyAwareObject):
     def acontext(self, value):
         self.__acontext = value
 
+    __data_handler_fns = {
+        str: lambda val, *args, **kwargs: val,
+        int: lambda val, *args, **kwargs: val,
+        float: lambda val, *args, **kwargs: val,
+        list: lambda val, fn, *args, **kwargs: [fn(item) for item in val],
+        set: lambda val, fn, *args, **kwargs: [fn(item) for item in val],
+        tuple: lambda val, fn, *args, **kwargs: [fn(item) for item in val],
+        dict: lambda val, fn, *args, **kwargs: {key: fn(item)
+                                                for key, item in val.items()}
+    }
+
+    def __handler(self, value):
+        if isinstance(value, PropertyJsonLD):
+            return value.data(exclude='acontext')
+        if type(value) in self.__data_handler_fns.keys():
+            return self.__data_handler_fns[type(value)](value, self.__handler)
+        if isinstance(value, Iterable):
+            return self.__data_handler_fns[list](value, self.__handler)
+        return str(value)
+
+
     def data(self, include: Iterable = (), exclude: Iterable = (),
              transforms: dict = None, rename: dict = None, include_none=False,
              reject_values: Iterable = (), context=JSON_DATA_CONTEXT) -> dict:
@@ -53,20 +75,16 @@ class PropertyJsonLD(PropertyAwareObject):
         :param rename: dict that renames properties in the output dict
         :param include_none: includes pairs where value is None (defaults False)
         :param reject_values: values to refuse to include
+        :param context: contextual property context to operate under
         :return: dictionary of properties
         """
-        # TODO: reimplement automatic unpacking of iterables
-        #   Special handling during json unpacking should be written in a
-        #   getter function, with the exception of iterables (which we should
-        #   handle here, putting "isinstance(obj, (list, tuple,...))" in each
-        #   property will get messy FAST)
         with self.switch_context(context) as process_context:
             transforms = {**self.default_transforms,
                           **(transforms if transforms else {})}
             rename = {**JSON_LD_KEYMAP, **(rename if rename else {})}
             data = {
                 # change name of property, if provided in mapping
-                rename.get(prop, prop): getattr(self, prop, None)
+                rename.get(prop, prop): self.__handler(getattr(self, prop, None))
                 for prop in self.__properties__
                 # if include_null is True or the property is not None
                 if (include_none or getattr(self, prop) is not None)
