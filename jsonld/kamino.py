@@ -9,6 +9,44 @@ from jsonld.utils import CLASS_CHANGE_CONTEXT
 
 
 class ClassCloner:
+
+    class DependencyNode:
+        def __init__(self, cls, ref):
+            self.cls = cls
+            self.find_parents(ref)
+            self.find_children(ref)
+
+        def find_parents(self, ref):
+            # anything in ref that is also a parent of cls
+            candidates = [i for i in self.cls.mro()
+                          if i in ref.keys() and self.cls != i]
+            # filter out anything that is not a top-level dependency
+            self.parents = {
+                c: None
+                for c in candidates
+                if not any(c in i.mro() for i in candidates if c != i)
+            }
+
+        def find_children(self, ref):
+            # anything in ref that is a child of cls
+            candidates = [i for i in ref.keys()
+                          if self.cls in i.mro() and self.cls != i]
+            # filter out anything with dependencies other than self.cls
+            self.children = {
+                c: None
+                for c in candidates
+                if not any(
+                    m for m in c.mro() if
+                    self.cls != m and m in ref.keys() and c != m
+                )
+            }
+
+        def set_nodes(self, ref):
+            for key in self.parents.keys():
+                self.parents[key] = ref.get(key, None)
+            for key in self.children.keys():
+                self.children[key] = ref.get(key, None)
+
     def clone_classes(self, classes):
         """
         Clones the base objects used to create the package. Copying the classes
@@ -31,13 +69,29 @@ class ClassCloner:
             classes += ordered[val]
 
         class_ref = {cls: None for cls in classes}
+        dep_tree = {cls: self.DependencyNode(cls, class_ref)
+                    for cls in class_ref.keys()}
+        for node in dep_tree.values():
+            node.find_parents(dep_tree)
+        for node in dep_tree.values():
+            node.find_children(dep_tree)
+        for node in dep_tree.values():
+            node.set_nodes(dep_tree)
 
-        for cls in classes:
+        ordered_nodes = list()
+        while any(node not in ordered_nodes for node in dep_tree.values()):
+            ordered_nodes += list(filter(
+                lambda n: all(
+                    parent in ordered_nodes for parent in n.parents.values()
+                ) and n not in ordered_nodes, dep_tree.values()))
+
+        for node in ordered_nodes:
             # IF there is a cloned class for a dependency (root will not have!)
             # THEN have the dependent cloned class inherit from it
-            inherits = [val for obj, val in class_ref.items()
-                        if obj in cls.mro() and val is not None]
-            inherits = (cls,) if not inherits else (inherits[-1], cls)
+            cls = node.cls
+            inherits = [class_ref.get(p) for p in node.parents.keys()] + [cls]
+            inherits = tuple(filter(lambda n: n is not None, inherits))
+
             class_ref[cls] = type(cls.__name__, inherits, cls.__dict__.copy())
             # change the return value for callables in class and properties
             self.wrap_callables(class_ref[cls])

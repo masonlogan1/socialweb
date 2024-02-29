@@ -146,30 +146,30 @@ class JsonLdPackage(ClassCloner):
     def __add__(self, other):
         if not isinstance(other, JsonLdPackage):
             raise TypeError(f'Cannot combine JsonLdPackage with {type(other)}')
-        new_namespaces = [cls.__get_namespace__() for cls in other.classes]
-        kept_classes = tuple(cls for cls in self.classes
+        new_namespaces = [cls.__get_namespace__() for cls in other.objects]
+        kept_classes = tuple(cls for cls in self.objects
                              if cls.__get_namespace__() not in new_namespaces)
-        classes = kept_classes + other.classes
+        objects = kept_classes + other.objects
 
         new_namespaces = [prp.__get_namespace__() for prp in other.properties]
         kept_props = tuple(prp for prp in self.properties
                            if prp.__get_namespace__() not in new_namespaces)
         properties = kept_props + other.properties
 
-        return JsonLdPackage(namespace=self.namespace, classes=classes,
+        return JsonLdPackage(namespace=self.namespace, objects=objects,
                              properties=properties)
 
     def __sub__(self, other):
         if not isinstance(other, JsonLdPackage):
             raise TypeError(f'Cannot subtract {type(other)} from JsonLdPackage')
-        removed_cls_ns = [cls.__get_namespace__() for cls in other.classes]
-        remaining_cls = tuple(cls for cls in self.classes
-                              if cls.__get_namespace__() not in removed_cls_ns)
+        removed_obj_ns = [cls.__get_namespace__() for cls in other.objects]
+        remaining_objs = tuple(cls for cls in self.objects
+                              if cls.__get_namespace__() not in removed_obj_ns)
 
-        removed_prp_ns = [cls.__get_namespace__() for cls in other.classes]
+        removed_prp_ns = [cls.__get_namespace__() for cls in other.properties]
         remaining_prps = tuple(prp for prp in other.properties
                                if prp.__get_namespace__() not in removed_prp_ns)
 
         return JsonLdPackage(namespace=self.namespace,
-                             classes=remaining_cls,
+                             objects=remaining_objs,
                              properties=remaining_prps)
