@@ -6,7 +6,7 @@ import json
 from collections.abc import Iterable
 from numbers import Number
 
-from jsonld.base import PropertyAwareObject
+from jsonld.base import PropertyAwareObject, contextualproperty
 from jsonld.utils import JSON_LD_KEYMAP, JSON_DATA_CONTEXT
 
 logger = logging.getLogger(__name__)
@@ -31,16 +31,16 @@ class PropertyJsonLD(PropertyAwareObject):
     def __str__(self):
         return self.json()
 
-    @property
+    @contextualproperty
     def acontext(self):
         """
         JSON-LD processing context
         """
-        return self.__acontext
+        return getattr(self, '___acontext___', None)
 
     @acontext.setter
     def acontext(self, value):
-        self.__acontext = value
+        self.___acontext___ = value
 
     __data_handler_fns = {
         str: lambda val, *args, **kwargs: val,

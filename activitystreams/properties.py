@@ -53,33 +53,29 @@ class Id(ActivityStreamsProperty):
     """
     Provides the globally unique identifier for an Object or Link.
     """
-    __id = None
-
     @contextualproperty
     def id(self):
-        return self.__id
+        return getattr(self, '___id___', None)
 
     @id.setter
     @SetterValidator(types=(str,), functional=True, additional=(validate_url,),
                      secure=SECURE_URLS_ONLY, skip_none=True).check
     def id(self, val):
-        self.__id = val
+        setattr(self, '___id___', val)
 
 
 class Type(ActivityStreamsProperty):
     """
     Identifies the Object or Link type. Multiple values may be specified.
     """
-    __type = None
-
     @contextualproperty
     def type(self):
-        return self.__type
+        return getattr(self, '__type___', None)
 
     @type.setter
     @SetterValidator(types=(str,)).check
     def type(self, val):
-        self.__type = val
+        setattr(self, '__type___', val)
 
 
 class Attachment(ActivityStreamsProperty):
