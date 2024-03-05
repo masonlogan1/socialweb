@@ -155,8 +155,18 @@ class DbNode:
     def connection(self):
         return getattr(object, '___connection___', None)
 
+    @connection.setter
+    def connection(self, value):
+        # __init__ ALWAYS sets this
+        if hasattr(object, '___connection___'):
+            raise AttributeError('property "connection" cannot be set')
+        setattr(self, '___connection___', value)
+
     @property
     def transaction_manager(self):
+        # if one is not provided, create a new one
+        if not hasattr(self, '___transaction_manager___'):
+            setattr(self, '___transaction_manager___', TransactionManager())
         return getattr(object, '___transaction_manager___', None)
 
     @property
@@ -166,12 +176,14 @@ class DbNode:
             setattr(self, '___root___', self.connection.root())
         return getattr(self, '___root___', None)
 
-    def __init__(self, storage, pool_size=7, pool_timeout=2147483648,
-                 cache_size=400, cache_size_bytes=0, historical_pool_size=3,
-                 historical_cache_size=1000, historical_cache_size_bytes=0,
-                 historical_timeout=300, database_name='unnamed',
-                 xrefs=True, large_record_size=16777216, **storage_args):
-        self.___transaction_manager___ = TransactionManager()
+    def __init__(self, storage, transaction_manager=None, pool_size=7,
+                 pool_timeout=2147483648, cache_size=400, cache_size_bytes=0,
+                 historical_pool_size=3, historical_cache_size=1000,
+                 historical_cache_size_bytes=0, historical_timeout=300,
+                 database_name='unnamed', xrefs=True,
+                 large_record_size=16777216, **storage_args):
+        self.___transaction_manager___ = transaction_manager or \
+                                         TransactionManager()
         self.___connection___ = DB(storage=FileStorage(storage, **storage_args),
                                    pool_size=pool_size,
                                    pool_timeout=pool_timeout,
