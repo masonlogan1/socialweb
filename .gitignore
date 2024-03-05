@@ -161,3 +161,6 @@ cython_debug/
 
 # ignore docs folder for now, we'll add this later
 docs/
+
+# ignore the scraps folder, I use it as a catch-all for junk while working
+scraps/
