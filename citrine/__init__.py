@@ -9,7 +9,8 @@ __source__ = "https://www.w3.org/TR/activitystreams-core"
 
 import datetime
 
-__created__ = datetime.datetime(2023, 7, 16)
-__updated__ = datetime.datetime(2024, 2, 22)
+__created__ = datetime.datetime(2024, 3, 5)
+__updated__ = datetime.datetime(2024, 3, 7)
 
-from activitystreams.package import create_package, create_engine
+from citrine.connection import CitrineConnection
+from citrine.citrinedb import CitrineDB
