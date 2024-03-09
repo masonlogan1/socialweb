@@ -107,19 +107,10 @@ class CitrineConnection(Connection):
         return [self.read(id) for id in keys]
 
     def __enter__(self):
-        # TODO: temp measure, should probably create a distinct class for
-        #   handling (and possibly logging!) transactions with unique uuid vals
-        transaction_id = str(uuid.uuid4())
-        setattr(self.transaction_manager, 'transaction_id', transaction_id)
-        self.logger.info(f'BEGIN TRANSACTION {transaction_id}')
-        self.auto_transaction = False
-        return self
+        return self.transaction_manager.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        transaction_id = self.transaction_manager.transaction_id
-        self.transaction_manager.commit()
-        self.logger.info(f'END TRANSACTION {transaction_id}')
-        self.auto_transaction = True
+        self.transaction_manager.__exit__(exc_type, exc_val, exc_tb)
 
     def __checks(self):
         """
