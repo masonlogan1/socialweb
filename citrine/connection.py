@@ -65,7 +65,7 @@ class CitrineConnection(Connection):
         :param obj:
         :return:
         """
-        self.root.container.save(id, obj)
+        self.root.container.save(id=id, obj=obj)
 
     def read(self, id):
         """
@@ -76,6 +76,7 @@ class CitrineConnection(Connection):
         """
         return self.root.container.get(id)
 
+    @autocommit
     def update(self, id, obj: object):
         """
         Locates the object by the given id and updates it to the new object
@@ -85,6 +86,7 @@ class CitrineConnection(Connection):
         """
         self.root.container.save(id, obj)
 
+    @autocommit
     def delete(self, id):
         """
         Locates the object by the given id and removes it from the database

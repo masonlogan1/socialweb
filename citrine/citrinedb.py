@@ -121,7 +121,7 @@ class CitrineDB(DB):
         """
         return super().open(
             transaction_manager=(transaction_manager or
-                                 CitrineTransactionManager),
+                                 CitrineTransactionManager()),
             at=at, before=before
         )
 

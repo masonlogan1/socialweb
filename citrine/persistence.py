@@ -23,21 +23,24 @@ class CitrineTransactionManager(TransactionManager):
     """
     def __init__(self, explicit=False):
         super().__init__(explicit=explicit)
+        self.autocommit = True
         self.logger = logging.getLogger('CTransManager')
         self.logger.setLevel(logging.INFO)
 
     def __enter__(self):
         self.transaction_uuid = uuid.uuid4()
-        logging.info(f'START TRANSACTION {self.transaction_uuid}')
+        self.logger.info(f'START TRANSACTION {self.transaction_uuid}')
+        self.autocommit = False
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val is not None:
+        if exc_val is None:
             self.commit()
             self.logger.info(f'TRANSACTION {self.transaction_uuid} SUCCESSFUL')
         else:
             self.abort()
             self.logger.error(f'TRANSACTION {self.transaction_uuid} FAILED')
+        self.autocommit = True
         self.transaction_uuid = None
 
 
@@ -47,15 +50,25 @@ class CitrineThreadTransactionManager(ThreadTransactionManager):
     that this object is used in.
     """
     def __init__(self):
+        super().__init__()
         self.manager = CitrineTransactionManager()
 
 
 def autocommit(fn):
-    def decorator(obj, *args, **kwargs):
+    """
+    Decorator designed to work with CitrineTransactionManager. Decorator will
+    automatically commit so long as the transaction manager's autocommit
+    attribute is set to True.
+    :param fn:
+    :return:
+    """
+    def decorator(obj, id, *args, **kwargs):
         tm = obj.transaction_manager
+        tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__} {id}')
+        if not tm.autocommit:
+            return fn(obj, id, *args, **kwargs)
         with tm:
-            tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__}')
-            fn(*args, **kwargs)
+            return fn(obj, id, *args, **kwargs)
     return decorator
 
 
