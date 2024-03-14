@@ -10,23 +10,121 @@ anything about the internal logic, only the standard methods used to get
 details on what the cluster contains and how to create, update, and delete the
 contents.
 """
+
+# a CitrineDb is a managed storage with easy read/write capability
+# a DbModule is a class that wraps the CitrineDb as a module for easy loading
+# a DbPool is a class that can discover and manage many DbModules
+# a CitrineCluster is a DbPool that can treat the modules as a single collective
+#   database where the objects are distributed among the many modules and
+#   accessible through a single CRUD interface. The cluster will self-scale
+#   as necessary and contain its own internal database that stores a record of
+#   ever transaction and any ClassCrystal objects necessary for the contents.
+#   Ideally, a cluster will be responsible for a single type of object so
+#   indexes and views can be efficiently written.
+
+from typing import Iterable
+from uuid import uuid4
+
+from citrine.citrinedb import CitrineDB
+
+
+class DbModule:
+    """
+    Manages the creation, migration, and deletion of a Citrine Database object
+    that is treated like an independent, importable code module.
+
+    This object is responsible for creating a directory structure with an
+    ``__init__.py`` file that provides a single importable object in the format
+    ``from <uuid> import get_db``
+    """
+
+    def __init__(self, path: str = '.'):
+        self.path = path
+
+    def db(self) -> CitrineDB:
+        """
+        Returns the CitrineDB object from the module
+        """
+
+    @classmethod
+    def create(cls, path: str, name: str):
+        """
+        Creates a new module at the path location, if one does not exist.
+
+        The provided name will be given to the newly created database
+        """
+
+    @classmethod
+    def destroy(cls, path: str):
+        """
+        Destroys a module at the path location
+        """
+
+
+class DbPool:
+    """
+    A collection of databases. Will create databases as importable modules under
+    a common directory and provide managed storage across all databases in the
+    collection.
+
+    It is STRONGLY RECOMMENDED to use the discovery process, and ONLY the
+    discovery process, to manage the contents of the pool.
+    """
+
+    def __init__(self, path: str = '.', dbs: Iterable = None, discovery=True):
+        """
+        Creates the pool, using the path as the root of the group. Any modules
+        stored in the root directory that can be imported in the format:
+        ``import module.db``
+        will be automatically retrieved by the pool if discovery is True
+        """
+        self.db_pool = {}
+        self.root = path
+        if discovery:
+            self.discover()
+
+    def create_db(self, name):
+        """
+        Creates a new database using the provided name, at the path. If no
+        path is specified, the directory of execution will be used
+        :param name: The name to assign the database
+        """
+
+    def add_db(self, name):
+        """
+        Adds an existing db to the cluster
+        :param name: The name of the database to add to the group
+        """
+
+    def remove_db(self, name):
+        """
+        Removes an existing db from the cluster
+        :param name: The name of the database to remove from the group
+        """
+
+    def get_db(self, name):
+        """
+        Returns a db object from the pool
+        :param name: The name of the desired database
+        """
+
+    def destroy_db(self, name):
+        """
+        Destroys a db object from the pool entirely. This action is irreversible
+        :param name: The name of the database to be destroyed
+        """
+
+    def discover(self):
+        """
+        Collects all database modules from the provided path and adds anything
+        into the pool that is not yet added
+        """
+
+
 class ClusterDb:
     """
     Data access and management object for an object database cluster
     """
-
-# STEP 1: CRUD OPERATIONS
-# TODO: Cluster MUST be able to store objects to nodes based on hash value
-#   of object id
-
-# TODO: Cluster MUST be able to retrieve objects from nodes based on hash
-#   value of the object id
-
-# TODO: Cluster MUST be able to update objects stored in nodes based on hash
-#   value of the object id
-
-# TODO: Cluster MUST be able to delete objects stored in nodes based on hash
-#   value of the object id
 
 
 # STEP 2: NODE MANAGEMENT

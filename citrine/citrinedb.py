@@ -125,6 +125,34 @@ class CitrineDB(DB):
             at=at, before=before
         )
 
+    @classmethod
+    def new(cls, storage, pool_size: int = 7,
+            pool_timeout: int = 2147483648, cache_size: int = 400,
+            cache_size_bytes: int = 0, historical_pool_size: int = 3,
+            historical_cache_size: int = 1000,
+            historical_cache_size_bytes: int = 0,
+            historical_timeout: int = 300, database_name: str = 'unnamed',
+            databases: dict = None, xrefs: bool = True,
+            large_record_size: int = 16777216, **storage_args):
+        """
+        Creates a new CitrineDb at the storage location and returns the object
+        """
+        db = CitrineDB(storage=storage, pool_size=pool_size,
+                       pool_timeout=pool_timeout, cache_size=cache_size,
+                       cache_size_bytes=cache_size_bytes,
+                       historical_pool_size=historical_pool_size,
+                       historical_cache_size=historical_cache_size,
+                       historical_cache_size_bytes=
+                       historical_cache_size_bytes,
+                       historical_timeout=historical_timeout,
+                       database_name=database_name, databases=databases,
+                       xrefs=xrefs, large_record_size=large_record_size,
+                       **storage_args)
+        conn = db.open()
+        conn.setup()
+        conn.close()
+        return db
+
     @CitrineIncompatibleMethodError.override_method
     def open_then_close_db_when_connection_closes(self):
         """DISABLED IN CITRINEDB"""

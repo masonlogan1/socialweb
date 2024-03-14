@@ -21,6 +21,7 @@ class CitrineTransactionManager(TransactionManager):
     and the ability to give each transaction a unique UUID for logging any
     action carried out in a transaction
     """
+
     def __init__(self, explicit=False):
         super().__init__(explicit=explicit)
         self.autocommit = True
@@ -49,6 +50,7 @@ class CitrineThreadTransactionManager(ThreadTransactionManager):
     Thread-local CitrineTransactionManager that creates a copy in the thread
     that this object is used in.
     """
+
     def __init__(self):
         super().__init__()
         self.manager = CitrineTransactionManager()
@@ -62,6 +64,7 @@ def autocommit(fn):
     :param fn:
     :return:
     """
+
     def decorator(obj, id, *args, **kwargs):
         tm = obj.transaction_manager
         tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__} {id}')
@@ -69,6 +72,7 @@ def autocommit(fn):
             return fn(obj, id, *args, **kwargs)
         with tm:
             return fn(obj, id, *args, **kwargs)
+
     return decorator
 
 
@@ -77,6 +81,7 @@ class DbMetadata(Persistent):
     Object used by a CitrineConnection as a form of metadata on the contents of
     the database
     """
+
     def __init__(self, size=None, cache=None):
         super().__init__()
         self.size = size
@@ -89,11 +94,12 @@ class DbContainer(Persistent):
     an object database. Uses the hash value of the object to determine which
     container it should be kept in.
     """
+
     @property
     def containers_size(self):
         return len(self.containers.keys())
 
-    def __init__(self, containers: dict|PersistentMapping = None):
+    def __init__(self, containers: dict | PersistentMapping = None):
         super().__init__()
         # Containers will be stored as a PM of PMs
         self.containers = containers if containers is not None else \
@@ -153,6 +159,13 @@ class DbContainer(Persistent):
         val = int.from_bytes(str(id).encode(), 'big')
         val = val % self.containers_size
         return self.containers[val]
+
+
+class ClassCrystal(Persistent):
+    """
+    Persistent object that can deconstruct and store a class in a persistent
+    manner, and then reconstruct the class after being retrieved
+    """
 
 
 class CitrineCrystal(Persistent):

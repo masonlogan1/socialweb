@@ -41,7 +41,6 @@ class CitrineConnection(Connection):
         self.open(self.transaction_manager)
 
         self.logger = getattr(self, 'logger', logging.getLogger(__name__))
-        self.__checks()
 
     def num_containers(self) -> int:
         return self.container.containers_size
@@ -112,7 +111,7 @@ class CitrineConnection(Connection):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.transaction_manager.__exit__(exc_type, exc_val, exc_tb)
 
-    def __checks(self):
+    def setup(self):
         """
         Performs checks that objects necessary for the CitrineConnection to
         function are present, and attempts to create them if they are not
