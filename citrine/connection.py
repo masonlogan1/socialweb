@@ -64,7 +64,7 @@ class CitrineConnection(Connection):
         :param obj:
         :return:
         """
-        self.root.container.save(id=id, obj=obj)
+        self.root.container.write(id=id, obj=obj)
 
     def read(self, id):
         """
@@ -73,7 +73,7 @@ class CitrineConnection(Connection):
         :param id:
         :return:
         """
-        return self.root.container.get(id)
+        return self.root.container.read(id)
 
     @autocommit
     def update(self, id, obj: object):
@@ -83,7 +83,7 @@ class CitrineConnection(Connection):
         :param obj:
         :return:
         """
-        self.root.container.save(id, obj)
+        self.root.container.write(id, obj)
 
     @autocommit
     def delete(self, id):
@@ -92,7 +92,7 @@ class CitrineConnection(Connection):
         :param id:
         :return:
         """
-        self.root.container.remove(id)
+        self.root.container.delete(id)
 
     def __getitem__(self, keys):
         """

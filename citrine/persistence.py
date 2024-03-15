@@ -67,10 +67,12 @@ def autocommit(fn):
 
     def decorator(obj, id, *args, **kwargs):
         tm = obj.transaction_manager
-        tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__} {id}')
         if not tm.autocommit:
+            if getattr(tm, 'transaction_uuid', None):
+                tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__} {id}')
             return fn(obj, id, *args, **kwargs)
         with tm:
+            tm.logger.info(f'{tm.transaction_uuid}: {fn.__name__} {id}')
             return fn(obj, id, *args, **kwargs)
 
     return decorator
@@ -115,7 +117,7 @@ class DbContainer(Persistent):
             for key in range(new_size)
         })
 
-    def exists(self, id) -> bool:
+    def has(self, id) -> bool:
         """
         Return a bool describing whether the object is already present in the
         database
@@ -124,7 +126,7 @@ class DbContainer(Persistent):
         """
         return id in self.__locate_container(id).keys()
 
-    def get(self, id):
+    def read(self, id):
         """
         Return an object by the given id
         :param id:
@@ -132,7 +134,7 @@ class DbContainer(Persistent):
         """
         return self.__locate_container(id).get(id, None)
 
-    def save(self, id, obj):
+    def write(self, id, obj):
         """
         Save an object to the database at the given id location
         :param obj:
@@ -141,7 +143,7 @@ class DbContainer(Persistent):
         """
         self.__locate_container(id)[id] = obj
 
-    def remove(self, id):
+    def delete(self, id):
         """
         Remove an object from the database by the given id
         :param id:
