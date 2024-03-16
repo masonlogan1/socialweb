@@ -2,10 +2,14 @@
 This module stores the code used for creating the directory and code for a
 citrine.cluster.DbModule object.
 """
-from os import path
+from uuid import uuid4
+
+from os import mkdir
+from os.path import join, exists
+from citrine.cluster_tools.consts import DBMODULE_INIT
 
 
-def create_dbmodule(module_path: str = '.', name: str = None,
+def create_dbmodule(path: str = '.', name: str = None,
                     overwrite: bool = False):
     """
     Creates the directory and code at the specified path with the specified
@@ -17,6 +21,15 @@ def create_dbmodule(module_path: str = '.', name: str = None,
     If ``overwrite`` is True, the existing files will be COMPLETELY REPLACED.
     This operation cannot be undone! Use of overwrite is strongly discouraged!
     """
+    name = name if name else str(uuid4()).replace('-', '_')
+    path = join(path, name)
+    if not overwrite and exists(path):
+        raise IOError(f'DbModule already exists at "{path}"')
+    mkdir(path)
+    init_path = join(path, '__init__.py')
+    with open(init_path, 'w') as writer:
+        writer.write(DBMODULE_INIT)
+    return path
 
 
 def delete_dbmodule(module_path: str, remove_empty: bool = True,

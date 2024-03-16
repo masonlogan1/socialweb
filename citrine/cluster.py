@@ -21,11 +21,12 @@ contents.
 #   ever transaction and any ClassCrystal objects necessary for the contents.
 #   Ideally, a cluster will be responsible for a single type of object so
 #   indexes and views can be efficiently written.
-
+from os.path import join
 from typing import Iterable
 from uuid import uuid4
 
 from citrine.citrinedb import CitrineDB
+from citrine.cluster_tools.dbmodule import create_dbmodule, delete_dbmodule
 
 
 class DbModule:
@@ -40,25 +41,59 @@ class DbModule:
 
     def __init__(self, path: str = '.'):
         self.path = path
+        self.db = self.load_db()
 
-    def db(self) -> CitrineDB:
+    def load_db(self):
+        if not hasattr(self, 'path'):
+            raise AttributeError(f'No path selected for DbModule!')
+        # imports the db, opens it, and returns the object
+        from importlib.util import spec_from_file_location, module_from_spec
+        init_path = join(self.path, '__init__.py')
+        spec = spec_from_file_location('db', init_path)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.db()
+
+    def open(self, transaction_manager=None, at=None, before=None):
         """
-        Returns the CitrineDB object from the module
+        Return a database Connection for use by application code.
+
+        Note that the connection pool is managed as a stack, to increase the
+        likelihood that the connection's stack will include useful objects.
+
+        :param transaction_manager: transaction manager to use, "None" will
+        default to a CitrineThreadTransactionManager
+        :param at: a ``datetime.datetime`` or 8 character transaction id of the
+        time to open the database with a read-only connection. Passing both
+        ``at`` and ``before`` raises a ValueError, and passing neither opens a
+        standard writable transaction of the newest state. A timezone-naive
+        ``datetime.datetime`` is treated as a UTC value.
+        :param before: like ``at``, but opens the readonly state before the tid
+        or datetime.
+        :return: CitrineConnection
         """
+        return self.db.open(transaction_manager=transaction_manager,
+                            at=at, before=before)
 
     @classmethod
-    def create(cls, path: str, name: str):
+    def create(cls, path: str, name: str, overwrite: bool = False):
         """
         Creates a new module at the path location, if one does not exist.
 
         The provided name will be given to the newly created database
         """
+        import importlib.util
+        module_path = create_dbmodule(path, name, overwrite)
+        return DbModule(module_path)
 
     @classmethod
     def destroy(cls, path: str):
         """
         Destroys a module at the path location
         """
+
+    def __call__(self):
+        return self.db
 
 
 class DbPool:
