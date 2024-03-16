@@ -4,8 +4,9 @@ citrine.cluster.DbModule object.
 """
 from uuid import uuid4
 
-from os import mkdir
-from os.path import join, exists
+from os import mkdir, listdir, rmdir, remove
+from os.path import join, exists, split, isfile
+from shutil import rmtree
 from citrine.cluster_tools.consts import DBMODULE_INIT
 
 
@@ -32,8 +33,8 @@ def create_dbmodule(path: str = '.', name: str = None,
     return path
 
 
-def delete_dbmodule(module_path: str, remove_empty: bool = True,
-                    remove: bool = False):
+def delete_dbmodule(path: str, remove_empty: bool = True,
+                    remove_all: bool = False):
     """
     Deletes the ``__init__.py`` and ``cluster_tools.db`` files from the
     specified directory.
@@ -44,3 +45,14 @@ def delete_dbmodule(module_path: str, remove_empty: bool = True,
     If ``remove`` is True, then the entire directory will be destroyed no matter
     what. This will supersede ``remove_empty``.
     """
+    if remove_all:
+        rmtree(path)
+        return
+    name = split(path)[1]
+    affected = [join(path, file) for file in listdir(path)
+                if (isfile(join(path, file)) and file.startswith(name))
+                    or file == '__init__.py']
+    for file in affected:
+        remove(file)
+    if remove_empty and not len(listdir(path)):
+        rmdir(path)

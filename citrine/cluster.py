@@ -42,6 +42,7 @@ class DbModule:
     def __init__(self, path: str = '.'):
         self.path = path
         self.db = self.load_db()
+        self.name = self.db.database_name
 
     def load_db(self):
         if not hasattr(self, 'path'):
@@ -82,15 +83,17 @@ class DbModule:
 
         The provided name will be given to the newly created database
         """
-        import importlib.util
         module_path = create_dbmodule(path, name, overwrite)
         return DbModule(module_path)
 
     @classmethod
-    def destroy(cls, path: str):
+    def destroy(cls, path: str, remove_empty: bool = True,
+                remove: bool = False):
         """
         Destroys a module at the path location
         """
+        delete_dbmodule(path, remove_empty, remove)
+
 
     def __call__(self):
         return self.db
