@@ -122,15 +122,15 @@ class DbGroup:
     runtime.
     """
     @property
-    def databases(self):
+    def dbs(self):
         if not hasattr(self, '___databases___'):
             setattr(self, '___databases___', {
                 name: module.db for name, module in self.modules.items()
             })
         return getattr(self, '___databases___', dict())
 
-    @databases.deleter
-    def databases(self):
+    @dbs.deleter
+    def dbs(self):
         delattr(self, '___databases___')
 
     @property
@@ -142,8 +142,8 @@ class DbGroup:
         setattr(self, '___modules___', value)
         # refresh database list (derived from modules)
         if hasattr(self, '___databases___'):
-            del self.databases
-        _ = self.databases
+            del self.dbs
+        _ = self.dbs
 
     def __init__(self, root: str = '.', discovery=True, modules: dict = None):
         """
@@ -183,10 +183,69 @@ class DbGroup:
         return {module.name: module for module in db_modules}
 
 
-class ClusterDb:
+class ClusterDB(DbGroup, CitrineDB):
     """
-    Data access and management object for an object database cluster
+    Data access and management object for an object database cluster.
+
+    Functions as both a database and a database manager. The database stores
+    information on the DbModule objects stored in the directory and information
+    on the overall number of objects. The primary use of this is to keep track
+    of the number of DbModules and what hash values the UUIDs are mapped to. If
+    a DbModule has disappeared, the Cluster will raise several warnings in
+    the logs.
+
+    Additional functionality includes the ability to expand the number of
+    modules in-place, as well as caching recently retrieved objects, creating
+    indexes, and running queries.
     """
+
+    def __init__(self, root: str, pool_size: int = 7,
+                 pool_timeout: int = 2147483648, cache_size: int = 400,
+                 cache_size_bytes: int = 0, historical_pool_size: int = 3,
+                 historical_cache_size: int = 1000,
+                 historical_cache_size_bytes: int = 0,
+                 historical_timeout: int = 300, database_name: str = 'unnamed',
+                 xrefs: bool = True, large_record_size: int = 16777216,
+                 **storage_args):
+        DbGroup.__init__(self, root)
+        CitrineDB.__init__(self,
+            storage=join(root, database_name), pool_size=pool_size,
+            pool_timeout=pool_timeout, cache_size=cache_size,
+            cache_size_bytes=cache_size_bytes,
+            historical_pool_size=historical_pool_size,
+            historical_cache_size=historical_cache_size,
+            historical_cache_size_bytes=historical_cache_size_bytes,
+            historical_timeout=historical_timeout,
+            database_name=database_name, databases=self.dbs,
+            xrefs=xrefs, large_record_size=large_record_size, **storage_args)
+
+    @classmethod
+    def new(cls, root, pool_size: int = 7,
+            pool_timeout: int = 2147483648, cache_size: int = 400,
+            cache_size_bytes: int = 0, historical_pool_size: int = 3,
+            historical_cache_size: int = 1000,
+            historical_cache_size_bytes: int = 0,
+            historical_timeout: int = 300, database_name: str = 'unnamed',
+            databases: dict = None, xrefs: bool = True,
+            large_record_size: int = 16777216, **storage_args):
+        """
+        Creates a new CitrineDb at the storage location and returns the object
+        """
+        db = ClusterDB(root=root, pool_size=pool_size,
+                       pool_timeout=pool_timeout, cache_size=cache_size,
+                       cache_size_bytes=cache_size_bytes,
+                       historical_pool_size=historical_pool_size,
+                       historical_cache_size=historical_cache_size,
+                       historical_cache_size_bytes=
+                       historical_cache_size_bytes,
+                       historical_timeout=historical_timeout,
+                       database_name=database_name, databases=databases,
+                       xrefs=xrefs, large_record_size=large_record_size,
+                       **storage_args)
+        conn = db.open()
+        conn.setup()
+        conn.close()
+        return db
 
 
 # STEP 2: NODE MANAGEMENT
