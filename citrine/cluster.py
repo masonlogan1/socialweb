@@ -99,7 +99,7 @@ class DbModule:
         return self.db
 
 
-class DbPool:
+class DbGroup:
     """
     A collection of databases. Will create databases as importable modules under
     a common directory and provide managed storage across all databases in the
@@ -109,17 +109,17 @@ class DbPool:
     discovery process, to manage the contents of the pool.
     """
 
-    def __init__(self, path: str = '.', dbs: Iterable = None, discovery=True):
+    def __init__(self, root: str = '.', discovery=True, dbs: Iterable = None):
         """
-        Creates the pool, using the path as the root of the group. Any modules
-        stored in the root directory that can be imported in the format:
-        ``import module.db``
-        will be automatically retrieved by the pool if discovery is True
+        Creates the pool, using the path as the root of the group. Any DbModules
+        in the root directory will be automatically retrieved and added to the
+        group if discovery is True
         """
         self.db_pool = {}
-        self.root = path
+        self.root = root
+        self.dbs = tuple(dbs) if dbs else tuple()
         if discovery:
-            self.discover()
+            self.dbs += self.discover()
 
     def create_db(self, name):
         """
@@ -156,6 +156,18 @@ class DbPool:
         """
         Collects all database modules from the provided path and adds anything
         into the pool that is not yet added
+        """
+
+    @classmethod
+    def new(self, root: str = '.', discovery=True):
+        """
+
+        """
+
+    @classmethod
+    def rebuild(self, root: str = '.'):
+        """
+
         """
 
 
