@@ -7,10 +7,11 @@ from uuid import uuid4
 from os import mkdir, listdir, rmdir, remove
 from os.path import join, exists, split, isfile
 from shutil import rmtree
-from citrine.cluster_tools.consts import DBMODULE_INIT
+from citrine.cluster_tools.consts import DBMODULE_DISCOVERABLE_INIT, \
+    DBMODULE_UNDISCOVERABLE_INIT, DBMODULE_INIT
 
 
-def create_dbmodule(path: str = '.', name: str = None,
+def create_dbmodule(path: str = '.', name: str = None, discoverable: bool = True,
                     overwrite: bool = False):
     """
     Creates the directory and code at the specified path with the specified
@@ -29,7 +30,10 @@ def create_dbmodule(path: str = '.', name: str = None,
     mkdir(path)
     init_path = join(path, '__init__.py')
     with open(init_path, 'w') as writer:
-        writer.write(DBMODULE_INIT)
+        if discoverable:
+            writer.write(DBMODULE_DISCOVERABLE_INIT)
+        else:
+            writer.write(DBMODULE_UNDISCOVERABLE_INIT)
     return path
 
 
@@ -56,3 +60,20 @@ def delete_dbmodule(path: str, remove_empty: bool = True,
         remove(file)
     if remove_empty and not len(listdir(path)):
         rmdir(path)
+
+
+def import_db(path):
+    """
+    Imports the module database from a DbModule directory and returns it
+    :param path: the location of the directory to find the __init__.py file
+    :return:
+    """
+    # imports the db, opens it, and returns the object
+    from importlib.util import spec_from_file_location, module_from_spec
+    init_path = join(path, '__init__.py')
+    if not exists(init_path):
+        raise FileNotFoundError(init_path)
+    spec = spec_from_file_location('db', init_path)
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.db()

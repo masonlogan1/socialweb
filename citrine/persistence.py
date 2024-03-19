@@ -10,6 +10,9 @@ from persistent import Persistent
 from persistent.mapping import PersistentMapping
 from transaction import ThreadTransactionManager, TransactionManager
 
+# "why does EVERYTHING say citrine??" because I named things that work in a
+# very specific way with each other and should not be replaced with default
+# zodb components as "citrine" + original name
 
 class CitrineTransactionManager(TransactionManager):
     """

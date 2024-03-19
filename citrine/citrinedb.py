@@ -153,6 +153,27 @@ class CitrineDB(DB):
         conn.close()
         return db
 
+    def __enter__(self):
+        """
+        Opens a temporary connection that is automatically closed.
+
+        DOES NOT ALLOW FOR USING AN EXISTING TRANSACTION MANAGER!
+        :return: CitrineConnection
+        """
+        self.__context_connection = self.open()
+        return self.__context_connection
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Closes the temporary connection
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        """
+        self.__context_connection.close()
+
+
     @CitrineIncompatibleMethodError.override_method
     def open_then_close_db_when_connection_closes(self):
         """DISABLED IN CITRINEDB"""

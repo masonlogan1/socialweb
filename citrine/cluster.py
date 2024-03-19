@@ -21,12 +21,13 @@ contents.
 #   ever transaction and any ClassCrystal objects necessary for the contents.
 #   Ideally, a cluster will be responsible for a single type of object so
 #   indexes and views can be efficiently written.
-from os.path import join
+from os.path import join, exists
 from typing import Iterable
 from uuid import uuid4
 
 from citrine.citrinedb import CitrineDB
-from citrine.cluster_tools.dbmodule import create_dbmodule, delete_dbmodule
+from citrine.cluster_tools.dbmodule import create_dbmodule, delete_dbmodule, \
+    import_db
 
 
 class DbModule:
@@ -39,21 +40,32 @@ class DbModule:
     ``from <uuid> import get_db``
     """
 
+    @property
+    def path(self):
+        """
+        Returns the path
+        :return:
+        """
+        return getattr(self, '___path___', None)
+
+    @path.setter
+    def path(self, value: str):
+        """
+        Sets the path. Only allows it to be set once and raises a
+        FileNotFoundError if attempting to set a path that does not exist
+        :param value: the path value
+        :return:
+        """
+        if hasattr(self, '___path___'):
+            raise AttributeError('Cannot change "path" attribute of DbModule')
+        if not exists(value):
+            raise FileNotFoundError(value)
+        setattr(self, '___path___', value)
+
     def __init__(self, path: str = '.'):
         self.path = path
-        self.db = self.load_db()
+        self.db = import_db(self.path)
         self.name = self.db.database_name
-
-    def load_db(self):
-        if not hasattr(self, 'path'):
-            raise AttributeError(f'No path selected for DbModule!')
-        # imports the db, opens it, and returns the object
-        from importlib.util import spec_from_file_location, module_from_spec
-        init_path = join(self.path, '__init__.py')
-        spec = spec_from_file_location('db', init_path)
-        module = module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module.db()
 
     def open(self, transaction_manager=None, at=None, before=None):
         """
@@ -94,19 +106,20 @@ class DbModule:
         """
         delete_dbmodule(path, remove_empty, remove)
 
-
     def __call__(self):
         return self.db
 
 
 class DbGroup:
     """
-    A collection of databases. Will create databases as importable modules under
-    a common directory and provide managed storage across all databases in the
-    collection.
+    A collection of databases as a single object. Will create databases as
+    importable modules under a common directory and provide managed storage
+    across all databases in the collection.
 
     It is STRONGLY RECOMMENDED to use the discovery process, and ONLY the
-    discovery process, to manage the contents of the pool.
+    discovery process, to manage the contents of the group, and is also strongly
+    encouraged to load an existing group rather than create a new one every
+    runtime.
     """
 
     def __init__(self, root: str = '.', discovery=True, dbs: Iterable = None):
@@ -159,15 +172,20 @@ class DbGroup:
         """
 
     @classmethod
-    def new(self, root: str = '.', discovery=True):
+    def new(cls, root: str = '.', discovery=True):
         """
-
+        Creates a new DbGroup using root as the directory for discovery.
+        :param root: The directory to use as the source for the group
+        :param discovery: Whether to scan for DbModule objects
+        :return:
         """
 
     @classmethod
-    def rebuild(self, root: str = '.'):
+    def rebuild(cls, root: str = '.'):
         """
 
+        :param root:
+        :return:
         """
 
 
