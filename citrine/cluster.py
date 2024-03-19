@@ -27,7 +27,7 @@ from uuid import uuid4
 
 from citrine.citrinedb import CitrineDB
 from citrine.cluster_tools.dbmodule import create_dbmodule, delete_dbmodule, \
-    import_db
+    import_db, find_dbmodules
 
 
 class DbModule:
@@ -121,72 +121,66 @@ class DbGroup:
     encouraged to load an existing group rather than create a new one every
     runtime.
     """
+    @property
+    def databases(self):
+        if not hasattr(self, '___databases___'):
+            setattr(self, '___databases___', {
+                name: module.db for name, module in self.modules.items()
+            })
+        return getattr(self, '___databases___', dict())
 
-    def __init__(self, root: str = '.', discovery=True, dbs: Iterable = None):
+    @databases.deleter
+    def databases(self):
+        delattr(self, '___databases___')
+
+    @property
+    def modules(self):
+        return getattr(self, '___modules___', dict())
+
+    @modules.setter
+    def modules(self, value):
+        setattr(self, '___modules___', value)
+        # refresh database list (derived from modules)
+        if hasattr(self, '___databases___'):
+            del self.databases
+        _ = self.databases
+
+    def __init__(self, root: str = '.', discovery=True, modules: dict = None):
         """
         Creates the pool, using the path as the root of the group. Any DbModules
         in the root directory will be automatically retrieved and added to the
         group if discovery is True
         """
-        self.db_pool = {}
         self.root = root
-        self.dbs = tuple(dbs) if dbs else tuple()
-        if discovery:
-            self.dbs += self.discover()
+        # uses modules if provided, discovers if instructed
+        self.modules = self.discover(root) | (modules if modules else dict()) \
+            if discovery else (modules if modules else dict())
 
-    def create_db(self, name):
+    def create_dbmodule(self, name: str = None, overwrite: bool = False):
         """
         Creates a new database using the provided name, at the path. If no
         path is specified, the directory of execution will be used
         :param name: The name to assign the database
         """
+        new = DbModule.create(self.root, name=name, overwrite=overwrite)
+        self.modules[new.name] = new
 
-    def add_db(self, name):
-        """
-        Adds an existing db to the cluster
-        :param name: The name of the database to add to the group
-        """
-
-    def remove_db(self, name):
-        """
-        Removes an existing db from the cluster
-        :param name: The name of the database to remove from the group
-        """
-
-    def get_db(self, name):
-        """
-        Returns a db object from the pool
-        :param name: The name of the desired database
-        """
-
-    def destroy_db(self, name):
+    def destroy_dbmodule(self, name):
         """
         Destroys a db object from the pool entirely. This action is irreversible
         :param name: The name of the database to be destroyed
         """
+        DbModule.destroy(join(self.root, name))
 
-    def discover(self):
+    @staticmethod
+    def discover(root):
         """
         Collects all database modules from the provided path and adds anything
         into the pool that is not yet added
         """
-
-    @classmethod
-    def new(cls, root: str = '.', discovery=True):
-        """
-        Creates a new DbGroup using root as the directory for discovery.
-        :param root: The directory to use as the source for the group
-        :param discovery: Whether to scan for DbModule objects
-        :return:
-        """
-
-    @classmethod
-    def rebuild(cls, root: str = '.'):
-        """
-
-        :param root:
-        :return:
-        """
+        module_paths = find_dbmodules(root)
+        db_modules = [DbModule(path) for path in module_paths]
+        return {module.name: module for module in db_modules}
 
 
 class ClusterDb:

@@ -62,6 +62,29 @@ def delete_dbmodule(path: str, remove_empty: bool = True,
         rmdir(path)
 
 
+def is_path_dbmodule(path):
+    from importlib.util import spec_from_file_location, module_from_spec
+    try:
+        init_path = join(path, '__init__.py')
+        spec = spec_from_file_location('DB_MODULE', init_path)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.DB_MODULE
+    except Exception:
+        # there are many things that can raise an exception, so let's just
+        # assume that if something happens this is not a DbModule directory
+        return False
+
+
+def find_dbmodules(path: str):
+    # find every directory with an init file
+    potential_dbmodules = [join(path, file) for file in listdir(path)
+                           if exists(join(path, file, '__init__.py'))
+                           and file != path]
+    # import the init files and look for DB_MODULE == True
+    return (mod for mod in potential_dbmodules if is_path_dbmodule(mod))
+
+
 def import_db(path):
     """
     Imports the module database from a DbModule directory and returns it

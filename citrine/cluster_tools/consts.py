@@ -9,7 +9,8 @@ from os.path import dirname, exists, join, split
 from citrine import CitrineDB
 DB_ID = split(dirname(__file__))[1]
 DB_PATH = join(dirname(__file__), DB_ID)
-db = lambda: CitrineDB(DB_PATH) if exists(DB_PATH) else CitrineDB.new(DB_PATH, database_name=DB_ID)
+db = lambda: CitrineDB(DB_PATH, database_name=DB_ID) if exists(DB_PATH) else CitrineDB.new(DB_PATH, database_name=DB_ID)
+DB_MODULE = True
 DISCOVERABLE = True
 '''
 
@@ -20,7 +21,8 @@ from os.path import dirname, exists, join, split
 from citrine import CitrineDB
 DB_ID = split(dirname(__file__))[1]
 DB_PATH = join(dirname(__file__), DB_ID)
-db = lambda: CitrineDB(DB_PATH) if exists(DB_PATH) else CitrineDB.new(DB_PATH, database_name=DB_ID)
+db = lambda: CitrineDB(DB_PATH, database_name=DB_ID) if exists(DB_PATH) else CitrineDB.new(DB_PATH, database_name=DB_ID)
+DB_MODULE = True
 DISCOVERABLE = False
 '''
 
