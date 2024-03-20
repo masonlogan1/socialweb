@@ -26,8 +26,9 @@ from typing import Iterable
 from uuid import uuid4
 
 from citrine.citrinedb import CitrineDB
-from citrine.cluster_tools.dbmodule import create_dbmodule, delete_dbmodule, \
-    import_db, find_dbmodules
+from citrine.cluster_tools.dbmodule.dbmodule import create_dbmodule, \
+    delete_dbmodule, import_db, find_dbmodules
+from citrine.cluster_tools.clusterdb.container import ClusterRegistryContainer
 
 
 class DbModule:
@@ -164,6 +165,7 @@ class DbGroup:
         """
         new = DbModule.create(self.root, name=name, overwrite=overwrite)
         self.modules[new.name] = new
+        return new
 
     def destroy_dbmodule(self, name):
         """
@@ -219,6 +221,48 @@ class ClusterDB(DbGroup, CitrineDB):
             database_name=database_name, databases=self.dbs,
             xrefs=xrefs, large_record_size=large_record_size, **storage_args)
 
+    def validate_module_registration(self):
+        """
+        Checks that all detected modules match the previous registry, and logs
+        inconsistencies if not.
+
+        If any expected modules are not detected, a check will be run to see
+        if the file exists but is corrupt before creating a new module to
+        replace it. If a directory containing a database is found, an attempt
+        will be made to create a connection, and if successful the database will
+        be copied directly into the new module.
+
+        If new modules are found their presence will be noted and they will
+        be accessible, but the contents will not be readable or written to by
+        standard operations unless the database is explicitly instructed to
+        merge the contents into the existing structure.
+        """
+
+    def create_dbmodule(self, name: str = None, overwrite: bool = False):
+        """
+        Creates a new database using the provided name, at the path. If no
+        path is specified, the directory of execution will be used
+        :param name: The name to assign the database
+        """
+        with self as conn:
+            with conn:
+                new = DbGroup.create_dbmodule(self, name=name,
+                                              overwrite=overwrite)
+                conn.create(new.name, new)
+
+    def destroy_dbmodule(self, name):
+        """
+        Destroys a db object from the pool entirely. This action is irreversible
+        :param name: The name of the database to be destroyed
+        """
+        with self as conn:
+            with conn:
+                # don't alter the order, if the actual destroy fails the
+                # transaction should too
+                conn.delete(name)
+                DbGroup.destroy_dbmodule(self, name)
+
+
     @classmethod
     def new(cls, root, pool_size: int = 7,
             pool_timeout: int = 2147483648, cache_size: int = 400,
@@ -226,10 +270,11 @@ class ClusterDB(DbGroup, CitrineDB):
             historical_cache_size: int = 1000,
             historical_cache_size_bytes: int = 0,
             historical_timeout: int = 300, database_name: str = 'unnamed',
-            databases: dict = None, xrefs: bool = True,
-            large_record_size: int = 16777216, **storage_args):
+            xrefs: bool = True, large_record_size: int = 16777216,
+            **storage_args):
         """
-        Creates a new CitrineDb at the storage location and returns the object
+        Creates a new ClusterDB at the root location and returns the object.
+        The directory will be scanned for existing databases and
         """
         db = ClusterDB(root=root, pool_size=pool_size,
                        pool_timeout=pool_timeout, cache_size=cache_size,
@@ -239,12 +284,12 @@ class ClusterDB(DbGroup, CitrineDB):
                        historical_cache_size_bytes=
                        historical_cache_size_bytes,
                        historical_timeout=historical_timeout,
-                       database_name=database_name, databases=databases,
-                       xrefs=xrefs, large_record_size=large_record_size,
-                       **storage_args)
-        conn = db.open()
-        conn.setup()
-        conn.close()
+                       database_name=database_name, xrefs=xrefs,
+                       large_record_size=large_record_size, **storage_args)
+        with db as conn:
+            conn.setup()
+            with conn:
+                conn.root.container = ClusterRegistryContainer(db.modules)
         return db
 
 

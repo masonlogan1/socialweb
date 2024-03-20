@@ -7,8 +7,8 @@ from uuid import uuid4
 from os import mkdir, listdir, rmdir, remove
 from os.path import join, exists, split, isfile
 from shutil import rmtree
-from citrine.cluster_tools.consts import DBMODULE_DISCOVERABLE_INIT, \
-    DBMODULE_UNDISCOVERABLE_INIT, DBMODULE_INIT
+from citrine.cluster_tools.dbmodule.consts import DBMODULE_DISCOVERABLE_INIT, \
+    DBMODULE_UNDISCOVERABLE_INIT
 
 
 def create_dbmodule(path: str = '.', name: str = None, discoverable: bool = True,

@@ -172,6 +172,8 @@ class CitrineDB(DB):
         :return:
         """
         self.__context_connection.close()
+        self.__context_connection = None
+        del self.__context_connection
 
 
     @CitrineIncompatibleMethodError.override_method
