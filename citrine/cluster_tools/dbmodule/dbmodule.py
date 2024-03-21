@@ -206,6 +206,7 @@ class DbModuleRegistry(Persistent):
         :param dbmodule:
         :return:
         """
+        self.size = dbmodule.size
 
     @staticmethod
     def from_dbmodule(dbmodule: DbModule):
@@ -214,3 +215,4 @@ class DbModuleRegistry(Persistent):
         :param dbmodule:
         :return:
         """
+        return DbModuleRegistry(dbmodule.path, dbmodule.name, dbmodule.size)
