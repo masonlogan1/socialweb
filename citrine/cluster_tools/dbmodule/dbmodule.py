@@ -9,6 +9,7 @@ from os.path import join, exists, split, isfile
 from shutil import rmtree
 from citrine.cluster_tools.dbmodule.consts import DBMODULE_DISCOVERABLE_INIT, \
     DBMODULE_UNDISCOVERABLE_INIT
+from uuid import uuid4
 
 
 def create_dbmodule(path: str = '.', name: str = None, discoverable: bool = True,
@@ -100,3 +101,83 @@ def import_db(path):
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.db()
+
+
+class DbModule:
+    """
+    Manages the creation, migration, and deletion of a Citrine Database object
+    that is treated like an independent, importable code module.
+
+    This object is responsible for creating a directory structure with an
+    ``__init__.py`` file that provides a single importable object in the format
+    ``from <uuid> import get_db``
+    """
+
+    @property
+    def path(self):
+        """
+        Returns the path
+        :return:
+        """
+        return getattr(self, '___path___', None)
+
+    @path.setter
+    def path(self, value: str):
+        """
+        Sets the path. Only allows it to be set once and raises a
+        FileNotFoundError if attempting to set a path that does not exist
+        :param value: the path value
+        :return:
+        """
+        if hasattr(self, '___path___'):
+            raise AttributeError('Cannot change "path" attribute of DbModule')
+        if not exists(value):
+            raise FileNotFoundError(value)
+        setattr(self, '___path___', value)
+
+    def __init__(self, path: str = '.'):
+        self.path = path
+        self.db = import_db(self.path)
+        self.name = self.db.database_name
+
+    def open(self, transaction_manager=None, at=None, before=None):
+        """
+        Return a database Connection for use by application code.
+
+        Note that the connection pool is managed as a stack, to increase the
+        likelihood that the connection's stack will include useful objects.
+
+        :param transaction_manager: transaction manager to use, "None" will
+        default to a CitrineThreadTransactionManager
+        :param at: a ``datetime.datetime`` or 8 character transaction id of the
+        time to open the database with a read-only connection. Passing both
+        ``at`` and ``before`` raises a ValueError, and passing neither opens a
+        standard writable transaction of the newest state. A timezone-naive
+        ``datetime.datetime`` is treated as a UTC value.
+        :param before: like ``at``, but opens the readonly state before the tid
+        or datetime.
+        :return: CitrineConnection
+        """
+        return self.db.open(transaction_manager=transaction_manager,
+                            at=at, before=before)
+
+    @classmethod
+    def create(cls, path: str, name: str, overwrite: bool = False):
+        """
+        Creates a new module at the path location, if one does not exist.
+
+        The provided name will be given to the newly created database
+        """
+        module_path = create_dbmodule(path, name, overwrite)
+        return DbModule(module_path)
+
+    @classmethod
+    def destroy(cls, path: str, remove_empty: bool = True,
+                remove: bool = False):
+        """
+        Destroys a module at the path location
+        """
+        delete_dbmodule(path, remove_empty, remove)
+
+    def __call__(self):
+        return self.db
