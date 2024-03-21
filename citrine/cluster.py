@@ -21,6 +21,7 @@ contents.
 #   ever transaction and any ClassCrystal objects necessary for the contents.
 #   Ideally, a cluster will be responsible for a single type of object so
 #   indexes and views can be efficiently written.
+import logging
 from os.path import join, exists
 from typing import Iterable
 from uuid import uuid4
@@ -123,15 +124,21 @@ class DbGroup:
     runtime.
     """
     @property
-    def dbs(self):
-        if not hasattr(self, '___databases___'):
-            setattr(self, '___databases___', {
-                name: module.db for name, module in self.modules.items()
-            })
-        return getattr(self, '___databases___', dict())
+    def databases(self):
+        """
+        Dictionary of names and database objects. Will derive a set from all
+        modules registered to the cluster unless a value has been manually set
+        """
+        if hasattr(self, '___databases___'):
+            return getattr(self, '___databases___', dict())
+        return {name: module.db for name, module in self.modules.items()}
 
-    @dbs.deleter
-    def dbs(self):
+    @databases.setter
+    def databases(self, value):
+        setattr(self, '___databases___', value)
+
+    @databases.deleter
+    def databases(self):
         delattr(self, '___databases___')
 
     @property
@@ -141,10 +148,6 @@ class DbGroup:
     @modules.setter
     def modules(self, value):
         setattr(self, '___modules___', value)
-        # refresh database list (derived from modules)
-        if hasattr(self, '___databases___'):
-            del self.dbs
-        _ = self.dbs
 
     def __init__(self, root: str = '.', discovery=True, modules: dict = None):
         """
@@ -201,6 +204,26 @@ class ClusterDB(DbGroup, CitrineDB):
     indexes, and running queries.
     """
 
+    @property
+    def databases(self):
+        """
+        Dictionary of names and database objects. Will derive a set from all
+        modules registered to the cluster unless a value has been manually set
+        """
+        if hasattr(self, '___databases___'):
+            return getattr(self, '___databases___', dict())
+        return {**{name: module.db for name, module in self.modules.items()},
+                **{getattr(self, 'database_name', 'unnamed'): self}}
+
+    @databases.setter
+    def databases(self, value):
+        setattr(self, '___databases___', value)
+
+    @databases.deleter
+    def databases(self):
+        # del is really just a reset to the default derived value
+        delattr(self, '___databases___')
+
     def __init__(self, root: str, pool_size: int = 7,
                  pool_timeout: int = 2147483648, cache_size: int = 400,
                  cache_size_bytes: int = 0, historical_pool_size: int = 3,
@@ -209,6 +232,7 @@ class ClusterDB(DbGroup, CitrineDB):
                  historical_timeout: int = 300, database_name: str = 'unnamed',
                  xrefs: bool = True, large_record_size: int = 16777216,
                  **storage_args):
+        self.logger = logging.getLogger(f'{database_name}_cluster')
         DbGroup.__init__(self, root)
         CitrineDB.__init__(self,
             storage=join(root, database_name), pool_size=pool_size,
@@ -218,8 +242,11 @@ class ClusterDB(DbGroup, CitrineDB):
             historical_cache_size=historical_cache_size,
             historical_cache_size_bytes=historical_cache_size_bytes,
             historical_timeout=historical_timeout,
-            database_name=database_name, databases=self.dbs,
+            database_name=database_name, databases=self.databases,
             xrefs=xrefs, large_record_size=large_record_size, **storage_args)
+        # zodb sets the databases value, so we reset to the derived version
+        del self.databases
+        #self.validate_module_registration()
 
     def validate_module_registration(self):
         """
@@ -237,6 +264,12 @@ class ClusterDB(DbGroup, CitrineDB):
         standard operations unless the database is explicitly instructed to
         merge the contents into the existing structure.
         """
+        with self as conn:
+            known_modules = conn.container.modules
+            for name, module in known_modules.items():
+                if name not in self.modules.keys():
+                    self.logger.warning(f"Module {name} not found!")
+
 
     def create_dbmodule(self, name: str = None, overwrite: bool = False):
         """
@@ -257,8 +290,6 @@ class ClusterDB(DbGroup, CitrineDB):
         """
         with self as conn:
             with conn:
-                # don't alter the order, if the actual destroy fails the
-                # transaction should too
                 conn.delete(name)
                 DbGroup.destroy_dbmodule(self, name)
 
