@@ -43,6 +43,10 @@ class DbGroup:
     def modules(self, value):
         setattr(self, '___modules___', value)
 
+    @property
+    def size(self):
+        return sum((module.size for module in self.modules.values()))
+
     def __init__(self, root: str = '.', discovery=True, modules: dict = None):
         """
         Creates the pool, using the path as the root of the group. Any DbModules

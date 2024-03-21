@@ -31,7 +31,7 @@ from citrine.cluster_tools.dbmodule.dbgroup import DbGroup
 from citrine.cluster_tools.clusterdb.container import ClusterRegistryContainer
 
 
-class ClusterDB(DbGroup, CitrineDB):
+class ManagedGroupDB(DbGroup, CitrineDB):
     """
     Data access and management object for an object database cluster.
 
@@ -89,7 +89,6 @@ class ClusterDB(DbGroup, CitrineDB):
             xrefs=xrefs, large_record_size=large_record_size, **storage_args)
         # zodb sets the databases value, so we reset to the derived version
         del self.databases
-        self.validate_module_registration()
 
     def validate_module_registration(self, strict=False):
         """
@@ -115,7 +114,7 @@ class ClusterDB(DbGroup, CitrineDB):
         with self as conn:
             # check that we aren't missing modules and log modules we find that
             # we aren't prepared to handle yet
-            known_modules = conn.container.modules.items()
+            known_modules = conn.container.modules
             for name, module in known_modules.items():
                 if name not in found_modules.keys():
                     raise ModuleNotFoundError(f'Expected module "{name}" not found')
@@ -139,7 +138,6 @@ class ClusterDB(DbGroup, CitrineDB):
                     raise NotImplementedError(f'db missing necessary method {name}, ' +
                                               'cannot proceed!')
 
-
     def create_dbmodule(self, name: str = None, overwrite: bool = False):
         """
         Creates a new database using the provided name, at the path. If no
@@ -161,6 +159,73 @@ class ClusterDB(DbGroup, CitrineDB):
             with conn:
                 conn.delete(name)
                 DbGroup.destroy_dbmodule(self, name)
+
+    @classmethod
+    def new(cls, root, pool_size: int = 7,
+            pool_timeout: int = 2147483648, cache_size: int = 400,
+            cache_size_bytes: int = 0, historical_pool_size: int = 3,
+            historical_cache_size: int = 1000,
+            historical_cache_size_bytes: int = 0,
+            historical_timeout: int = 300, database_name: str = 'unnamed',
+            xrefs: bool = True, large_record_size: int = 16777216,
+            **storage_args):
+        """
+        Creates a new ClusterDB at the root location and returns the object.
+        The directory will be scanned for existing databases and
+        """
+        db = ManagedGroupDB(root=root, pool_size=pool_size,
+                       pool_timeout=pool_timeout, cache_size=cache_size,
+                       cache_size_bytes=cache_size_bytes,
+                       historical_pool_size=historical_pool_size,
+                       historical_cache_size=historical_cache_size,
+                       historical_cache_size_bytes=
+                       historical_cache_size_bytes,
+                       historical_timeout=historical_timeout,
+                       database_name=database_name, xrefs=xrefs,
+                       large_record_size=large_record_size, **storage_args)
+        with db as conn:
+            conn.setup()
+            with conn:
+                conn.root.container = ClusterRegistryContainer(db.modules)
+        return db
+
+
+class ClusterDB(ManagedGroupDB):
+    def create(self, id: str, obj):
+        """
+        Converts the object into a persistable format and stores it to the
+        database
+        :param id:
+        :param obj:
+        :return:
+        """
+        raise NotImplementedError
+
+    def read(self, id):
+        """
+        Retrieves the object from the database and returns it to its original
+        format
+        :param id:
+        :return:
+        """
+        raise NotImplementedError
+
+    def update(self, id, obj: object):
+        """
+        Locates the object by the given id and updates it to the new object
+        :param id:
+        :param obj:
+        :return:
+        """
+        raise NotImplementedError
+
+    def delete(self, id):
+        """
+        Locates the object by the given id and removes it from the database
+        :param id:
+        :return:
+        """
+        raise NotImplementedError
 
     @classmethod
     def new(cls, root, pool_size: int = 7,

@@ -7,6 +7,8 @@ from uuid import uuid4
 from os import mkdir, listdir, rmdir, remove
 from os.path import join, exists, split, isfile
 from shutil import rmtree
+from persistent import Persistent
+from persistent.mapping import PersistentMapping
 from citrine.cluster_tools.dbmodule.consts import DBMODULE_DISCOVERABLE_INIT, \
     DBMODULE_UNDISCOVERABLE_INIT
 from uuid import uuid4
@@ -135,6 +137,11 @@ class DbModule:
             raise FileNotFoundError(value)
         setattr(self, '___path___', value)
 
+    @property
+    def size(self):
+        with self.db as connection:
+            return connection.size
+
     def __init__(self, path: str = '.'):
         self.path = path
         self.db = import_db(self.path)
@@ -181,3 +188,29 @@ class DbModule:
 
     def __call__(self):
         return self.db
+
+
+class DbModuleRegistry(Persistent):
+    """
+    Object representative of a DbModule that can be saved to a database
+    """
+    def __init__(self, module_path: str, name: str, size: int = 0):
+        self.module_path = module_path
+        self.name = name
+        self.size = size
+
+    def update_from_dbmodule(self, dbmodule: DbModule):
+        """
+        Updates the registry object by providing a new dbmodule. Only updates
+        attributes expected to change, like the size.
+        :param dbmodule:
+        :return:
+        """
+
+    @staticmethod
+    def from_dbmodule(dbmodule: DbModule):
+        """
+        Creates a registry object from a DbModule
+        :param dbmodule:
+        :return:
+        """

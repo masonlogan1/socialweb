@@ -31,6 +31,10 @@ class CitrineConnection(Connection):
     def meta(self):
         return self.root.meta
 
+    @property
+    def size(self):
+        return self.container.size
+
     def __init__(self, db, cache_size=400, before=None, cache_size_bytes=0,
                  transaction_manager=None, **db_args):
         super().__init__(db=db, cache_size=cache_size, before=before,

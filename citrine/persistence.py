@@ -104,6 +104,10 @@ class DbContainer(Persistent):
     def containers_size(self):
         return len(self.containers.keys())
 
+    @property
+    def size(self):
+        return sum((len(con.keys()) for con in self.containers.values()))
+
     def __init__(self, containers: dict | PersistentMapping = None):
         super().__init__()
         # Containers will be stored as a PM of PMs
