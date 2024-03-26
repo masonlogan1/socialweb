@@ -8,7 +8,7 @@ from validate_email import validate_email
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-VALID_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
+VALID_URL_REGEX = re.compile('[^a-zA-Z0-9_.:-]+')
 
 DEFAULT_TYPE = 'https://www.w3.org/ns/activitystreams#Object'
 DEFAULT_CONTEXT = "http://www.w3.org/ns/activitystreams#"
