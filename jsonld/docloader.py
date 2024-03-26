@@ -9,7 +9,7 @@ import requests
 from pyld import jsonld
 from pyld.jsonld import JsonLdError, parse_link_header, LINK_HEADER_REL
 
-JSON_LD_URL_REGEX = re.compile('[^a-zA-Z0-9_\-.:]+')
+JSON_LD_URL_REGEX = re.compile('[^a-zA-Z0-9_.:-]+')
 
 
 class RequestsJsonLoader:
