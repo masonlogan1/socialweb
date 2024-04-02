@@ -1,4 +1,6 @@
 requests
+zodb
+dill
 cachetools==5.3.1
 decorator==5.1.1
 frozendict==2.3.8

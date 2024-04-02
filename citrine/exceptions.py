@@ -19,3 +19,14 @@ class CitrineIncompatibleMethodError(Exception):
         def decorator(*args, **kwargs):
             raise CitrineIncompatibleMethodError(fn.__name__)
         return decorator
+
+class CitrineDuplicateIdError(Exception):
+    """
+    Exception thrown when attempting to read from multiple databases and
+    multiple results are returned for the same ID.
+    """
+    def __init__(self, id, dbs=None):
+        msg = f'ID "{id}" found in multiple databases'
+        if dbs:
+            msg += f'; {", ".join(db.database_name for db in dbs)}'
+        super().__init__(msg)
