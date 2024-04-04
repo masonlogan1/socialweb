@@ -112,12 +112,12 @@ class AttributedTo(ActivityStreamsProperty):
     @contextualproperty
     @Link.expand
     def attributedTo(self):
-        return getattr(self, '___attributed_to___', None)
+        return getattr(self, '___attributedTo___', None)
 
     @attributedTo.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
     def attributedTo(self):
-        return getattr(self, '___attributed_to___', None)
+        return getattr(self, '___attributedTo___', None)
 
     @attributedTo.setter
     @Link.from_str
@@ -142,7 +142,7 @@ class Actor(ActivityStreamsProperty):
     @actor.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
     def actor(self):
-        return getattr(self, '___attributed_to___', None)
+        return getattr(self, '___attributedTo___', None)
 
     @actor.setter
     @Link.from_str
