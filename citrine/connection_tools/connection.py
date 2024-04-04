@@ -10,6 +10,7 @@ from ZODB.Connection import Connection
 
 from citrine.persistence import DbContainer, DbMetadata
 from citrine.persistence import CitrineThreadTransactionManager, autocommit
+from citrine.storage_tools.container import Container, Metadata
 
 
 class CitrineConnection(Connection):
@@ -132,3 +133,33 @@ class CitrineConnection(Connection):
                             'CREATING NEW')
             with self:
                 self.root.meta = DbMetadata()
+
+# PLACEHOLDER! This will be the new name after the refactor in citrine.storage_tools is done
+class ManagedConnection(CitrineConnection):
+    """
+    Modified version of the ZODB.Connection.Connection class that adds a few
+    utility methods and attributes for enhanced performance.
+
+    ALL actions performed by a CitrineConnection are transactional by default,
+    unless the object is being used as a context manager in which case
+    the transaction will be committed on closure. To disable automatic
+    transactions, set self.auto_transaction to False.
+    """
+
+    def setup(self):
+        """
+        Performs checks that objects necessary for the CitrineConnection to
+        function are present, and attempts to create them if they are not
+        :return:
+        """
+        if not hasattr(self.root, 'container'):
+            logging.warning('MISSING CONTAINER OBJECT "root.container", ' +
+                            'CREATING NEW')
+            with self:
+                self.root.container = Container()
+
+        if not hasattr(self.root, 'meta'):
+            logging.warning('MISSING METADATA OBJECT "root.meta", ' +
+                            'CREATING NEW')
+            with self:
+                self.root.meta = Metadata()
