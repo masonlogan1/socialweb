@@ -6,7 +6,7 @@ from ZODB import DB
 from citrine.exceptions import CitrineIncompatibleMethodError
 from citrine.connection_tools import ManagedConnection
 
-from citrine.storage_tools.transaction import CitrineTransactionManager
+from citrine.storage_tools.transaction import TransactionManager
 
 
 class ManagedStorage(DB):
@@ -121,7 +121,7 @@ class ManagedStorage(DB):
         """
         return super().open(
             transaction_manager=(transaction_manager or
-                                 CitrineTransactionManager()),
+                                 TransactionManager()),
             at=at, before=before
         )
 
@@ -152,6 +152,11 @@ class ManagedStorage(DB):
         conn.setup()
         conn.close()
         return db
+
+    def __getitem__(self, item):
+        with self as conn:
+            val = conn[item]
+        return val
 
     def __enter__(self):
         """

@@ -1,9 +1,10 @@
 import uuid
 import logging
 
-from transaction import ThreadTransactionManager, TransactionManager
+from transaction import ThreadTransactionManager as ZoThreadTransactionManager
+from transaction import TransactionManager as ZoTransactionManager
 
-class CitrineTransactionManager(TransactionManager):
+class TransactionManager(ZoTransactionManager):
     """
     Single-threaded transaction manager for persisting objects to a Citrine
     Database.
@@ -37,7 +38,7 @@ class CitrineTransactionManager(TransactionManager):
         self.transaction_uuid = None
 
 
-class CitrineThreadTransactionManager(ThreadTransactionManager):
+class ThreadTransactionManager(ZoThreadTransactionManager):
     """
     Thread-local CitrineTransactionManager that creates a copy in the thread
     that this object is used in.
@@ -45,7 +46,7 @@ class CitrineThreadTransactionManager(ThreadTransactionManager):
 
     def __init__(self):
         super().__init__()
-        self.manager = CitrineTransactionManager()
+        self.manager = TransactionManager()
 
 
 def autocommit(fn):
