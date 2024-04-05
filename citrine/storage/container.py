@@ -1,8 +1,28 @@
-import uuid
 import logging
-
+from uuid import uuid4
 from persistent import Persistent
 from persistent.mapping import PersistentMapping
+from BTrees.OOBTree import OOBTree
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+class Collection(OOBTree):
+    """
+    Modified version of a PersistentMapping that allows for accessing objects
+    stored inside as attributes
+    """
+    def __init__(self, uuid: str = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.uuid = uuid if uuid else str(uuid4())
+
+    def __getattr__(self, item):
+        val = self.get(item)
+        if val:
+            return val
+        super().__getattr__(item)
+
 
 class Metadata(Persistent):
     """
@@ -24,10 +44,6 @@ class Container(Persistent):
     """
 
     @property
-    def containers_size(self):
-        return len(self.containers.keys())
-
-    @property
     def size(self):
         return sum((len(con.keys()) for con in self.containers.values()))
 
@@ -35,7 +51,7 @@ class Container(Persistent):
         super().__init__()
         # Containers will be stored as a PM of PMs
         self.containers = containers if containers is not None else \
-            PersistentMapping({0: PersistentMapping()})
+            PersistentMapping({0: Collection()})
 
     def expand_size(self, new_size: int):
         if new_size <= self.containers_size:

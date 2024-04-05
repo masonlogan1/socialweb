@@ -10,7 +10,7 @@ from ZODB.Connection import Connection
 
 from citrine.persistence import DbContainer, DbMetadata
 from citrine.persistence import CitrineThreadTransactionManager, autocommit
-from citrine.storage_tools.container import Container, Metadata
+from citrine.storage.container import Container, Metadata
 
 
 class CitrineConnection(Connection):
@@ -134,7 +134,7 @@ class CitrineConnection(Connection):
             with self:
                 self.root.meta = DbMetadata()
 
-# PLACEHOLDER! This will be the new name after the refactor in citrine.storage_tools is done
+# PLACEHOLDER! This will be the new name after the refactor in citrine.storage is done
 class ManagedConnection(CitrineConnection):
     """
     Modified version of the ZODB.Connection.Connection class that adds a few

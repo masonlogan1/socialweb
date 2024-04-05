@@ -6,7 +6,7 @@ from ZODB import DB
 from citrine.exceptions import CitrineIncompatibleMethodError
 from citrine.connection_tools import ManagedConnection
 
-from citrine.storage_tools.transaction import TransactionManager
+from citrine.storage.transaction import TransactionManager
 
 
 class ManagedStorage(DB):
