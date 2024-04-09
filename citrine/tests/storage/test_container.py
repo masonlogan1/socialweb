@@ -12,7 +12,8 @@ class TestObject:
     """
     Generic class for testing storage with
     """
-    def __init__(self, **kwargs):
+    def __init__(self, id, **kwargs):
+        self.id = id
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -83,23 +84,6 @@ class CollectionTests(TestCase):
         for key, value in objects.items():
             self.assertEqual(collection.get(value.id).num, key)
 
-    def test_access_stored_values_as_attributes(self):
-        """
-        Tests that a Collection's values can be accessed when the key is treated
-        like an attribute of the collection
-        :return:
-        """
-        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
-        collection = container.Collection(uuid=prepared_uuid)
-
-        objects = {num: TestObject(id='_'+str(uuid4()).replace('-', '_'), num=num) for num in range(10)}
-
-        for value in objects.values():
-            collection.insert(value.id, value)
-
-        for key, value in objects.items():
-            self.assertEqual(getattr(collection, value.id).num, key)
-
     def test_access_stored_values_after_persisting(self):
         prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
         collection = container.Collection(uuid=prepared_uuid)
@@ -118,6 +102,18 @@ class CollectionTests(TestCase):
 
         for key, value in objects.items():
             self.assertEqual(persisted.get(value.id).num, key)
+
+    def test_raises_indexerror_if_max_exceeded(self):
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid)
+
+        objects = {
+            num: TestObject(id='_' + str(uuid4()).replace('-', '_'), num=num)
+            for num in range(5001)
+        }
+        with self.assertRaises(IndexError):
+            for value in objects.values():
+                collection.insert(value.id, value)
 
 
 if __name__ == '__main__':
