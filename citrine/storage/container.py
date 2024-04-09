@@ -6,6 +6,8 @@ from persistent import Persistent
 from persistent.mapping import PersistentMapping
 from BTrees.OOBTree import BTree
 
+from citrine.cluster_tools.clusterdb import container
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -22,10 +24,10 @@ class CollectionMeta(Persistent):
     # work perfectly well, but performance drops off after that point
     HEALTHY = 0
     ACCEPTABLE = 60
-    MODERATE = 70
+    ALERT = 70
     WARNING = 80
     CRITICAL = 90
-    LEVELS = [HEALTHY, ACCEPTABLE, MODERATE, WARNING, CRITICAL]
+    LEVELS = [HEALTHY, ACCEPTABLE, ALERT, WARNING, CRITICAL]
     # Things can become unstable over 5000 using the default ZODB DB cache size
     DEFAULT_MAX = 5000
 
@@ -45,12 +47,13 @@ class CollectionMeta(Persistent):
         may be time to either prune or create another collection that holds
         more objects.
         """
-        return max(v for v in self.LEVELS if v <= ceil(self.usage) * 100)
+        return max(v for v in self.LEVELS if v <= ceil(self.usage * 100))
 
-    def __init__(self, obj, uuid, max_size):
+    def __init__(self, obj, uuid, max_size, strict):
         self.obj = obj
         self.uuid = uuid
         self.max_size = max_size
+        self.strict = strict
 
 
 class Collection(BTree):
@@ -81,27 +84,87 @@ class Collection(BTree):
     def max_size(self):
         return self.meta.max_size
 
-    def __init__(self, uuid: str = None, max_size: int = None, *args, **kwargs):
+    @property
+    def strict(self):
+        return self.meta.strict
+
+    @strict.setter
+    def strict(self, value: bool):
+        self.meta.strict = value
+
+    def __init__(self, uuid: str = None, max_size: int = None, strict=True,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.meta = CollectionMeta(
             self,
             uuid=uuid if uuid else str(uuid4()),
-            max_size=max_size if max_size else CollectionMeta.DEFAULT_MAX
+            max_size=max_size if max_size else CollectionMeta.DEFAULT_MAX,
+            strict=strict
         )
 
     def insert(self, key, value):
-        if self.size >= self.max_size:
+        if self.size >= self.max_size and self.strict:
             raise IndexError(
                 f'Cannot insert "{key}"; maximum size reached!'
             )
         super().insert(key, value)
 
     def update(self, collection):
-        if self.size + len(collection.keys()) > self.max_size:
+        if self.size + len(collection.keys()) > self.max_size and self.strict:
             raise IndexError(
                 f'Cannot update collection; maximum size reached!'
             )
         super().update(collection)
+
+
+class CollectionGroupMeta(Persistent):
+    """
+    Allows for tracking the internal status of CollectionGroup objects in a way
+    that can be stored as an independent persistent object.
+    """
+
+    @property
+    def size(self):
+        return sum(collection.size for collection in self.collections)
+
+    @property
+    def max_size(self):
+        return sum(collection.max_size for collection in self.collections)
+
+    @property
+    def max_collection_size(self):
+        return max(collection.max_size for collection in self.collections)
+
+    @property
+    def usage(self):
+        """Percent of used space"""
+        return self.size / self.max_size
+
+    @property
+    def collection_usage(self):
+        """Percent of used space by collection"""
+        return {collection: collection.usage for collection in self.collections}
+
+    @property
+    def highest_collection_usage(self):
+        return max(self.collection_usage.values())
+
+    @property
+    def lowest_collection_usage(self):
+        return min(self.collection_usage.values())
+
+    @property
+    def status(self):
+        """
+        Provides the status of the collection group. Will use the highest status
+        from the collections; if one collection is unstable it threatens the
+        stability of the entire group.
+        """
+        return max(collection.status for collection in self.collections)
+
+    def __init__(self, obj):
+        self.obj = obj
+        self.collections = tuple(self.obj.collections)
 
 
 class CollectionGroup(Persistent):
@@ -111,13 +174,18 @@ class CollectionGroup(Persistent):
     Intended to act as an immutable set. Collections created by/managed by a
     CollectionGroup should not be modified directly as their contents may not
     be reachable when attempting to use any of the standard operations.
+
+    These objects should be saved to a database immediately if possible, keeping
+    them in memory can cause a number of issues if they start to grow too large
+    before the initial commit.
     """
-    def __init__(self, collections: tuple = None, **kwargs):
+    def __init__(self, collections, **kwargs):
         super().__init__(**kwargs)
-        if not (collections and
-                len({col.uuid for col in collections}) == len(collections)):
+        # repeating UUID values
+        if len({col.uuid for col in collections}) != len(collections):
             raise KeyError("Collections must not have conflicting UUID values")
-        self.collections = collections if collections else (Collection(),)
+        self.collections = collections
+        self.meta = CollectionGroupMeta(self)
 
     @staticmethod
     def groupfn(fn):
