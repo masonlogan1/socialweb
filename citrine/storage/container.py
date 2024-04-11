@@ -12,6 +12,83 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+class CollectionCapacityError(Exception):
+    """
+    Raised when an operation will exceed the capacity of a collection.
+    """
+
+
+class RestrictedItemError(Exception):
+    """
+    Raised when attempting to access or alter an item in a collection that
+    is not meant to be accessed or altered.
+    """
+
+
+def groupfn(fn):
+    def decorator(obj, key, *args, **kwargs):
+        index = int.from_bytes(key.encode()) % (len(obj.collections))
+        collection = obj.collections[index]
+        fn(obj, collection, key, *args, **kwargs)
+    return decorator
+
+
+class CollectionView:
+    obj = None
+    fn = None
+
+    def __iter__(self):
+        return self.fn()
+
+    def __len__(self):
+        count = 0
+        for _ in self.fn():
+            count += 1
+        return count
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key > self.obj.size:
+                raise IndexError('CollectionKeys index out of range')
+            indexes = [key]
+        elif isinstance(key, slice):
+            indexes = list(range(key.start, key.stop, key.step))
+        else:
+            raise TypeError('CollectionKeys indices must be integers ' +
+                            f'or slice, not {type(key)}')
+        found = list()
+        for index, val in enumerate(self.fn()):
+            if index in indexes:
+                found.append(val)
+        return found if isinstance(key, slice) else found[0]
+
+    def __contains__(self, item):
+        for key in self.fn():
+            if item == key:
+                return True
+        return False
+
+
+class CollectionKeys(CollectionView):
+    def __init__(self, obj):
+        self.obj = obj
+        self.fn = obj.iterkeys
+
+
+class CollectionValues(CollectionView):
+
+    def __init__(self, obj):
+        self.obj = obj
+        self.fn = obj.itervalues
+
+
+class CollectionItems(CollectionView):
+
+    def __init__(self, obj):
+        self.obj = obj
+        self.fn = obj.iteritems
+
+
 class CollectionMeta(Persistent):
     """
     Metadata object for managing a Collection. Keeps information on the size,
@@ -33,11 +110,12 @@ class CollectionMeta(Persistent):
 
     @property
     def size(self):
+        """Number of items in the collection."""
         return len(self.obj.keys())
 
     @property
     def usage(self):
-        """Percent of used space"""
+        """Percent of used space as a float value"""
         return self.size / self.max_size
 
     @property
@@ -49,7 +127,8 @@ class CollectionMeta(Persistent):
         """
         return max(v for v in self.LEVELS if v <= ceil(self.usage * 100))
 
-    def __init__(self, obj, uuid, max_size, strict):
+    def __init__(self, obj, uuid, max_size, strict, **kwargs):
+        super().__init__(**kwargs)
         self.obj = obj
         self.uuid = uuid
         self.max_size = max_size
@@ -58,8 +137,10 @@ class CollectionMeta(Persistent):
 
 class Collection(BTree):
     """
-    Modified version of a PersistentMapping that allows for accessing objects
-    stored inside as attributes
+    Modified version of a OOBTree that provides a metadata object and several
+    properties derived from it for easily keeping track of the size and health
+    of the collection. Also provides a "strict" mode that will put a hard limit
+    on the number of items the collection can store to ensure stability.
     """
 
     # "why list these out when you can just use obj.meta.whatever?"
@@ -70,6 +151,7 @@ class Collection(BTree):
 
     @property
     def size(self):
+        # subtract one to account for stored metadata object
         return self.meta.size
 
     @property
@@ -92,29 +174,144 @@ class Collection(BTree):
     def strict(self, value: bool):
         self.meta.strict = value
 
+    @property
+    def meta(self):
+        # set up a new CollectionMeta value if one does not exist
+        if 'meta' in self.keys():
+            return self.get('meta')
+        super().insert('meta', CollectionMeta(
+                    self,
+                    uuid=str(uuid4()),
+                    max_size=CollectionMeta.DEFAULT_MAX,
+                    strict=True
+                )
+            )
+        return self.get('meta')
+
+    @meta.setter
+    def meta(self, value):
+        super().insert('meta', value)
+
     def __init__(self, uuid: str = None, max_size: int = None, strict=True,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.meta = CollectionMeta(
+
+        meta = CollectionMeta(
             self,
             uuid=uuid if uuid else str(uuid4()),
             max_size=max_size if max_size else CollectionMeta.DEFAULT_MAX,
             strict=strict
         )
+        self.meta = meta
 
     def insert(self, key, value):
         if self.size >= self.max_size and self.strict:
-            raise IndexError(
+            raise CollectionCapacityError(
                 f'Cannot insert "{key}"; maximum size reached!'
             )
-        super().insert(key, value)
+        if key == 'meta':
+            raise RestrictedItemError('Cannot alter protected value "meta"')
+        return super().insert(key, value)
 
     def update(self, collection):
         if self.size + len(collection.keys()) > self.max_size and self.strict:
-            raise IndexError(
+            raise CollectionCapacityError(
                 f'Cannot update collection; maximum size reached!'
             )
-        super().update(collection)
+        if 'meta' in collection.keys():
+            raise RestrictedItemError('Cannot alter protected value "meta"')
+        return super().update(collection)
+
+    def pop(self, key, default=None):
+        """
+        Pop a key from the collection and return its value.
+        :param key:
+        :param default:
+        :return:
+        """
+        if key == 'meta':
+            raise RestrictedItemError('Cannot remove protected value "meta"')
+        return super().pop(key, default)
+
+    def popitem(self):
+        """
+        Pop a key from the collection and return the key-value pair. Raises
+        a KeyError if the
+        :param key:
+        :return:
+        """
+        key = self.minKey()
+        return key, self.pop(key)
+
+    def setdefault(self, key, value):
+        """
+        Sets the value at the key to the provided value. If the key already
+        exists then return the previous value stored there, else return the
+        value provided
+        :param key: id of item to write to
+        :param value: the value to write
+        :return: existing value or provided value if no value currently exists
+        """
+        if key == 'meta':
+            raise RestrictedItemError('Cannot alter protected value "meta"')
+        prior = self.get(key) if key in self.keys() else value
+        self.insert(key, value)
+        return prior
+
+    def clear(self):
+        # save the meta element!
+        meta = super().get('meta')
+        super().clear()
+        super().insert('meta', meta)
+
+    # I know iterkeys, itervalues, and iteritems are supposed to be deprecated,
+    # but OOBTree.BTree still uses them, and I'd rather not have loose ends.
+    # Additionally, we only have to lean on one function to filter out 'meta'.
+    def keys(self):
+        return CollectionKeys(self)
+
+    def iterkeys(self, min=None, max=None):
+        return (key for key, value in self.iteritems(min, max))
+
+    def values(self):
+        return CollectionValues(self)
+
+    def itervalues(self, min=None, max=None):
+        return (value for key, value in self.iteritems(min, max))
+
+    def items(self):
+        return CollectionItems(self)
+
+    def iteritems(self, min=None, max=None):
+        for key, value in super().iteritems(min, max):
+            if key != 'meta':
+                yield key, value
+
+    def byValue(self, min=None):
+        """
+        Returns anything where key >= min in (value, key) pairs
+        :param min: minimum value to start from
+        :return:
+        """
+        for key, value in self.iteritems(min=min):
+            yield value, key
+
+    def maxKey(self, max=None):
+        # gonna be honest, this method seems useless any time strings are the
+        # keys, but for the sake of completeness we provide an implementation
+        if (key := super().maxKey(max)) != 'meta':
+            return key
+        if not self.size:
+            raise ValueError('empty tree')
+        return super().maxKey(super().keys()[-2])
+
+    def minKey(self, min=None):
+        # same as above, this seems useless in practice if strings are involved
+        if (key := super().minKey(min)) != 'meta':
+            return key
+        if not self.size:
+            raise ValueError('empty tree')
+        return super().minKey(super().keys()[1])
 
 
 class CollectionGroupMeta(Persistent):
@@ -187,13 +384,9 @@ class CollectionGroup(Persistent):
         self.collections = collections
         self.meta = CollectionGroupMeta(self)
 
-    @staticmethod
-    def groupfn(fn):
-        def decorator(obj, key, *args, **kwargs):
-            index = int.from_bytes(key.encode()) % (len(obj.collections))
-            collection = obj.collections[index]
-            fn(obj, collection, key, *args, **kwargs)
-        return decorator
+    @groupfn
+    def get(self, collection: Collection, key: str, value):
+        return collection.get(key)
 
     @groupfn
     def insert(self, collection: Collection, key: str, value):

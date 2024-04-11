@@ -18,6 +18,27 @@ class TestObject:
             setattr(self, key, value)
 
 
+class CollectionMetaTests(TestCase):
+    """
+    Tests for the citrine.storage.container.CollectionMeta class
+    """
+
+    def test_init(self):
+        # meta calculates size based on length of .keys()
+        collection = MagicMock(keys=lambda: [0 for _ in range(10)])
+        uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        max_size = 5000
+        strict = False
+
+        meta = container.CollectionMeta(collection, uuid=uuid, max_size=max_size,
+                                        strict=strict)
+
+        self.assertEqual(meta.size, 10)
+        self.assertEqual(meta.uuid, uuid)
+        self.assertEqual(meta.max_size, max_size)
+        self.assertEqual(meta.strict, strict)
+
+
 class CollectionTests(TestCase):
     """
     Tests for the citrine.storage.container.Collection class
@@ -98,7 +119,8 @@ class CollectionTests(TestCase):
         with self.connection.transaction_manager as tm:
             self.connection.root.test_object = collection
             tm.commit()
-        persisted = self.connection.root.test_object
+        new_connection = self.memdb.open()
+        persisted = new_connection.root.test_object
 
         for key, value in objects.items():
             self.assertEqual(persisted.get(value.id).num, key)
