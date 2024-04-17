@@ -142,7 +142,7 @@ class Actor(ActivityStreamsProperty):
     @actor.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
     def actor(self):
-        return getattr(self, '___attributedTo___', None)
+        return getattr(self, '___actor___', None)
 
     @actor.setter
     @Link.from_str
