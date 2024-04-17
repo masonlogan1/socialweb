@@ -9,29 +9,27 @@ class TestSampleData:
 
     def test_ex1(self):
         with open("core-ex1-jsonld.json") as test_file:
-            # Create dictionary from json file
-            test_data = json.load(test_file)
-            # Load object into engine
-            engine_obj = TestSampleData.engine.from_json(test_data)
-            # Compare engine object's json output to original json data
-            a = json.dumps(engine_obj.json(), sort_keys=True)
+            # Store raw json string and dictionary.
+            test_data_raw = test_file.read()
+            test_data_dict = json.loads(test_data_raw)
 
-            print("\nTESTSDATA")
-            print(test_data)
+            # Create an engine object with the raw json string, store object's data and json output.
+            obj_raw = TestSampleData.engine.from_json(test_data_raw)
+            obj_raw_data = obj_raw.data()
+            obj_raw_json = obj_raw.json()
 
-            print("ENGINEOBJ")
-            print(engine_obj)
+            # Create an engine object with the dictionary, store object's data and json output.
+            obj_dict = TestSampleData.engine.from_json(test_data_dict)
+            obj_dict_data = obj_dict.data()
+            obj_dict_json = obj_dict.json()
 
-            assert 1 == 1
+            # Create dictionaries based-off engine json output for json validation.
+            obj_raw_json_dict = json.loads(obj_raw_json)
+            obj_dict_json_dict = json.loads(obj_dict_json)
 
-    def test_ex2(self):
-        assert 2 == 2
+            # Assert both engine objects are of same length with same entries as original dictionary,
+            # as well as dictionaries created from the JSON output of both engine objects.
+            assert len(test_data_dict.keys()) == len(obj_raw_data.keys()) == len(obj_dict_data.keys()) == len(obj_raw_json_dict.keys()) == len(obj_dict_json_dict.keys())
+            for attr in test_data_dict:
+                assert test_data_dict[attr] == obj_raw_data[attr] == obj_dict_data[attr] == obj_raw_json_dict[attr] == obj_dict_json_dict[attr]
 
-
-class TestDataSimpl:
-
-    def test_0001(self):
-        assert 1 == 1
-
-    def test_0002(self):
-        assert 2 == 2
