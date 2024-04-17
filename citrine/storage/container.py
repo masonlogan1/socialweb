@@ -4,7 +4,12 @@ from uuid import uuid4
 
 from persistent import Persistent
 from persistent.mapping import PersistentMapping
-from BTrees.OOBTree import BTree
+
+# if the zope people would like to make sure the BTree class is directly
+# importable rather than the current "cleverer than you" bs they have going on,
+# that would be FANTASTIC.
+from BTrees import _OOBTree
+BTree = _OOBTree.BTree
 
 from citrine.cluster_tools.clusterdb import container
 
@@ -87,6 +92,13 @@ class CollectionItems(CollectionView):
     def __init__(self, obj):
         self.obj = obj
         self.fn = obj.iteritems
+
+
+class CollectionByValue(CollectionView):
+
+    def __init__(self, obj):
+        self.obj = obj
+        self.fn = lambda: ((value, key) for key, value in obj.iteritems())
 
 
 class CollectionMeta(Persistent):
@@ -176,6 +188,7 @@ class Collection(BTree):
 
     @property
     def meta(self):
+        # TODO: THE OBJECT NEEDS TO BE CACHED AFTER GETTING IT THE FIRST TIME
         # set up a new CollectionMeta value if one does not exist
         if 'meta' in self.keys():
             return self.get('meta')
@@ -186,10 +199,13 @@ class Collection(BTree):
                     strict=True
                 )
             )
-        return self.get('meta')
+        return BTree.get(self, 'meta')
 
     @meta.setter
     def meta(self, value):
+        # TODO: TYPE CHECK FOR COLLECTIONMETA OBJECTS AND THAT THE META POINTS
+        #   TO THIS COLLECTION; DO NOT ALLOW METAS POINTED TO OTHER OBJECTS TO
+        #   BE SET AS THE META FOR THIS COLLECTION!
         super().insert('meta', value)
 
     def __init__(self, uuid: str = None, max_size: int = None, strict=True,
@@ -204,6 +220,16 @@ class Collection(BTree):
         )
         self.meta = meta
 
+    def get(self, key, default=None):
+        """
+        Retrieve a value from the collection.
+        :param key: the key associated with the desired item
+        :param default: value to return if the key does not exist
+        """
+        if key == 'meta':
+            raise RestrictedItemError('Cannot directly retrieve meta object')
+        return super().get(key, default)
+
     def insert(self, key, value):
         if self.size >= self.max_size and self.strict:
             raise CollectionCapacityError(
@@ -214,7 +240,8 @@ class Collection(BTree):
         return super().insert(key, value)
 
     def update(self, collection):
-        if self.size + len(collection.keys()) > self.max_size and self.strict:
+        new_keys = [key for key in collection.keys() if key not in self.keys()]
+        if self.size + len(new_keys) > self.max_size and self.strict:
             raise CollectionCapacityError(
                 f'Cannot update collection; maximum size reached!'
             )
@@ -231,6 +258,8 @@ class Collection(BTree):
         """
         if key == 'meta':
             raise RestrictedItemError('Cannot remove protected value "meta"')
+        if key not in self.keys() and default is None:
+            raise KeyError(f'Key "{key}" not found in collection')
         return super().pop(key, default)
 
     def popitem(self):
@@ -255,7 +284,7 @@ class Collection(BTree):
         if key == 'meta':
             raise RestrictedItemError('Cannot alter protected value "meta"')
         prior = self.get(key) if key in self.keys() else value
-        self.insert(key, value)
+        self.update({key: value})
         return prior
 
     def clear(self):
@@ -277,7 +306,9 @@ class Collection(BTree):
         return CollectionValues(self)
 
     def itervalues(self, min=None, max=None):
-        return (value for key, value in self.iteritems(min, max))
+        for value in super().itervalues(min, max):
+            if not isinstance(value, CollectionMeta):
+                yield value
 
     def items(self):
         return CollectionItems(self)
@@ -293,8 +324,7 @@ class Collection(BTree):
         :param min: minimum value to start from
         :return:
         """
-        for key, value in self.iteritems(min=min):
-            yield value, key
+        return CollectionByValue(self)
 
     def maxKey(self, max=None):
         # gonna be honest, this method seems useless any time strings are the
@@ -312,6 +342,9 @@ class Collection(BTree):
         if not self.size:
             raise ValueError('empty tree')
         return super().minKey(super().keys()[1])
+
+    def has_key(self, key):
+        return key in self.keys()
 
 
 class CollectionGroupMeta(Persistent):
