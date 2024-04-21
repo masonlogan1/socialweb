@@ -1,9 +1,214 @@
 from unittest import TestCase, main
+from unittest.mock import MagicMock, patch
+
+from uuid import uuid4
+
+from ZODB import DB
 
 from citrine.storage import collection as container
 
 from BTrees import _OOBTree
 BTree = _OOBTree.BTree
+
+
+class TestObject:
+    """
+    Generic class for testing storage with
+    """
+    def __init__(self, id, **kwargs):
+        self.id = id
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+class CollectionMetaTests(TestCase):
+    """
+    Tests for the citrine.storage.container.CollectionMeta class
+    """
+
+    def test_init(self):
+        # meta calculates size based on length of .keys()
+        collection = MagicMock(keys=lambda: list())
+        uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        max_size = 5000
+        strict = False
+
+        meta = container.CollectionMeta(collection, uuid=uuid,
+                                        max_size=max_size,
+                                        strict=strict)
+
+        self.assertEqual(meta.size, 0)
+        self.assertEqual(meta.uuid, uuid)
+        self.assertEqual(meta.max_size, max_size)
+        self.assertEqual(meta.strict, strict)
+
+    def test_size(self):
+        collection = MagicMock()
+        collection.keys.return_value = list()
+        uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        max_size = 5000
+        strict = False
+
+        meta = container.CollectionMeta(collection, uuid=uuid,
+                                        max_size=max_size,
+                                        strict=strict)
+
+        self.assertEqual(meta.size, 0)
+        collection.keys.return_value = [0 for _ in range(10)]
+        self.assertEqual(meta.size, 10)
+        collection.keys.return_value = [0 for _ in range(50)]
+        self.assertEqual(meta.size, 50)
+        collection.keys.return_value = [0 for _ in range(20)]
+        self.assertEqual(meta.size, 20)
+
+    def test_status_levels(self):
+        collection = MagicMock()
+        collection.keys.return_value = list()
+        uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        max_size = 100
+        strict = False
+
+        meta = container.CollectionMeta(collection, uuid=uuid,
+                                        max_size=max_size,
+                                        strict=strict)
+
+        collection.keys.return_value = [0 for _ in range(container.CollectionMeta.HEALTHY)]
+        self.assertEqual(container.CollectionMeta.HEALTHY, meta.status)
+        collection.keys.return_value = [0 for _ in range(container.CollectionMeta.ACCEPTABLE)]
+        self.assertEqual(container.CollectionMeta.ACCEPTABLE, meta.status)
+        collection.keys.return_value = [0 for _ in range(container.CollectionMeta.ALERT)]
+        self.assertEqual(container.CollectionMeta.ALERT, meta.status)
+        collection.keys.return_value = [0 for _ in range(container.CollectionMeta.WARNING)]
+        self.assertEqual(container.CollectionMeta.WARNING, meta.status)
+        collection.keys.return_value = [0 for _ in range(container.CollectionMeta.CRITICAL)]
+        self.assertEqual(container.CollectionMeta.CRITICAL, meta.status)
+
+    def test_usage_level(self):
+        """
+        Tests that the usage level is reasonably reliable. This generally should
+        NOT be depended on for an exact reading as it is a float value, but it
+        makes for a good monitoring metric and when rounded up to an integer can
+        provide insight into the health of the system
+        """
+        collection = MagicMock()
+        collection.keys.return_value = list()
+        uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        max_size = 100
+        strict = False
+
+        meta = container.CollectionMeta(collection, uuid=uuid,
+                                        max_size=max_size,
+                                        strict=strict)
+
+        # should see a usage rate of 43%
+        collection.keys.return_value = [0 for _ in range(43)]
+        self.assertEqual(int(meta.usage*100), 43)
+        # should see a usage rate of 99%
+        collection.keys.return_value = [0 for _ in range(99)]
+        self.assertEqual(int(meta.usage * 100), 99)
+        # should see a usage rate of 0%
+        collection.keys.return_value = []
+        self.assertEqual(int(meta.usage * 100), 0)
+
+
+class CollectionPropertyTests(TestCase):
+    """
+    Tests for the citrine.storage.container.Collection class
+    """
+
+    def setUp(self):
+        self.memdb = DB(None)
+        self.connection = self.memdb.open()
+
+    def tearDown(self):
+        self.connection.close()
+        self.memdb.close()
+        self.memdb = None
+
+    def test_accepts_uuid_value(self):
+        """
+        Test that a Collection object will take an assigned UUID value
+        """
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid)
+
+        self.assertEqual(prepared_uuid, collection.uuid)
+
+    @patch.object(container, 'uuid4',
+                  return_value='108002d1-1568-4ac2-9944-db08cfa708ff')
+    def test_generates_new_uuid_value(self, mock_uuid4):
+        """
+        Tests that a Collection object will assign itself a UUID value if one
+        is not provided. Also ensures that the uuid4 function is used
+        """
+        expected_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection()
+
+        self.assertEqual(expected_uuid, collection.uuid)
+
+    def test_persistent_uuid(self):
+        """
+        Tests that a Collection's uuid value will be kept after storing it
+        :return:
+        """
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid)
+
+        with self.connection.transaction_manager as tm:
+            self.connection.root.test_object = collection
+            tm.commit()
+
+        self.assertEqual(prepared_uuid, self.connection.root.test_object.uuid)
+
+    def test_access_stored_values(self):
+        """
+        Tests that a Collection's values can be stored with the OOBTree
+        ``insert`` method and accessed using the OOBTree ``get`` method
+        :return:
+        """
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid)
+
+        objects = {num: TestObject(id='_'+str(uuid4()).replace('-', '_'), num=num) for num in range(10)}
+
+        for value in objects.values():
+            collection.insert(value.id, value)
+
+        for key, value in objects.items():
+            self.assertEqual(collection.get(value.id).num, key)
+
+    def test_access_stored_values_after_persisting(self):
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid)
+
+        objects = {
+            num: TestObject(id='_' + str(uuid4()).replace('-', '_'), num=num)
+            for num in range(10)
+        }
+        for value in objects.values():
+            collection.insert(value.id, value)
+
+        with self.connection.transaction_manager as tm:
+            self.connection.root.test_object = collection
+            tm.commit()
+        new_connection = self.memdb.open()
+        persisted = new_connection.root.test_object
+
+        for key, value in objects.items():
+            self.assertEqual(persisted.get(value.id).num, key)
+
+    def test_raises_collection_capacity_error_if_max_exceeded(self):
+        prepared_uuid = '108002d1-1568-4ac2-9944-db08cfa708ff'
+        collection = container.Collection(uuid=prepared_uuid, max_size=10)
+
+        objects = {
+            num: TestObject(id='_' + str(uuid4()).replace('-', '_'), num=num)
+            for num in range(11)
+        }
+        with self.assertRaises(container.CollectionCapacityError):
+            for value in objects.values():
+                collection.insert(value.id, value)
+
 
 
 class CollectionStorageTests(TestCase):
@@ -498,4 +703,4 @@ class CollectionStorageTests(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
