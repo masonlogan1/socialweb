@@ -16,6 +16,10 @@ BTree = _OOBTree.BTree
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
+DEFAULT_MAX = 5000
+
+
 class CollectionCapacityError(Exception):
     """
     Raised when an operation will exceed the capacity of a collection.
@@ -27,14 +31,6 @@ class RestrictedItemError(Exception):
     Raised when attempting to access or alter an item in a collection that
     is not meant to be accessed or altered.
     """
-
-
-def groupfn(fn):
-    def decorator(obj, key, *args, **kwargs):
-        index = int.from_bytes(key.encode()) % (len(obj.collections))
-        collection = obj.collections[index]
-        fn(obj, collection, key, *args, **kwargs)
-    return decorator
 
 
 class CollectionMeta(Persistent):
@@ -54,7 +50,6 @@ class CollectionMeta(Persistent):
     CRITICAL = 90
     LEVELS = [HEALTHY, ACCEPTABLE, ALERT, WARNING, CRITICAL]
     # Things can become unstable over 5000 using the default ZODB DB cache size
-    DEFAULT_MAX = 5000
 
     @property
     def size(self):
@@ -133,7 +128,7 @@ class Collection(Persistent):
         self.__metadata__ = CollectionMeta(
             self.tree,
             uuid=uuid if uuid else str(uuid4()),
-            max_size=max_size if max_size else CollectionMeta.DEFAULT_MAX,
+            max_size=max_size if max_size else DEFAULT_MAX,
             strict=strict
         )
 
