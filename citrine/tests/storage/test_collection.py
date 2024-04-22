@@ -210,7 +210,6 @@ class CollectionPropertyTests(TestCase):
                 collection.insert(value.id, value)
 
 
-
 class CollectionStorageTests(TestCase):
     """
     Tests for the Collection class that ensure it can save and load objects

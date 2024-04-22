@@ -142,15 +142,23 @@ class Group(Persistent):
         """
         Metadata object for this group
         """
-        return self.__metadata__
+        return self.___metadata___
+
+    @property
+    def collections(self):
+        """
+        Collection objects for this group
+        :return:
+        """
+        return self.___collections___
 
     def __init__(self, collections, **kwargs):
         super().__init__(**kwargs)
         # repeating UUID values
         if len({col.uuid for col in collections}) != len(collections):
             raise KeyError("Collections must not have conflicting UUID values")
-        self.collections = collections
-        self.__metadata__ = GroupMeta(self)
+        self.___collections___ = collections
+        self.___metadata___ = GroupMeta(self)
 
     @staticmethod
     def new(size: int = None, max_collection_size: int = DEFAULT_MAX,

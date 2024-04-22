@@ -119,13 +119,13 @@ class Collection(Persistent):
 
     @property
     def meta(self):
-        return self.__metadata__
+        return self.___metadata___
 
     def __init__(self, uuid: str = None, max_size: int = None, strict=True,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tree = BTree()
-        self.__metadata__ = CollectionMeta(
+        self.___metadata___ = CollectionMeta(
             self.tree,
             uuid=uuid if uuid else str(uuid4()),
             max_size=max_size if max_size else DEFAULT_MAX,
