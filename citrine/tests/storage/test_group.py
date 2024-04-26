@@ -431,6 +431,653 @@ class GroupStorageTests(TestCase):
     as expected
     """
 
+    # This is a modified duplicate of the CollectionStorageTests
+
+    def test_iterkeys(self):
+        """
+        Tests that the Collection.iterkeys method will iterate over all keys,
+        iterate over keys when a range is specified, and will ALWAYS ignore
+        the "meta" key
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        # we're inserting the keys directly into the COLLECTIONS rather than
+        # through the group's insert to avoid assuming that the group insert
+        # already works
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set[index]):
+                collection.insert(key, value)
+
+        # check for all keys
+        expected = keys
+        out = list(grp.iterkeys())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for keys 1, 2, and 3
+        expected = keys[1:8]
+        out = list(grp.iterkeys(min=keys[1], max=keys[7]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for keys 0, 1, and 2
+        expected = keys[:6]
+        out = list(grp.iterkeys(max=keys[5]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for keys 2, 3, and 4
+        expected = keys[7:]
+        out = list(grp.iterkeys(min=keys[7]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_itervalues(self):
+        """
+        Tests that the Collection.itervalues method will iterate over all
+        values, iterate over values when a range is specified, and will ALWAYS
+        ignore the "meta" value
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.itervalues()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set [index]):
+                collection.insert(key, value)
+
+        # check for all values
+        expected = values
+        out = list(grp.itervalues())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 1, 2, and 3
+        expected = values[1:8]
+        out = list(grp.itervalues(min=keys[1], max=keys[7]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 0, 1, and 2
+        expected = values[:7]
+        out = list(grp.itervalues(max=keys[6]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 2, 3, and 4
+        expected = values[7:]
+        out = list(grp.itervalues(min=keys[7]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_iteritems(self):
+        """
+        Tests that the Collection.itervalues method will iterate over all
+        values, iterate over values when a range is specified, and will ALWAYS
+        ignore the "meta" value
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set[index]):
+                collection.insert(key, value)
+
+        # check for all fifteen values
+        expected = {k: v for k, v in items.items()}
+        out = dict(grp.iteritems())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 1, 2, and 3
+        expected = {k: v for k, v in items.items() if k in keys[1:4]}
+        out = dict(grp.iteritems(min=keys[1], max=keys[3]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 0, 1, and 2
+        expected = {k: v for k, v in items.items() if k in keys[:3]}
+        out = dict(grp.iteritems(max=keys[2]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+        # check for values 2, 3, and 4
+        expected = {k: v for k, v in items.items() if k in keys[2:]}
+        out = dict(grp.iteritems(min=keys[2]))
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_keys(self):
+        """
+        Tests that the Collection.iterkeys method will iterate over all keys,
+        iterate over keys when a range is specified, and will ALWAYS ignore
+        the "meta" key
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set[index]):
+                collection.insert(key, value)
+
+        # check for all keys
+        expected = keys
+        out = list(grp.keys())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_values(self):
+        """
+        Tests that the Collection.itervalues method will iterate over all
+        values, iterate over values when a range is specified, and will ALWAYS
+        ignore the "meta" value
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set[index]):
+                collection.insert(key, value)
+
+        # check for all values
+        expected = values
+        out = list(grp.values())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_items(self):
+        """
+        Tests that the Collection.itervalues method will iterate over all
+        values, iterate over values when a range is specified, and will ALWAYS
+        ignore the "meta" value
+        :return:
+        """
+        collections = (Collection(max_size=5), Collection(max_size=5),
+                       Collection(max_size=5))
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2', 'key0.3', 'key0.4']
+        keys1 = ['key1.0', 'key1.1', 'key1.2', 'key1.3', 'key1.4']
+        keys2 = ['key2.0', 'key2.1', 'key2.2', 'key2.3', 'key2.4']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2', 'value0.3', 'value0.4']
+        values1 = ['value1.0', 'value1.1', 'value1.2', 'value1.3', 'value1.4']
+        values2 = ['value2.0', 'value2.1', 'value2.2', 'value2.3', 'value2.4']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for index, collection in enumerate(collections):
+            for key, value in zip(key_set[index], value_set[index]):
+                collection.insert(key, value)
+
+        # check for all five values
+        expected = {k: v for k, v in items.items()}
+        out = dict(grp.items())
+        self.assertEqual(expected, out, msg=f'{out} != {expected}')
+
+    def test_insert(self):
+        """
+        Test that the implementation of ``insert`` in the Collection class works
+        as intended.
+
+        Tests that we can insert values, that we cannot exceed capacity in
+        strict mode, that we can exceed capacity with strict mode off, and that
+        attempting to insert a value for meta will raise an exception
+        """
+        collections = (Collection(max_size=3), Collection(max_size=3),
+                       Collection(max_size=3))
+        grp = group.Group(collections=collections, strict=True)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2']
+        keys1 = ['key1.0', 'key1.1', 'key1.2']
+        keys2 = ['key2.0', 'key2.1', 'key2.2']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2']
+        values1 = ['value1.0', 'value1.1', 'value1.2']
+        values2 = ['value2.0', 'value2.1', 'value2.2']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        collection_items = dict()
+        for collection in grp.collections:
+            for key, value in collection.items():
+                collection_items[key] = value
+
+        # test that everything we have inserted made its way into the collection
+        self.assertEqual(collection_items, items, msg=f'{collection_items} != {items}')
+
+        # test that when strict==True, we cannot exceed the capacity
+        with self.assertRaises(group.GroupCapacityError):
+            grp.insert('key5', 'val5')
+
+        # test that when strict==False, we can exceed the capacity
+        grp.strict = False
+        grp.insert('key3.0', 'val3.0')
+        self.assertEqual(grp.collections[0].get('key3.0'), 'val3.0')
+
+    def test_update(self):
+        """
+        Tests that the implementation of ``update`` in the Collection class
+        works as intended.
+
+        Tests that we can a dict of values, that we cannot exceed capacity in
+        strict mode, that we can exceed capacity with strict mode off, that
+        attempting to insert a value for meta will raise an exception, and that
+        if an update fails the size or type checks nothing will be added
+        """
+        collections = (Collection(max_size=3), Collection(max_size=3),
+                       Collection(max_size=3))
+        grp = group.Group(collections=collections, strict=True)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2']
+        keys1 = ['key1.0', 'key1.1', 'key1.2']
+        keys2 = ['key2.0', 'key2.1', 'key2.2']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2']
+        values1 = ['value1.0', 'value1.1', 'value1.2']
+        values2 = ['value2.0', 'value2.1', 'value2.2']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+
+        # test that everything made its way into the group
+        grp.update(items)
+        collection_items = dict()
+        for collection in grp.collections:
+            for key, value in collection.items():
+                collection_items[key] = value
+        self.assertEqual(collection_items, items,
+                         msg=f'{collection_items} != {items}')
+
+        # test that when strict==True, we cannot exceed the capacity
+        too_many = {f'key{i}': f'val{i}' for i in range(5, 20)}
+        with self.assertRaises(group.GroupCapacityError):
+            grp.update(too_many)
+
+        # check that a failed update does not insert ANY of the keys, even if
+        # there is enough room for some of them
+        for key in too_many.keys():
+            self.assertNotIn(key, grp.keys())
+
+        # test that when strict==False, we can exceed the capacity
+        grp.strict = False
+        too_many = {f'key{i}': f'val{i}' for i in range(5, 20)}
+        grp.update(too_many)
+        for key, value in too_many.items():
+            self.assertIn(key, grp.keys())
+
+    def test_get(self):
+        """
+        Tests that the implementation of ``get`` in the Collection class
+        works as intended.
+
+        Tests that we can get a value back by its key, that attempting to
+        directly access the meta object will raise an exception, and that we
+        can set a default value for when a key does not exist.
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        keys0 = ['key0.0', 'key0.1', 'key0.2']
+        keys1 = ['key1.0', 'key1.1', 'key1.2']
+        keys2 = ['key2.0', 'key2.1', 'key2.2']
+        key_set = (keys0, keys1, keys2)
+        keys = keys0 + keys1 + keys2
+        values0 = ['value0.0', 'value0.1', 'value0.2']
+        values1 = ['value1.0', 'value1.1', 'value1.2']
+        values2 = ['value2.0', 'value2.1', 'value2.2']
+        value_set = (values0, values1, values2)
+        values = values0 + values1 + values2
+        items0 = {k: v for k, v in zip(keys0, values0)}
+        items1 = {k: v for k, v in zip(keys1, values1)}
+        items2 = {k: v for k, v in zip(keys2, values2)}
+        item_set = (items0, items1, items2)
+        items = {**items0, **items1, **items2}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # test that every item can be accessed via get
+        for key, value in items.items():
+            self.assertEqual(grp.get(key), value)
+
+        # test that the default value will be returned if a key does not exist
+        self.assertEqual(grp.get('keyNull', 'valNull'), 'valNull')
+
+        # test that the default is ignored if the key DOES exist
+        self.assertEqual(grp.get(keys[0], 'valNull'), values[0])
+
+    def test_maxkey(self):
+        """
+        Tests that the implementation of ``maxkey`` in the Collection class
+        works as intended.
+
+        Tests that we can get the key with the highest value, that we can
+        define a ceiling, and that the meta object will not ever be returned
+        (even if no other keys exist)
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        with self.assertRaises(ValueError):
+            grp.maxKey()
+
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # tests that the highest key from our inserted values appears
+        self.assertEqual(grp.maxKey(), keys[-1],
+                         f'{grp.maxKey()} != {keys[-1]}')
+        # tests that a lower-value key is returned if we set a ceiling
+        self.assertEqual(grp.maxKey(max=keys[3]), keys[3],
+                         f'{grp.maxKey(max=keys[3])} != {keys[3]}')
+
+    def test_minKey(self):
+        """
+        Tests that the implementation of ``minkey`` in the Collection class
+        works as intended.
+
+        Tests that we can get the key with the highest value, that we can
+        define a floor, and that the meta object will not ever be returned
+        (even if no other keys exist)
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        with self.assertRaises(ValueError):
+            grp.minKey()
+
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # tests that the highest key from our inserted values appears
+        self.assertEqual(grp.minKey(), keys[0],
+                         f'{grp.minKey()} != {keys[0]}')
+        # tests that a lower-value key is returned if we set a ceiling
+        self.assertEqual(grp.minKey(min=keys[3]), keys[3],
+                         f'{grp.minKey(min=keys[3])} != {keys[3]}')
+
+    def test_pop(self):
+        """
+        Tests that the implementation of ``pop`` in the Collection class
+        works as intended.
+
+        Tests that pop returns the correct value, that the value is removed
+        from the collection after, that the meta object cannot be popped, and
+        that attempting to pop a nonexistent object will raise a KeyError.
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # test that we get the desired value for the key
+        value = grp.pop(keys[2])
+        self.assertEqual(value, values[2])
+
+        # test that the key-value pair has disappeared from the collection
+        self.assertNotIn(value, grp.values())
+        self.assertNotIn(keys[2], grp.keys())
+
+        # test that attempting to pop a nonexistent value will raise a KeyError
+        with self.assertRaises(KeyError):
+            grp.pop('nonexistent key')
+
+        # test that default will be returned if popping a nonexistent key
+        value = grp.pop('nonexistent key', 'default')
+        self.assertEqual(value, 'default')
+
+        # test that default will not be returned if popping an existent key
+        value = grp.pop(keys[0], 'default')
+        self.assertEqual(value, values[0])
+
+    def test_popitem(self):
+        """
+        Tests that the implementation of ``pop`` in the Collection class
+        works as intended.
+
+        Tests that pop returns the correct value, that the value is removed
+        from the collection after, that the meta object cannot be popped, and
+        that attempting to pop a nonexistent object will raise a KeyError.
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # test that we get the desired value for the key
+        key, value = grp.popitem()
+        self.assertEqual(key, keys[0])
+        self.assertEqual(value, values[0])
+
+        # test that the key-value pair has disappeared from the collection
+        self.assertNotIn(key, grp.keys())
+        self.assertNotIn(value, grp.values())
+
+    def test_setdefault(self):
+        """
+
+        :return:
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # test that the default is returned if the key does not exist
+        value = grp.setdefault('key5', 'val5')
+        self.assertEqual(value, 'val5')
+
+        # test that the new value has been inserted
+        self.assertEqual(grp.get('key5'), 'val5')
+
+        # test that the key value is returned if the key does exist
+        value = grp.setdefault(keys[0], 'val0-1')
+        self.assertEqual(value, values[0])
+
+        # test that the value was not changed
+        self.assertEqual(grp.get(keys[0]), values[0])
+
+    def test_byValue(self):
+        """
+
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        value_key = tuple((value, key) for key, value in items.items())
+
+        # test that we get an iterable of value-key pairs
+        expected = value_key[::-1]
+        actual = tuple(grp.byValue())
+        self.assertEqual(expected, actual)
+
+        # test that we get a list of value-key pairs where a minimum is set
+        expected = value_key[2::][::-1]
+        actual = tuple(grp.byValue(min='value0.2'))
+        self.assertEqual(expected, actual)
+
+    def test_clear(self):
+        """
+
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        self.assertEqual(len(grp.keys()), len(keys))
+
+        grp.clear()
+
+        self.assertEqual(len(grp.keys()), 0)
+
+
+    def test_has_key(self):
+        """
+
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+
+        # check that we receive an iterable that produces nothing
+        self.assertEqual(list(grp.iterkeys()), [])
+
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['key0.0', 'key0.1', 'key0.2', 'key1.0', 'key1.1', 'key1.2',
+                'key2.0', 'key2.1', 'key2.2']
+        values = ['value0.0', 'value0.1', 'value0.2', 'value1.0', 'value1.1',
+                  'value1.2', 'value2.0', 'value2.1', 'value2.2']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        # test that keys in the collection are all found
+        for key in keys:
+            self.assertTrue(grp.has_key(key))
+
+        # test that keys not in the collection are not found
+        for key in ['key5', 'key6', 'key7']:
+            self.assertFalse(grp.has_key(key))
+
 
 class GroupDivisionTests(TestCase):
     """
@@ -441,6 +1088,7 @@ class GroupDivisionTests(TestCase):
     check that objects are being assigned to the correct collections and that
     retrieval operations look for the correct location
     """
+
 
 
 if __name__ == '__main__':

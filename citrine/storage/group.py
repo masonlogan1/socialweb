@@ -1,4 +1,5 @@
 import logging
+from itertools import chain
 from math import ceil
 from uuid import uuid4
 
@@ -6,16 +7,62 @@ from persistent import Persistent
 
 from citrine.storage.collection import Collection, DEFAULT_MAX
 
+minimum = min
+maximum = max
+
+
+def get_group_index(id: str, num_collections):
+    return int.from_bytes(id.encode()) % num_collections
+
 
 def groupfn(fn):
     # they key MUST be either a kwarg OR the first positional arg
     def decorator(obj, *args, **kwargs):
         key = kwargs.get('key', None if not args else args[0])
-        index = int.from_bytes(key.encode()) % (len(obj.collections))
+        index = get_group_index(key, len(obj.collections))
         collection = obj.collections[index]
         # fn gives us the function from Collection
         return fn(obj, *args, **kwargs)(collection, *args, **kwargs)
     return decorator
+
+
+class GroupCapacityError(Exception):
+    """
+    Raised when an operation will exceed the capacity of a collection.
+    """
+
+
+class GroupView:
+    fn = lambda *args, **kwargs: None
+
+    def __init__(self, collections):
+        self.collections = collections
+
+    def __len__(self):
+        count = 0
+        for _ in self:
+            count += 1
+        return count
+
+    def __iter__(self):
+        for collection in self.collections:
+            for item in self.fn(collection):
+                yield item
+
+
+class GroupKeys(GroupView):
+    def fn(self, collection):
+        return Collection.keys(collection)
+
+
+class GroupValues(GroupView):
+    def fn(self, collection):
+        return Collection.values(collection)
+
+
+class GroupItems(GroupView):
+    def fn(self, collection):
+        return Collection.items(collection)
 
 
 class GroupMeta(Persistent):
@@ -152,13 +199,25 @@ class Group(Persistent):
         """
         return self.___collections___
 
-    def __init__(self, collections, **kwargs):
+    @property
+    def strict(self):
+        return all(collection.strict for collection in self.collections)
+
+    @strict.setter
+    def strict(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'strict' must be a boolean")
+        for collection in self.collections:
+            collection.strict = value
+
+    def __init__(self, collections, strict=False, **kwargs):
         super().__init__(**kwargs)
         # repeating UUID values
         if len({col.uuid for col in collections}) != len(collections):
             raise KeyError("Collections must not have conflicting UUID values")
         self.___collections___ = collections
         self.___metadata___ = GroupMeta(self)
+        self.strict = strict
 
     @staticmethod
     def new(size: int = None, max_collection_size: int = DEFAULT_MAX,
@@ -197,7 +256,6 @@ class Group(Persistent):
         """
         # generate everything if custom definition is not provided
         if not custom:
-
             if not size:
                 raise ValueError("Size must be provided if no custom " +
                                  "definition is")
@@ -216,7 +274,8 @@ class Group(Persistent):
         for key in range(size):
             if key not in keys:
                 custom[key] = max_collection_size
-        collections = tuple(Collection(max_size=max_collection_size)
+        collections = tuple(Collection(max_size=max_collection_size,
+                                       strict=strict)
                             for _, max_collection_size in custom.items())
         return Group(collections=collections)
 
@@ -235,12 +294,15 @@ class Group(Persistent):
         Insert a single key-value pair into the collection
         :param key: the identifier
         :param value: the value to store
-        :raises CollectionCapacityError: if the size of the collection exceeds
+        :raises GroupCapacityError: if the size of the collection exceeds
         the limit in strict mode
         """
+        if (self.size >= self.max_size
+                and key not in self.keys()
+                and self.strict):
+            raise GroupCapacityError("Maximum size reached! Cannot insert")
         return Collection.insert
 
-    @groupfn
     def update(self, collection):
         """
         Update a collection with a set of key-value pairs.
@@ -248,7 +310,17 @@ class Group(Persistent):
         :raises CollectionCapacityError: if the size of the new keys to be
         inserted will exceed the limit in strict mode
         """
-        return Collection.update
+        new_keys = (key for key in collection.keys() if key not in self.keys())
+        if len(tuple(new_keys)) + self.size > self.max_size and self.strict:
+            raise GroupCapacityError("Maximum size reached! Cannot perform update")
+
+        num_collections = len(self.collections)
+        split_collection = {_: {} for _ in range(len(self.collections))}
+        for key, value in collection.items():
+            split_collection[get_group_index(key, num_collections)][key] = value
+
+        for index, collection in split_collection.items():
+            self.collections[index].update(collection)
 
     @groupfn
     def pop(self, key, default=None):
@@ -260,13 +332,12 @@ class Group(Persistent):
         """
         return Collection.pop
 
-    @groupfn
     def popitem(self):
         """
         Pop a key from the collection and return the key-value pair
         :raise KeyError: if the key is not present in the collection
         """
-        return Collection.popitem
+        return self.minKey(), self.pop(self.minKey())
 
     @groupfn
     def setdefault(self, key, value):
@@ -283,17 +354,15 @@ class Group(Persistent):
         """
         Clears all values in the collection
         """
-        return Collection.clear
+        return [collection.clear() for collection in self.collections]
 
-    @groupfn
     def keys(self):
         """
         Return a view of all keys in the collection
         :return: OOBTreeItems object
         """
-        return Collection.keys
+        return GroupKeys(self.collections)
 
-    @groupfn
     def iterkeys(self, min=None, max=None):
         """
         Return a view of all keys in the collection within a minimum/maximum
@@ -302,17 +371,31 @@ class Group(Persistent):
         :param max: the highest key to return
         :return: generator of key
         """
-        return Collection.iterkeys
+        gens = [collection.iterkeys(min, max)
+                for collection in self.collections]
+        vals = list()
+        for gen in gens:
+            try:
+                vals.append(next(gen))
+            except StopIteration:
+                vals.append(None)
+        while any(vals):
+            # get the lowest value
+            next_val = minimum((v for v in vals if v is not None))
+            # replace the lowest value with the next value from the generator
+            try:
+                vals[vals.index(next_val)] = next(gens[vals.index(next_val)])
+            except StopIteration:
+                vals[vals.index(next_val)] = None
+            yield next_val
 
-    @groupfn
     def values(self):
         """
         Return a view of all values in the collection
         :return: OOBTreeItems object
         """
-        return Collection.values
+        return GroupValues(self.collections)
 
-    @groupfn
     def itervalues(self, min=None, max=None):
         """
         Return a view of all keys in the collection within a minimum/maximum
@@ -321,17 +404,31 @@ class Group(Persistent):
         :param max: the highest value to return
         :return: generator of values
         """
-        return Collection.itervalues
+        gens = [collection.itervalues(min, max)
+                for collection in self.collections]
+        vals = list()
+        for gen in gens:
+            try:
+                vals.append(next(gen))
+            except StopIteration:
+                vals.append(None)
+        while any(vals):
+            # get the lowest value
+            next_val = minimum((v for v in vals if v is not None))
+            # replace the lowest value with the next value from the generator
+            try:
+                vals[vals.index(next_val)] = next(gens[vals.index(next_val)])
+            except StopIteration:
+                vals[vals.index(next_val)] = None
+            yield next_val
 
-    @groupfn
     def items(self):
         """
         Return a view of all items in the collection
         :return: OOBTreeItems object
         """
-        return Collection.items
+        return GroupItems(self.collections)
 
-    @groupfn
     def iteritems(self, min=None, max=None):
         """
         Return a view of all keys in the collection within a minimum/maximum
@@ -340,18 +437,43 @@ class Group(Persistent):
         :param max: the highest key in the items
         :return: generator of key-value pairs
         """
-        return Collection.iteritems
+        gens = [collection.iteritems(min, max)
+                for collection in self.collections]
+        keys = list()
+        items = dict()
+        for gen in gens:
+            try:
+                item = next(gen)
+                keys.append(item[0])
+                items[item[0]] = item[1]
+            except StopIteration:
+                keys.append(None)
+        while any(keys):
+            # get the lowest value
+            next_key = minimum((v for v in keys if v is not None))
+            # replace the lowest value with the next value from the generator
+            try:
+                item = next(gens[keys.index(next_key)])
+                keys[keys.index(next_key)] = item[0]
+                items[item[0]] = item[1]
+                yield next_key, items.pop(next_key)
+            except StopIteration:
+                keys[keys.index(next_key)] = None
+                yield next_key, items.pop(next_key)
 
-    @groupfn
     def byValue(self, min=None):
         """
         Returns anything where key >= min in (value, key) pairs
         :param min: minimum value to start from
         :return:
         """
-        return Collection.byValue
+        values = [collection.byValue(min) for collection in self.collections]
+        combined = list()
+        for group in values:
+            combined += list(group)
+        for val in sorted(combined, reverse=True):
+            yield val
 
-    @groupfn
     def maxKey(self, max=None):
         """
         Returns the highest-value key in the collection with an optional
@@ -359,9 +481,9 @@ class Group(Persistent):
         :param max: highest key value to return
         :raise ValueError: if there are no keys in the collection
         """
-        return Collection.maxKey
+        return maximum(collection.maxKey(max)
+                       for collection in self.collections)
 
-    @groupfn
     def minKey(self, min=None):
         """
         Returns the lowest-value key in the collection with an optional floor
@@ -369,7 +491,8 @@ class Group(Persistent):
         :param max: lowest key value to return
         :raise ValueError: if there are no keys in the collection
         """
-        return Collection.minKey
+        return minimum(collection.minKey(min)
+                       for collection in self.collections)
 
     @groupfn
     def has_key(self, key):
