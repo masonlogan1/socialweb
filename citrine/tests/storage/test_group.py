@@ -194,6 +194,39 @@ class GroupConstructionTests(TestCase):
     sizing and strictness
     """
 
+    # test that Group.new creates specified number of groups with default sizes
+    # o test create one
+    # o test create multiple
+    # o test raise exception when number is zero
+
+    # test that Group.new creates specified number of groups using provided size
+    # o test create one
+    # o test create multiple
+    # o test raise exception when size is zero
+
+    # test that Group.new creates groups with custom size definition
+    # o test create one
+    # o test create multiple
+    # o test raise exception when no sizes provided
+
+    # test that Group.new creates groups with custom size definition and fills gaps with default sized groups
+    # o test spaces before
+    # o test spaces after
+    # o test spaces between
+    # o test spaces before and after
+    # o test spaces before and between
+    # o test spaces after and between
+    # o test spaces before, after, and between
+
+    # test that Group.new creates groups with custom size definition and fills gaps with provided size
+    # o test spaces before
+    # o test spaces after
+    # o test spaces between
+    # o test spaces before and after
+    # o test spaces before and between
+    # o test spaces after and between
+    # o test spaces before, after, and between
+
 
 class GroupPropertyTests(TestCase):
     """
@@ -1088,6 +1121,10 @@ class GroupDivisionTests(TestCase):
     check that objects are being assigned to the correct collections and that
     retrieval operations look for the correct location
     """
+    # test against 1 collection that all values go in
+
+    # test against 3 collections that key-value pairs with known int transforms
+    # will go into correct locations
 
 
 
