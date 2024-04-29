@@ -1121,10 +1121,41 @@ class GroupDivisionTests(TestCase):
     check that objects are being assigned to the correct collections and that
     retrieval operations look for the correct location
     """
-    # test against 1 collection that all values go in
+    def test_single_collection(self):
+        """
+        Tests that a group will insert all keys into a collection if there is
+        only one collection
+        """
+        collections = (Collection(),)
+        grp = group.Group(collections=collections)
+        keys = ['key0', 'key1', 'key2', 'key3', 'key4', 'key5']
+        values = ['value0', 'value1', 'value2', 'value3', 'value4', 'value5']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
 
-    # test against 3 collections that key-value pairs with known int transforms
-    # will go into correct locations
+        for key, value in zip(keys, values):
+            self.assertTrue(grp.collections[0].has_key(key))
+            self.assertEqual(grp.collections[0].get(key), value)
+
+    def test_multiple_collections(self):
+        """
+        Tests that a group will spread the key-value pairs into multiple
+        collections based on the value of the key.
+        """
+        collections = (Collection(), Collection(), Collection())
+        grp = group.Group(collections=collections)
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['value0', 'value1', 'value2', 'value3', 'value4', 'value5']
+        items = {k: v for k, v in zip(keys, values)}
+        for key, value in items.items():
+            grp.insert(key, value)
+
+        for index, collection in enumerate(grp.collections):
+            for key, value in zip(keys[index::3], values[index::3]):
+                self.assertTrue(collection.has_key(key),
+                                f'{key} not in {", ".join(list(collection.keys()))}')
+                self.assertEqual(collection.get(key), value)
 
 
 
