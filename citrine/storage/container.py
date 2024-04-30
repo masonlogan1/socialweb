@@ -1,20 +1,16 @@
 import logging
+from typing import List
 from math import ceil
 from uuid import uuid4
 
 from persistent import Persistent
-from persistent.mapping import PersistentMapping
-
-# if the zope people would like to make sure the BTree class is directly
-# importable rather than the current "cleverer than you" bs they have going on,
-# that would be FANTASTIC.
-from BTrees import _OOBTree
-BTree = _OOBTree.BTree
-
-from citrine.cluster_tools.clusterdb import container
+from citrine.storage.group import Group
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+DEFAULT_SIZE = 65536
 
 
 class Metadata(Persistent):
@@ -29,74 +25,202 @@ class Metadata(Persistent):
         self.cache = cache
 
 
-class Container(Persistent):
+class ContainerMeta(Persistent):
+    """
+    Allows for tracking the internal status of Container objects in a way
+    that can be stored as an independent persistent object.
+    """
+
+    @property
+    def size(self):
+        """
+
+        :return:
+        """
+        return
+
+    @property
+    def max_size(self):
+        """
+
+        :return:
+        """
+        return
+
+    @property
+    def usage(self):
+        """
+
+        """
+        return
+
+    @property
+    def status(self):
+        """
+
+        """
+        return
+
+    def __init__(self, obj):
+        self.obj = obj
+
+
+class ContainerProperties:
+
+    # The actual purpose of this class is to make it easier to separate the
+    # boilerplate property logic and docstrings from the actual functionality
+
+    # should be overridden by instances of implementing class
+    ___metadata___ = None
+    ___primary___ = None
+    ___groups___ = tuple()
+
+    @property
+    def meta(self):
+        """
+        Quick reference to the metadata object
+        :return:
+        """
+        return self.___metadata___
+
+    @property
+    def primary_group(self):
+        return self.___primary___
+
+    @property
+    def groups(self):
+        return self.___groups___
+
+    @property
+    def size(self):
+        """
+        Number of items in the container
+        :return:
+        """
+        return
+
+    @property
+    def max_size(self):
+        """
+        Limit of items that a container can hold in strict mode
+        :return:
+        """
+        return
+
+    @property
+    def usage(self):
+        """
+        Percentage of the container's max_size that has been used
+        """
+        return
+
+    @property
+    def status(self):
+        """
+        Enumerated type giving a brief summary of how full the container is
+        """
+        return
+
+
+class Container(Persistent, ContainerProperties):
     """
     Object used to manage a collection of PersistentMapping objects within
     an object database. Uses the hash value of the object to determine which
     container it should be kept in.
     """
 
-    @property
-    def size(self):
-        return sum((len(con.keys()) for con in self.containers.values()))
-
-    def __init__(self, containers: dict | PersistentMapping = None):
+    def __init__(self, groups: tuple, primary_group: Group,
+                 strict: bool = False, **kwargs):
+        """
+        Creates the Container. If the primary_group is not in the groups, it
+        will be added, however if it is in the groups it will just be set as
+        the primary_group property
+        :param groups: all groups to include in the container
+        :param primary_group: the primary group for the container
+        :param strict: whether to enforce size restrictions
+        """
         super().__init__()
-        # Containers will be stored as a PM of PMs
-        self.containers = containers if containers is not None else \
-            PersistentMapping({0: Collection()})
+        self.___primary___ = primary_group
+        self.___groups___ = groups
+        if self.primary not in self.groups:
+            self.___groups___ += (self.primary,)
+        self.___metadata___ = ContainerMeta(self)
 
-    def expand_size(self, new_size: int):
-        if new_size <= self.containers_size:
-            raise ValueError(f'Cannot expand from {self.containers_size} ' +
-                             f'containers to {new_size} containers, new size ' +
-                             f'must be larger than existing size')
-        self.containers = PersistentMapping({
-            key: self.containers.get(key, PersistentMapping())
-            for key in range(new_size)
-        })
+    def resize(self, size: int):
+        """
+        Changes the size of the container. Raises a ValueError if the provided
+        size value is smaller than the current number of stored objects
+        :param size:
+        :return:
+        """
+
+    def condense(self, transfer: bool = True) -> List[Group]:
+        """
+        Condenses all groups in the container into the primary group. If
+        transfer is True (default), the operation will be performed in-place
+        and the original groups will be depopulated. All secondary groups will
+        be removed from the container at the end of the operation
+        :param transfer: whether to empty the secondary containers
+        :return: secondary groups removed from the container
+        """
 
     def has(self, id) -> bool:
         """
         Return a bool describing whether the object is already present in the
         database
-        :param id:
-        :return:
+        :param id: the identifier of the object
+        :return: whether the object exists
         """
-        return id in self.__locate_container(id).keys()
 
     def read(self, id):
         """
         Return an object by the given id
-        :param id:
+        :param id: identifier of the stored object
         :return:
         """
-        return self.__locate_container(id).get(id, None)
 
     def write(self, id, obj):
         """
         Save an object to the database at the given id location
-        :param obj:
-        :param id:
+        :param id: identifier for the object to be stored
+        :param obj: the object to be stored
         :return:
         """
-        self.__locate_container(id)[id] = obj
 
     def delete(self, id):
         """
         Remove an object from the database by the given id
-        :param id:
-        :return:
+        :param id: identifier of the object
+        :return: removed object
         """
-        self.__locate_container(id).pop(id)
 
-    def __locate_container(self, id: str):
+    @staticmethod
+    def new(size: int = DEFAULT_SIZE, strict=False):
         """
-        Locate the appropriate container based on the provided id value
-        :param id:
+        Creates a new container with the given size and capacity enforcement.
+        :param size: the item capacity for the container
+        :param strict: whether to enforce restrictions on exceeding capacity
         :return:
         """
-        # ensure we get the same value each time
-        val = int.from_bytes(str(id).encode(), 'big')
-        val = val % self.containers_size
-        return self.containers[val]
+
+    def __add__(self, other):
+        """
+        Combines either two containers or a container and a group. The
+        container on the left side of the operation will acquire the group(s)
+        from the container/group on the right as secondary containers.
+        :param other:
+        :return:
+        """
+
+    def __contains__(self, item):
+        """
+        Determines whether a value is used as an id in the container.
+        :param item:
+        :return:
+        """
+
+    def __iter__(self):
+        """
+        Iterates over all items stored in the group as key-value pairs.
+        :return:
+        """
