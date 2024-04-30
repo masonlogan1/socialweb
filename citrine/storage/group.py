@@ -259,6 +259,8 @@ class Group(Persistent):
             if not size:
                 raise ValueError("Size must be provided if no custom " +
                                  "definition is")
+            if max_collection_size <= 0:
+                raise ValueError('Collection sizes cannot be less than 1')
             collections = tuple(Collection(max_size=max_collection_size)
                                 for _ in range(size))
             return Group(collections=collections)
@@ -274,9 +276,13 @@ class Group(Persistent):
         for key in range(size):
             if key not in keys:
                 custom[key] = max_collection_size
+        for key, value in custom.items():
+            if value <= 0:
+                raise ValueError('Collection sizes cannot be less than 1')
+
         collections = tuple(Collection(max_size=max_collection_size,
                                        strict=strict)
-                            for _, max_collection_size in custom.items())
+                            for _, max_collection_size in sorted(custom.items()))
         return Group(collections=collections)
 
     @groupfn

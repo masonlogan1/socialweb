@@ -194,38 +194,180 @@ class GroupConstructionTests(TestCase):
     sizing and strictness
     """
 
-    # test that Group.new creates specified number of groups with default sizes
-    # o test create one
-    # o test create multiple
-    # o test raise exception when number is zero
+    def test_new_defaults(self):
+        """
+        Tests that Group.new creates a specified number of groups using the
+        default collection max size, and that a ValueError is raised if no
+        size is specified
+        :return:
+        """
+        size_zero = 0
+        size_one = 1
+        size_multiple = 3
 
-    # test that Group.new creates specified number of groups using provided size
-    # o test create one
-    # o test create multiple
-    # o test raise exception when size is zero
+        grp = group.Group.new(size=size_one)
+        self.assertEqual(len(grp.collections), size_one)
 
-    # test that Group.new creates groups with custom size definition
-    # o test create one
-    # o test create multiple
-    # o test raise exception when no sizes provided
+        grp = group.Group.new(size=size_multiple)
+        self.assertEqual(len(grp.collections), size_multiple)
 
-    # test that Group.new creates groups with custom size definition and fills gaps with default sized groups
-    # o test spaces before
-    # o test spaces after
-    # o test spaces between
-    # o test spaces before and after
-    # o test spaces before and between
-    # o test spaces after and between
-    # o test spaces before, after, and between
+        with self.assertRaises(ValueError):
+            group.Group.new(size=size_zero)
 
-    # test that Group.new creates groups with custom size definition and fills gaps with provided size
-    # o test spaces before
-    # o test spaces after
-    # o test spaces between
-    # o test spaces before and after
-    # o test spaces before and between
-    # o test spaces after and between
-    # o test spaces before, after, and between
+    def test_max_collection_size(self):
+        size = 3
+
+        collection_size_zero = 0
+        collection_size_one = 1
+        collection_size_multiple = 3
+
+        grp = group.Group.new(size=size,
+                              max_collection_size=collection_size_one)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size, collection_size_one)
+
+        grp = group.Group.new(size=size,
+                              max_collection_size=collection_size_multiple)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size, collection_size_multiple)
+
+        with self.assertRaises(ValueError):
+            grp = group.Group.new(size=size,
+                                  max_collection_size=collection_size_zero)
+
+    def test_size_and_max_collection_size_generation(self):
+        """
+
+        """
+        size_one = 1
+        size_multiple = 3
+
+        collection_size_one = 1
+        collection_size_multiple = 3
+
+        # one collection, one item, total one item
+        grp = group.Group.new(size=size_one,
+                              max_collection_size=collection_size_one)
+        self.assertEqual(len(grp.collections), size_one)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size, collection_size_one)
+        self.assertEqual(grp.max_size, 1)
+
+        # one collection, three items, total three items
+        grp = group.Group.new(size=size_one,
+                              max_collection_size=collection_size_multiple)
+        self.assertEqual(len(grp.collections), size_one)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size,
+                             collection_size_multiple)
+        self.assertEqual(grp.max_size, 3)
+
+        # three collections, one item each, total of three items
+        grp = group.Group.new(size=size_multiple,
+                              max_collection_size=collection_size_one)
+        self.assertEqual(len(grp.collections), size_multiple)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size, collection_size_one)
+        self.assertEqual(grp.max_size, 3)
+
+        # three collections, three items each, total of nine items
+        grp = group.Group.new(size=size_multiple,
+                              max_collection_size=collection_size_multiple)
+        self.assertEqual(len(grp.collections), size_multiple)
+        for collection in grp.collections:
+            self.assertEqual(collection.max_size, collection_size_multiple)
+        self.assertEqual(grp.max_size, 9)
+
+    def test_custom_group_definition(self):
+        """
+        Tests that group.Group.new can take a dictionary of values and
+        produce a set of collections from it. This test assumes that the
+        provided keys will be an unbroken sequence of integers starting with
+        zero. Also checks that is a size lower than the max key value is
+        specified a KeyError will be raised.
+        :return:
+        """
+        group0_size = 10
+        group1_size = 15
+        group2_size = 20
+        sizes = (group0_size, group1_size, group2_size)
+
+        custom_definition = {
+            0: group0_size,
+            1: group1_size,
+            2: group2_size,
+        }
+        # three collections, totalling 45 items
+        grp = group.Group.new(custom=custom_definition)
+        self.assertEqual(len(grp.collections), 3)
+        for expected_size, collection in zip(sizes, grp.collections):
+            self.assertEqual(collection.max_size, expected_size)
+        self.assertEqual(grp.max_size, 45)
+
+        with self.assertRaises(KeyError):
+            grp = group.Group.new(size=1, custom=custom_definition)
+
+    def test_custom_definition_with_gaps(self):
+        """
+        Tests that a group created with a custom definition can generate a
+        set of collections that meet the provided definition and fill any gaps
+        in the key set with the generation defaults
+        """
+        group0_size = 10
+        group1_size = 15
+        group3_size = 20
+        sizes = (group0_size, group1_size, group.DEFAULT_MAX, group3_size)
+
+        custom_definition = {
+            0: group0_size,
+            1: group1_size,
+            3: group3_size,
+        }
+
+        group_size = group0_size+group1_size+group3_size+group.DEFAULT_MAX
+
+        # three collections, totalling 5045 items
+        grp = group.Group.new(custom=custom_definition)
+        self.assertEqual(len(grp.collections), 4)
+        for expected_size, collection in zip(sizes, grp.collections):
+            self.assertEqual(collection.max_size, expected_size,
+                             f'Size mismatch: {collection.max_size}!={expected_size}')
+        self.assertEqual(grp.max_size, group_size)
+
+        with self.assertRaises(KeyError):
+            grp = group.Group.new(size=1, custom=custom_definition)
+
+    def test_custom_definition_with_gap_generation(self):
+        """
+        Tests that a group created with a custom definition can generate a
+        set of collections that meet the provided definition and fill any gaps
+        in the key set with provided defaults
+        """
+        collection_size = 50
+        group0_size = 10
+        group1_size = 15
+        group3_size = 20
+        sizes = (group0_size, group1_size, collection_size, group3_size)
+
+        custom_definition = {
+            0: group0_size,
+            1: group1_size,
+            3: group3_size,
+        }
+
+        group_size = group0_size + group1_size + group3_size + collection_size
+
+        # three collections, totalling 5045 items
+        grp = group.Group.new(max_collection_size=collection_size,
+                              custom=custom_definition)
+        self.assertEqual(len(grp.collections), 4)
+        for expected_size, collection in zip(sizes, grp.collections):
+            self.assertEqual(collection.max_size, expected_size,
+                             f'Size mismatch: {collection.max_size}!={expected_size}')
+        self.assertEqual(grp.max_size, group_size)
+
+        with self.assertRaises(KeyError):
+            grp = group.Group.new(size=1, custom=custom_definition)
 
 
 class GroupPropertyTests(TestCase):
