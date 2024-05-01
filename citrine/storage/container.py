@@ -34,32 +34,44 @@ class ContainerMeta(Persistent):
     @property
     def size(self):
         """
-
-        :return:
+        The number of all items in all groups
         """
-        return
+        return sum(grp.size for grp in self.obj.groups)
 
     @property
     def max_size(self):
         """
-
-        :return:
+        The maximum size of all groups in the container
         """
-        return
+        return sum(grp.max_size for grp in self.obj.groups)
+
+    @property
+    def capacity(self):
+        """
+        The maximum size of the primary group
+        """
+        return self.obj.primary.max_size
+
+    @property
+    def used(self):
+        """
+        The number of items in the primary group
+        """
+        return self.obj.primary.size
 
     @property
     def usage(self):
         """
-
+        The usage percentage of the primary group
         """
-        return
+        return self.obj.primary.usage
 
     @property
     def status(self):
         """
-
+        The health of the primary group
         """
-        return
+        return self.obj.primary.status
 
     def __init__(self, obj):
         self.obj = obj
@@ -85,10 +97,18 @@ class ContainerProperties:
 
     @property
     def primary_group(self):
+        """
+        The primary read/write group of the container
+        :return:
+        """
         return self.___primary___
 
     @property
     def groups(self):
+        """
+        The ordered set of groups in the container
+        :return:
+        """
         return self.___groups___
 
     @property
