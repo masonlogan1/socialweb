@@ -3,8 +3,10 @@ from typing import List
 
 from persistent import Persistent
 from citrine.storage.group import Group
-from citrine.storage.consts import DEFAULT_CONTAINER_SIZE, \
-    DEFAULT_COLLECTION_SIZE
+from citrine.storage.consts import (DEFAULT_CONTAINER_SIZE,
+                                    DEFAULT_COLLECTION_SIZE)
+from citrine.storage.utils import (number_of_collections,
+                                   next_number_of_collections)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -164,7 +166,7 @@ class Container(Persistent, ContainerProperties):
     container it should be kept in.
     """
 
-    def __init__(self, groups: tuple, primary_group: Group,
+    def __init__(self, primary_group: Group, groups: tuple = tuple(),
                  strict: bool = False, **kwargs):
         """
         Creates the Container. If the primary_group is not in the groups, it
@@ -178,8 +180,9 @@ class Container(Persistent, ContainerProperties):
         self.___primary___ = primary_group
         self.___groups___ = groups
         if self.primary not in self.groups:
-            self.___groups___ += (self.primary,)
+            self.___groups___ = (self.primary,) + self.groups
         self.___metadata___ = ContainerMeta(self)
+        self.strict = strict
 
     @classmethod
     def new(cls, capacity: int = DEFAULT_CONTAINER_SIZE,
@@ -195,6 +198,18 @@ class Container(Persistent, ContainerProperties):
         :raises ValueError: if ``collection_max_size`` is less than ``capacity``
         :return: new Container object
         """
+        size = number_of_collections(
+            capacity,
+            max_collection_size=collection_max_size
+        )
+        if size * capacity < collection_max_size:
+            collection_max_size = size * capacity
+        primary = Group.new(
+            size=size,
+            max_collection_size=collection_max_size,
+            strict=strict
+        )
+        return Container(primary, strict=strict)
 
 
     def resize(self, size: int):
@@ -243,15 +258,6 @@ class Container(Persistent, ContainerProperties):
         Remove an object from the database by the given id
         :param id: identifier of the object
         :return: removed object
-        """
-
-    @staticmethod
-    def new(size: int = DEFAULT_CONTAINER_SIZE, strict=False):
-        """
-        Creates a new container with the given size and capacity enforcement.
-        :param size: the item capacity for the container
-        :param strict: whether to enforce restrictions on exceeding capacity
-        :return:
         """
 
     def __add__(self, other):

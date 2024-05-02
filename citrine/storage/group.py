@@ -249,6 +249,11 @@ class Group(Persistent):
         sizes by the hash value of the items that will be stored there, and any
         gaps will be automatically filled
 
+        It is HIGHLY RECOMMENDED that the number of collections is PRIME. Using
+        a non-prime number of collections runs the risk of a collection being
+        consistently missed when writing, essentially making part of the group
+        unreachable.
+
         :param size: the total number of containers that should be created
         :param max_collection_size: the maximum number of objects each container can handle
         :param strict: whether to raise exceptions if the max_collection_size is exceeded (default False)

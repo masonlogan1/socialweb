@@ -264,7 +264,7 @@ class ContainerPropertyTests(TestCase):
         """
         primary = MagicMock()
         groups = (primary, MagicMock(max_size=20), MagicMock(max_size=30))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertEqual(metamock.return_value, obj.meta)
 
@@ -275,14 +275,14 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock()
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertEqual(primary, obj.primary)
 
         # test when multiple groups are present
         primary = MagicMock()
         groups = (primary, MagicMock(max_size=20), MagicMock(max_size=30))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertEqual(primary, obj.primary)
 
@@ -293,14 +293,14 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock()
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertEqual(groups, obj.groups)
 
         # test when multiple groups are present
         primary = MagicMock()
         groups = (primary, MagicMock(max_size=20), MagicMock(max_size=30))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertEqual(groups, obj.groups)
 
@@ -312,7 +312,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group and empty
         primary = MagicMock(size=0)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 0
         self.assertEqual(obj.size, expected)
@@ -320,7 +320,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group and has items
         primary = MagicMock(size=10)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 10
         self.assertEqual(obj.size, expected)
@@ -328,7 +328,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; all empty
         primary = MagicMock(size=0)
         groups = (primary, MagicMock(size=0), MagicMock(size=0))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 0
         self.assertEqual(obj.size, expected)
@@ -336,7 +336,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; only primary has items
         primary = MagicMock(size=5)
         groups = (primary, MagicMock(size=0), MagicMock(size=0))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 5
         self.assertEqual(obj.size, expected)
@@ -344,7 +344,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; only secondary have items
         primary = MagicMock(size=0)
         groups = (primary, MagicMock(size=5), MagicMock(size=10))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 15
         self.assertEqual(obj.size, expected)
@@ -352,7 +352,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; primary and secondary have items
         primary = MagicMock(size=5)
         groups = (primary, MagicMock(size=5), MagicMock(size=10))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 20
         self.assertEqual(obj.size, expected)
@@ -366,7 +366,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock(max_size=5)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 5
         self.assertEqual(obj.max_size, expected)
@@ -374,7 +374,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; all same size
         primary = MagicMock(max_size=5)
         groups = (primary, MagicMock(max_size=5), MagicMock(max_size=5))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 15
         self.assertEqual(obj.max_size, expected)
@@ -382,7 +382,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; different sizes
         primary = MagicMock(max_size=5)
         groups = (primary, MagicMock(max_size=10), MagicMock(max_size=15))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 30
         self.assertEqual(obj.max_size, expected)
@@ -395,7 +395,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock(size=5)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 5
         self.assertEqual(obj.used, expected)
@@ -403,7 +403,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; all same used
         primary = MagicMock(size=10)
         groups = (primary, MagicMock(size=10), MagicMock(size=10))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 10
         self.assertEqual(obj.used, expected)
@@ -411,7 +411,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; different used
         primary = MagicMock(size=15)
         groups = (primary, MagicMock(size=18), MagicMock(size=25))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 15
         self.assertEqual(obj.used, expected)
@@ -424,7 +424,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock(usage=.35)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 35
         self.assertEqual(int(obj.usage*100), expected)
@@ -432,7 +432,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; all same usage rate
         primary = MagicMock(usage=.24)
         groups = (primary, MagicMock(usage=.11), MagicMock(usage=.80))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 24
         self.assertEqual(int(obj.usage*100), expected)
@@ -440,7 +440,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; different usage rates
         primary = MagicMock(usage=.55)
         groups = (primary, MagicMock(usage=.65), MagicMock(usage=.14))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = 55
         self.assertEqual(int(obj.usage*100), expected)
@@ -453,7 +453,7 @@ class ContainerPropertyTests(TestCase):
         # test when primary is only group
         primary = MagicMock(status=HEALTHY)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = HEALTHY
         self.assertEqual(obj.status, expected)
@@ -461,7 +461,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; all same status
         primary = MagicMock(status=WARNING)
         groups = (primary, MagicMock(status=WARNING), MagicMock(status=WARNING))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = WARNING
         self.assertEqual(obj.status, expected)
@@ -469,7 +469,7 @@ class ContainerPropertyTests(TestCase):
         # test with multiple groups; different statuses
         primary = MagicMock(status=CRITICAL)
         groups = (primary, MagicMock(status=ALERT), MagicMock(status=HEALTHY))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         expected = CRITICAL
         self.assertEqual(obj.status, expected)
@@ -482,7 +482,7 @@ class ContainerPropertyTests(TestCase):
         # test with only primary
         primary = MagicMock(strict=False)
         groups = (primary,)
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertFalse(obj.strict)
 
@@ -493,7 +493,7 @@ class ContainerPropertyTests(TestCase):
         primary = MagicMock(strict=False)
         secondary0 = MagicMock(strict=False)
         groups = (primary, secondary0, MagicMock(strict=False))
-        obj = container.Container(groups, primary)
+        obj = container.Container(primary, groups)
 
         self.assertFalse(obj.strict)
 
@@ -516,47 +516,234 @@ class ContainerConstructorTests(TestCase):
         Tests that the primary group is set correctly to the ``primary``
         property
         """
+        # tests that the primary is set if it is the only group
+        primary = MagicMock()
+        obj = container.Container(primary)
+
+        self.assertEqual(primary, obj.primary)
+
+        # tests that the primary is set if more than one group is present
+        primary = MagicMock()
+        groups = (primary, MagicMock(), MagicMock(), MagicMock())
+        obj = container.Container(primary, groups)
+
+        self.assertEqual(primary, obj.primary)
 
     def test_sets_all_groups(self):
         """
         Tests that the default init will add one or more groups to the
         ``groups`` property in the order they were provided in
         """
+        # tests that all groups are added and in order
+        primary = MagicMock()
+        grp0 = MagicMock()
+        grp1 = MagicMock()
+        grp2 = MagicMock()
+        groups = (primary, grp0, grp1, grp2)
+        obj = container.Container(primary, groups)
+
+        self.assertEqual(groups, obj.groups)
+
+        # tests that if primary is not in groups it is added to the start
+        primary = MagicMock()
+        grp0 = MagicMock()
+        grp1 = MagicMock()
+        grp2 = MagicMock()
+        groups = (grp0, grp1, grp2)
+        obj = container.Container(primary, groups)
+
+        expected = (primary, grp0, grp1, grp2)
+        self.assertEqual(expected, obj.groups)
 
     def test_sets_strictness(self):
         """
         Tests that the default init will set the ``strict`` property correctly
         """
+        # tests with only one group
+        primary = MagicMock(strict=False)
+        obj = container.Container(primary, strict=False)
+        self.assertFalse(obj.strict)
+        self.assertFalse(obj.primary.strict)
+
+        primary = MagicMock(strict=True)
+        obj = container.Container(primary, strict=True)
+        self.assertTrue(obj.strict)
+        self.assertTrue(obj.primary.strict)
+
+        primary = MagicMock(strict=True)
+        obj = container.Container(primary, strict=False)
+        self.assertFalse(obj.strict)
+        self.assertFalse(obj.primary.strict)
+
+        primary = MagicMock(strict=False)
+        obj = container.Container(primary, strict=True)
+        self.assertTrue(obj.strict)
+        self.assertTrue(obj.primary.strict)
+
+        # tests with multiple groups (only primary is set)
+        primary = MagicMock(strict=False)
+        grp0 = MagicMock(strict=False)
+        grp1 = MagicMock(strict=False)
+        grp2 = MagicMock(strict=False)
+        groups = (primary, grp0, grp1, grp2)
+        obj = container.Container(primary, groups, strict=False)
+        self.assertFalse(obj.strict)
+        self.assertFalse(obj.primary.strict)
+        for group in groups[1:]:
+            self.assertFalse(group.strict)
+
+        primary = MagicMock(strict=True)
+        grp0 = MagicMock(strict=False)
+        grp1 = MagicMock(strict=False)
+        grp2 = MagicMock(strict=False)
+        groups = (primary, grp0, grp1, grp2)
+        obj = container.Container(primary, groups, strict=True)
+        self.assertTrue(obj.strict)
+        self.assertTrue(obj.primary.strict)
+        for group in groups[1:]:
+            self.assertFalse(group.strict)
+
+        primary = MagicMock(strict=True)
+        grp0 = MagicMock(strict=False)
+        grp1 = MagicMock(strict=False)
+        grp2 = MagicMock(strict=False)
+        groups = (primary, grp0, grp1, grp2)
+        obj = container.Container(primary, groups, strict=False)
+        self.assertFalse(obj.strict)
+        self.assertFalse(obj.primary.strict)
+        for group in groups[1:]:
+            self.assertFalse(group.strict)
+
+        primary = MagicMock(strict=False)
+        grp0 = MagicMock(strict=False)
+        grp1 = MagicMock(strict=False)
+        grp2 = MagicMock(strict=False)
+        groups = (primary, grp0, grp1, grp2)
+        obj = container.Container(primary, groups, strict=True)
+        self.assertTrue(obj.strict)
+        self.assertTrue(obj.primary.strict)
+        for group in groups[1:]:
+            self.assertFalse(group.strict)
 
     def test_new_default_constructors(self):
         """
         Tests that ``Container.new`` creates a container with the correct
-        sizing and groups with the default parameters.
+        sizing and collections with the default parameters.
         """
+        # tests that 20 collections are created
+        obj = container.Container.new()
+        expected = 23
+        self.assertEqual(len(obj.primary.collections), expected)
 
     def test_new_custom_capacity(self):
         """
         Tests that ``Container.new`` creates a container with a provided
         ``capacity`` parameter and the default ``collection_max_size``
         """
+        # tests that 1 collection is created
+        obj = container.Container.new(capacity=5000)
+        expected_collections = 1
+        expected_size = 5000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 11 collections are created
+        obj = container.Container.new(capacity=50000)
+        expected_collections = 11
+        expected_size = 55000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 30 collections are created
+        obj = container.Container.new(capacity=150000)
+        expected_collections = 31
+        expected_size = 155000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that a group can be created with a capacity smaller than
+        # collection_max_size
+        obj = container.Container.new(capacity=150)
+        expected_collections = 1
+        expected_size = 150
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
 
     def test_new_custom_collection_max_size(self):
         """
         Tests that ``Container.new`` creates a container with a provided
         ``collection_max_size`` parameter and the default ``capacity``
         """
+        # tests that 1 collection is created
+        obj = container.Container.new(collection_max_size=100000)
+        expected_collections = 1
+        expected_size = 100000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 11 collections are created
+        obj = container.Container.new(collection_max_size=10000)
+        expected_collections = 11
+        expected_size = 110000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 31 collections are created
+        obj = container.Container.new(collection_max_size=3300)
+        expected_collections = 31
+        expected_size = 102300
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
 
     def test_new_custom_capacity_and_collection_max_size(self):
         """
         Tests that ``Container.new`` creates a container with provided
         ``capacity`` and ``collection_max_size`` parameters
         """
+        # tests that 1 collection is created
+        # tests that 1 collection is created
+        obj = container.Container.new(capacity=1000, collection_max_size=1000)
+        expected_collections = 1
+        expected_size = 1000
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 11 collections are created
+        obj = container.Container.new(capacity=9000, collection_max_size=850)
+        expected_collections = 11
+        expected_size = 9350
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that 31 collections are created
+        obj = container.Container.new(capacity=99000, collection_max_size=3300)
+        expected_collections = 31
+        expected_size = 102300
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
+
+        # tests that a group can be created with a capacity smaller than
+        # collection_max_size
+        obj = container.Container.new(capacity=150, collection_max_size=1500)
+        expected_collections = 1
+        expected_size = 150
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+        self.assertEqual(obj.primary.max_size, expected_size)
 
     def test_new_custom_strict(self):
         """
         Tests that ``Container.new`` creates a container with a provided
         ``strict`` parameter
         """
+        # test that strict mode is enabled
+        obj = container.Container.new(strict=True)
+        self.assertTrue(obj.strict)
+        self.assertTrue(obj.primary.strict)
+
+        # test that strict mode is disabled
+        obj = container.Container.new(strict=False)
+        self.assertFalse(obj.strict)
+        self.assertFalse(obj.primary.strict)
 
 
 class ContainerReadWriteTests(TestCase):

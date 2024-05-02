@@ -6,6 +6,8 @@ from ZODB import DB
 from citrine.storage import group
 from citrine.storage.collection import Collection, CollectionMeta
 
+from citrine.storage.consts import DEFAULT_COLLECTION_SIZE
+
 
 class DummyGroup:
     """
@@ -316,7 +318,7 @@ class GroupConstructionTests(TestCase):
         group0_size = 10
         group1_size = 15
         group3_size = 20
-        sizes = (group0_size, group1_size, group.DEFAULT_MAX, group3_size)
+        sizes = (group0_size, group1_size, DEFAULT_COLLECTION_SIZE, group3_size)
 
         custom_definition = {
             0: group0_size,
@@ -324,7 +326,7 @@ class GroupConstructionTests(TestCase):
             3: group3_size,
         }
 
-        group_size = group0_size+group1_size+group3_size+group.DEFAULT_MAX
+        group_size = group0_size+group1_size+group3_size+DEFAULT_COLLECTION_SIZE
 
         # three collections, totalling 5045 items
         grp = group.Group.new(custom=custom_definition)
