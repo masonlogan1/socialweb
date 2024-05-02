@@ -1,16 +1,12 @@
 import logging
 from typing import List
-from math import ceil
-from uuid import uuid4
 
 from persistent import Persistent
 from citrine.storage.group import Group
+from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-DEFAULT_SIZE = 65536
 
 
 class Metadata(Persistent):
@@ -96,7 +92,7 @@ class ContainerProperties:
         return self.___metadata___
 
     @property
-    def primary_group(self):
+    def primary(self):
         """
         The primary read/write group of the container
         :return:
@@ -117,7 +113,7 @@ class ContainerProperties:
         Number of items in the container
         :return:
         """
-        return
+        return self.meta.size
 
     @property
     def max_size(self):
@@ -125,21 +121,39 @@ class ContainerProperties:
         Limit of items that a container can hold in strict mode
         :return:
         """
-        return
+        return self.meta.max_size
+
+    @property
+    def used(self):
+        """
+        The number of items in the primary group
+        :return:
+        """
+        return self.meta.used
 
     @property
     def usage(self):
         """
         Percentage of the container's max_size that has been used
         """
-        return
+        return self.meta.usage
 
     @property
     def status(self):
         """
         Enumerated type giving a brief summary of how full the container is
         """
-        return
+        return self.meta.status
+
+    @property
+    def strict(self):
+        return self.primary.strict
+
+    @strict.setter
+    def strict(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'strict' must be a boolean")
+        self.primary.strict = value
 
 
 class Container(Persistent, ContainerProperties):
@@ -215,7 +229,7 @@ class Container(Persistent, ContainerProperties):
         """
 
     @staticmethod
-    def new(size: int = DEFAULT_SIZE, strict=False):
+    def new(size: int = DEFAULT_CONTAINER_SIZE, strict=False):
         """
         Creates a new container with the given size and capacity enforcement.
         :param size: the item capacity for the container
