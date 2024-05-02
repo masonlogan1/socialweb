@@ -3,7 +3,8 @@ from typing import List
 
 from persistent import Persistent
 from citrine.storage.group import Group
-from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
+from citrine.storage.consts import DEFAULT_CONTAINER_SIZE, \
+    DEFAULT_COLLECTION_SIZE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -179,6 +180,22 @@ class Container(Persistent, ContainerProperties):
         if self.primary not in self.groups:
             self.___groups___ += (self.primary,)
         self.___metadata___ = ContainerMeta(self)
+
+    @classmethod
+    def new(cls, capacity: int = DEFAULT_CONTAINER_SIZE,
+            collection_max_size: int = DEFAULT_COLLECTION_SIZE,
+            strict: bool = False):
+        """
+        Creates a new Container object with the given size. The number each
+        internal collection can store will be capped to the
+        ``collection_max_size`` value.
+        :param capacity: the maximum number of objects the Container can hold
+        :param collection_max_size: the maximum size of each collection
+        :param strict: whether to enforce size restrictions with exceptions
+        :raises ValueError: if ``collection_max_size`` is less than ``capacity``
+        :return: new Container object
+        """
+
 
     def resize(self, size: int):
         """

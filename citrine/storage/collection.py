@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from persistent import Persistent
 
+from citrine.storage.consts import DEFAULT_COLLECTION_SIZE
+
 # if the zope people would like to make sure the BTree class is directly
 # importable rather than the current "cleverer than you" bs they have going on,
 # that would be FANTASTIC.
@@ -15,9 +17,6 @@ BTree = _OOBTree.BTree
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-DEFAULT_MAX = 5000
 
 
 class CollectionCapacityError(Exception):
@@ -128,7 +127,7 @@ class Collection(Persistent):
         self.___metadata___ = CollectionMeta(
             self.tree,
             uuid=uuid if uuid else str(uuid4()),
-            max_size=max_size if max_size else DEFAULT_MAX,
+            max_size=max_size if max_size else DEFAULT_COLLECTION_SIZE,
             strict=strict
         )
 

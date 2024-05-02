@@ -511,6 +511,53 @@ class ContainerConstructorTests(TestCase):
     generate an internal group prepared for a certain initial capacity.
     """
 
+    def test_sets_correct_primary_group(self):
+        """
+        Tests that the primary group is set correctly to the ``primary``
+        property
+        """
+
+    def test_sets_all_groups(self):
+        """
+        Tests that the default init will add one or more groups to the
+        ``groups`` property in the order they were provided in
+        """
+
+    def test_sets_strictness(self):
+        """
+        Tests that the default init will set the ``strict`` property correctly
+        """
+
+    def test_new_default_constructors(self):
+        """
+        Tests that ``Container.new`` creates a container with the correct
+        sizing and groups with the default parameters.
+        """
+
+    def test_new_custom_capacity(self):
+        """
+        Tests that ``Container.new`` creates a container with a provided
+        ``capacity`` parameter and the default ``collection_max_size``
+        """
+
+    def test_new_custom_collection_max_size(self):
+        """
+        Tests that ``Container.new`` creates a container with a provided
+        ``collection_max_size`` parameter and the default ``capacity``
+        """
+
+    def test_new_custom_capacity_and_collection_max_size(self):
+        """
+        Tests that ``Container.new`` creates a container with provided
+        ``capacity`` and ``collection_max_size`` parameters
+        """
+
+    def test_new_custom_strict(self):
+        """
+        Tests that ``Container.new`` creates a container with a provided
+        ``strict`` parameter
+        """
+
 
 class ContainerReadWriteTests(TestCase):
     """

@@ -5,7 +5,8 @@ from uuid import uuid4
 
 from persistent import Persistent
 
-from citrine.storage.collection import Collection, DEFAULT_MAX
+from citrine.storage.collection import Collection
+from citrine.storage.consts import DEFAULT_COLLECTION_SIZE
 
 minimum = min
 maximum = max
@@ -220,7 +221,7 @@ class Group(Persistent):
         self.strict = strict
 
     @staticmethod
-    def new(size: int = None, max_collection_size: int = DEFAULT_MAX,
+    def new(size: int = None, max_collection_size: int = DEFAULT_COLLECTION_SIZE,
             strict=False, custom: dict = None):
         """
         Creates a new, empty Group.
