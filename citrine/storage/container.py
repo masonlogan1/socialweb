@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 from persistent import Persistent
 from citrine.storage.group import Group
@@ -87,7 +87,7 @@ class ContainerProperties:
     ___groups___ = tuple()
 
     @property
-    def meta(self):
+    def meta(self) -> ContainerMeta:
         """
         Quick reference to the metadata object
         :return:
@@ -95,7 +95,7 @@ class ContainerProperties:
         return self.___metadata___
 
     @property
-    def primary(self):
+    def primary(self) -> Group:
         """
         The primary read/write group of the container
         :return:
@@ -103,7 +103,7 @@ class ContainerProperties:
         return self.___primary___
 
     @property
-    def groups(self):
+    def groups(self) -> Tuple[Group]:
         """
         The ordered set of groups in the container
         :return:
@@ -111,7 +111,7 @@ class ContainerProperties:
         return self.___groups___
 
     @property
-    def size(self):
+    def size(self) -> int:
         """
         Number of items in the container
         :return:
@@ -119,7 +119,7 @@ class ContainerProperties:
         return self.meta.size
 
     @property
-    def max_size(self):
+    def max_size(self) -> int:
         """
         Limit of items that a container can hold in strict mode
         :return:
@@ -127,7 +127,7 @@ class ContainerProperties:
         return self.meta.max_size
 
     @property
-    def used(self):
+    def used(self) -> float:
         """
         The number of items in the primary group
         :return:
@@ -135,21 +135,21 @@ class ContainerProperties:
         return self.meta.used
 
     @property
-    def usage(self):
+    def usage(self) -> float:
         """
         Percentage of the container's max_size that has been used
         """
         return self.meta.usage
 
     @property
-    def status(self):
+    def status(self) -> int:
         """
         Enumerated type giving a brief summary of how full the container is
         """
         return self.meta.status
 
     @property
-    def strict(self):
+    def strict(self) -> bool:
         return self.primary.strict
 
     @strict.setter
@@ -212,20 +212,48 @@ class Container(Persistent, ContainerProperties):
         return Container(primary, strict=strict)
 
 
-    def resize(self, size: int):
+    def resize(self, capacity: int, condense=False, transfer=True) \
+            -> List[Group]:
         """
-        Changes the size of the container. Raises a ValueError if the provided
+        Changes the size of the container. The previous primary group will be
+        condensed into the new primary. Raises a ValueError if the provided
         size value is smaller than the current number of stored objects
-        :param size:
-        :return:
+
+        The primary group cannot be resized in place without breaking the
+        ability to read the objects inside, however the primary will be placed
+        into the group list so all objects will be accessible during the
+        resizing process.
+
+        If ``transfer`` is set to True, any groups merged into the new primary
+        will have their contents moved in-place, emptying the group. This
+        operation will take place in reverse order, ensuring that groups earlier
+        in the listing have their contents prioritized.
+
+        If ``condense`` is set to True, the secondary groups will be condensed
+        into the primary group.
+
+        If ``transfer`` is set to True alongside ``condense``, the secondary
+        groups will be emptied of their contents, which is an irreversible
+        action. This action is equivalent to  ``condense(transfer=True)``.
+        See the documentation of ``condense`` for more information.
+
+        :param capacity: the desired new size
+        :param condense: whether to condense all secondary containers
+        :return: groups removed from the container
         """
 
     def condense(self, transfer: bool = True) -> List[Group]:
         """
-        Condenses all groups in the container into the primary group. If
-        transfer is True (default), the operation will be performed in-place
-        and the original groups will be depopulated. All secondary groups will
-        be removed from the container at the end of the operation
+        Condenses all groups in the container into the primary group.
+
+        If the primary group is in strict mode and the number of objects that
+        will be added exceeds the capacity, a CapacityException will be raised.
+
+        If ``transfer`` is True (default), the operation will be performed
+        in-place and the original groups will be depopulated. All secondary
+        groups will be removed from the container at the end of the operation
+        and returned.
+
         :param transfer: whether to empty the secondary containers
         :return: secondary groups removed from the container
         """
@@ -238,19 +266,19 @@ class Container(Persistent, ContainerProperties):
         :return: whether the object exists
         """
 
-    def read(self, id):
+    def read(self, id, default=None):
         """
         Return an object by the given id
         :param id: identifier of the stored object
-        :return:
+        :param default: default value to return if the object does not exist
+        :return: the desired object if it exists, or the default if provided
         """
 
-    def write(self, id, obj):
+    def write(self, id, obj) -> None:
         """
         Save an object to the database at the given id location
         :param id: identifier for the object to be stored
         :param obj: the object to be stored
-        :return:
         """
 
     def delete(self, id):

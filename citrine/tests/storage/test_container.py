@@ -751,6 +751,82 @@ class ContainerReadWriteTests(TestCase):
     Tests that a Container can use the standard ``read``, ``write``, ``has``,
     and ``delete`` methods for reading and writing to the internal group.
     """
+    def test_write(self):
+        """
+        Tests that a Container can write to the primary group.
+        """
+        # test that a single-group Container can write an object to an id
+
+        # test that a single-group Container can overwrite an existing object
+
+        # test that a single-group Container raises an exception when the id is
+        # not a string
+
+        # test that a multi-group Container writes an object to ONLY the primary
+
+        # test that a multi-group Container overwrites ONLY on the primary
+
+        # test that attempting to use a non-string ID will raise a TypeError
+
+    def test_read(self):
+        """
+        Tests that a Container can read from the groups
+        """
+        # test that a single-group Container can read an object from the group
+
+        # test that a single-group Container will return the default value if
+        # an object does not exist
+
+        # test that a single-group Container will return None if the value is
+        # not present
+
+        # test that a multi-group Container will read an object from the
+        # primary if it is found there
+
+        # test that a multi-group Container will read an object from the first
+        # secondary if it is found there
+
+        # test that a multi-group Container will not return an object if it
+        # is found earlier in the set of groups
+
+        # test that a multi-group Container will return the default value if
+        # an object does not exist
+
+        # test that a multi-group Container will return None if the value is
+        # not present
+
+        # test that attempting to use a non-string ID will raise a TypeError
+
+    def test_delete(self):
+        """
+        Tests that a Container can delete from the primary group.
+        """
+        # test that a single-group Container can remove an item
+
+        # test that a single-group Container will do nothing if an item does not
+        # exist
+
+        # test that a multi-group Container will delete all instances of
+        # an object
+
+        # test that a multi-group Container will do nothing if an item is not
+        # found in any of the groups
+
+        # test that attempting to use a non-string ID will raise a TypeError
+
+    def test_has(self):
+        """
+        Tests that a Container will return True if an object is located in any
+        of the groups
+        """
+        # test that a single-group Container returns 1 if an item is found
+
+        # test that a single-group Container returns 0 if an item is not found
+
+        # test that a multi-group Container returns the number of times an item
+        # is found
+
+        # test that a multi-group Container returns 0 if an item is not found
 
 
 class ContainerInternalResizeTests(TestCase):
