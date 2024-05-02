@@ -6,6 +6,7 @@ from uuid import uuid4
 from ZODB import DB
 
 from citrine.storage import container
+from citrine.storage.group import Group
 
 from citrine.storage.consts import HEALTHY, ACCEPTABLE, ALERT, WARNING, CRITICAL
 
@@ -15,6 +16,7 @@ class ContainerMetaTests(TestCase):
     Tests that a Container's metadata is a reflection of the groups stored
     inside.
     """
+
     def test_size(self):
         """
         Tests that the size value matches the sum of the size of all groups
@@ -103,7 +105,8 @@ class ContainerMetaTests(TestCase):
         mock_container = MagicMock()
         primary = MagicMock(size=0)
         mock_container.primary = primary
-        mock_container.groups = (primary, MagicMock(size=10), MagicMock(size=10))
+        mock_container.groups = (
+        primary, MagicMock(size=10), MagicMock(size=10))
 
         meta = container.ContainerMeta(mock_container)
         self.assertEqual(meta.size, 20)
@@ -112,7 +115,8 @@ class ContainerMetaTests(TestCase):
         mock_container = MagicMock()
         primary = MagicMock(size=10)
         mock_container.primary = primary
-        mock_container.groups = (primary, MagicMock(size=10), MagicMock(size=10))
+        mock_container.groups = (
+        primary, MagicMock(size=10), MagicMock(size=10))
 
         meta = container.ContainerMeta(mock_container)
         self.assertEqual(meta.size, 30)
@@ -209,7 +213,7 @@ class ContainerMetaTests(TestCase):
         mock_container.groups = (primary,)
 
         meta = container.ContainerMeta(mock_container)
-        self.assertEqual(int(meta.usage*100), 55)
+        self.assertEqual(int(meta.usage * 100), 55)
 
         # test against multiple to make sure only primary group is used
         mock_container = MagicMock()
@@ -251,6 +255,7 @@ class ContainerMetaTests(TestCase):
 
         primary.status = WARNING
         self.assertEqual(meta.status, WARNING)
+
 
 class ContainerPropertyTests(TestCase):
     """
@@ -357,7 +362,6 @@ class ContainerPropertyTests(TestCase):
         expected = 20
         self.assertEqual(obj.size, expected)
 
-
     def test_max_size(self):
         """
         Tests that the ``max_size`` property will return the maximum size of
@@ -427,7 +431,7 @@ class ContainerPropertyTests(TestCase):
         obj = container.Container(primary, groups)
 
         expected = 35
-        self.assertEqual(int(obj.usage*100), expected)
+        self.assertEqual(int(obj.usage * 100), expected)
 
         # test with multiple groups; all same usage rate
         primary = MagicMock(usage=.24)
@@ -435,7 +439,7 @@ class ContainerPropertyTests(TestCase):
         obj = container.Container(primary, groups)
 
         expected = 24
-        self.assertEqual(int(obj.usage*100), expected)
+        self.assertEqual(int(obj.usage * 100), expected)
 
         # test with multiple groups; different usage rates
         primary = MagicMock(usage=.55)
@@ -443,7 +447,7 @@ class ContainerPropertyTests(TestCase):
         obj = container.Container(primary, groups)
 
         expected = 55
-        self.assertEqual(int(obj.usage*100), expected)
+        self.assertEqual(int(obj.usage * 100), expected)
 
     def test_status(self):
         """
@@ -751,68 +755,218 @@ class ContainerReadWriteTests(TestCase):
     Tests that a Container can use the standard ``read``, ``write``, ``has``,
     and ``delete`` methods for reading and writing to the internal group.
     """
+
     def test_write(self):
         """
         Tests that a Container can write to the primary group.
         """
         # test that a single-group Container can write an object to an id
+        id = 'id0'
+        value = 'value0'
+
+        obj = container.Container.new()
+        obj.write(id, value)
+
+        self.assertEqual(obj.primary.get(id), value)
 
         # test that a single-group Container can overwrite an existing object
+        id = 'id1'
+        value = 'value1'
 
-        # test that a single-group Container raises an exception when the id is
-        # not a string
+        obj = container.Container.new()
+        obj.write(id, value)
+
+        new_value = 'value1-0'
+        obj.write(id, new_value)
+
+        self.assertEqual(obj.primary.get(id), new_value)
 
         # test that a multi-group Container writes an object to ONLY the primary
+        id = 'id2'
+        value = 'value2'
+
+        obj = container.Container.new(capacity=30, collection_max_size=10)
+        obj.write(id, value)
+
+        self.assertEqual(obj.primary.get(id), value)
+
+        for group in obj.groups[1:]:
+            self.assertFalse(group.has(id))
 
         # test that a multi-group Container overwrites ONLY on the primary
+        id = 'id3'
+        value = 'value3'
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1))
+        obj = container.Container(primary, groups)
+
+        # inserting value into the primary and secondary
+        obj.groups[1].insert(id, value)
+        obj.write(id, value)
+
+        new_value = 'value3-0'
+        obj.write(id, new_value)
+
+        # primary should be updated, secondary should not
+        self.assertEqual(obj.primary.get(id), new_value)
+        self.assertEqual(obj.groups[1].get(id), value)
 
         # test that attempting to use a non-string ID will raise a TypeError
+        id = 0
+        value = 'bad value'
+
+        obj = container.Container.new(capacity=30, collection_max_size=10)
 
     def test_read(self):
         """
         Tests that a Container can read from the groups
         """
         # test that a single-group Container can read an object from the group
+        id = 'id0-0'
+        value = 'value0-0'
+
+        obj = container.Container.new()
+        obj.primary.insert(id, value)
+
+        self.assertEqual(obj.read(id), value)
 
         # test that a single-group Container will return the default value if
         # an object does not exist
+        id = 'id1-0'
+        default = 'default1-0'
+
+        obj = container.Container.new()
+
+        self.assertEqual(obj.read(id, default), default)
 
         # test that a single-group Container will return None if the value is
         # not present
+        id = 'id2-0'
+
+        obj = container.Container.new()
+
+        self.assertIsNone(obj.read(id))
 
         # test that a multi-group Container will read an object from the
         # primary if it is found there
+        id = 'id3-0'
+        value = 'value3-0'
+        alt_value_1 = 'value3-1'
+        alt_value_2 = 'value3-2'
+
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        obj.primary.insert(id, value)
+        obj.groups[1].insert(id, alt_value_1)
+        obj.groups[2].insert(id, alt_value_2)
+
+        self.assertEqual(obj.read(id), value)
 
         # test that a multi-group Container will read an object from the first
         # secondary if it is found there
+        id = 'id4-0'
+        alt_value_1 = 'value4-1'
+        alt_value_2 = 'value4-2'
 
-        # test that a multi-group Container will not return an object if it
-        # is found earlier in the set of groups
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        obj.groups[1].insert(id, alt_value_1)
+        obj.groups[2].insert(id, alt_value_2)
+
+        self.assertEqual(obj.read(id), alt_value_1)
 
         # test that a multi-group Container will return the default value if
         # an object does not exist
+        id = 'id5-0'
+        default = 'default5-0'
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        self.assertEqual(obj.read(id, default), default)
 
         # test that a multi-group Container will return None if the value is
         # not present
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
 
-        # test that attempting to use a non-string ID will raise a TypeError
+        self.assertIsNone(obj.read(id))
 
     def test_delete(self):
         """
         Tests that a Container can delete from the primary group.
         """
         # test that a single-group Container can remove an item
+        id = 'id0-0'
+        value = 'value0-0'
+
+        obj = container.Container.new()
+        obj.primary.insert(id, value)
+        self.assertEqual(obj.primary.get(id), value)
+
+        obj.delete(id)
+        self.assertIsNone(obj.primary.get(id))
 
         # test that a single-group Container will do nothing if an item does not
         # exist
+        id = 'id1-0'
+
+        obj = container.Container.new()
+        self.assertIsNone(obj.primary.get(id))
+
+        obj.delete(id)
+        self.assertIsNone(obj.primary.get(id))
 
         # test that a multi-group Container will delete all instances of
         # an object
+        id = 'id2-0'
+        value = 'value2-0'
+        alt_value_1 = 'value2-1'
+        alt_value_2 = 'value2-2'
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        obj.primary.insert(id, value)
+        obj.groups[1].insert(id, alt_value_1)
+        obj.groups[2].insert(id, alt_value_2)
+
+        self.assertEqual(obj.primary.get(id), value)
+        self.assertEqual(obj.groups[1].get(id), alt_value_1)
+        self.assertEqual(obj.groups[2].get(id), alt_value_2)
+
+        obj.delete(id)
+
+        self.assertIsNone(obj.primary.get(id))
+        self.assertIsNone(obj.groups[1].get(id))
+        self.assertIsNone(obj.groups[2].get(id))
 
         # test that a multi-group Container will do nothing if an item is not
         # found in any of the groups
+        id = 'id3-0'
 
-        # test that attempting to use a non-string ID will raise a TypeError
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        self.assertIsNone(obj.primary.get(id))
+        self.assertIsNone(obj.groups[1].get(id))
+        self.assertIsNone(obj.groups[2].get(id))
+
+        obj.delete(id)
+
+        self.assertIsNone(obj.primary.get(id))
+        self.assertIsNone(obj.groups[1].get(id))
+        self.assertIsNone(obj.groups[2].get(id))
 
     def test_has(self):
         """
@@ -820,13 +974,50 @@ class ContainerReadWriteTests(TestCase):
         of the groups
         """
         # test that a single-group Container returns 1 if an item is found
+        id = 'id0-0'
+        value = 'value0-0'
+
+        obj = container.Container.new()
+        obj.primary.insert(id, value)
+
+        expected = 1
+        self.assertEqual(obj.has(id), expected)
 
         # test that a single-group Container returns 0 if an item is not found
+        id = 'id1-0'
+
+        obj = container.Container.new()
+
+        expected = 0
+        self.assertEqual(obj.has(id), expected)
 
         # test that a multi-group Container returns the number of times an item
         # is found
+        id = 'id2-0'
+        value = 'value2-0'
+        alt_value_1 = 'value2-1'
+        alt_value_2 = 'value2-2'
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        obj.primary.insert(id, value)
+        obj.groups[1].insert(id, alt_value_1)
+        obj.groups[2].insert(id, alt_value_2)
+
+        expected = 3
+        self.assertEqual(obj.has(id), expected)
 
         # test that a multi-group Container returns 0 if an item is not found
+        id = 'id3-0'
+
+        primary = Group.new(1)
+        groups = (primary, Group.new(1), Group.new(2))
+        obj = container.Container(primary, groups)
+
+        expected = 0
+        self.assertEqual(obj.has(id), expected)
 
 
 class ContainerInternalResizeTests(TestCase):

@@ -195,8 +195,7 @@ class Container(Persistent, ContainerProperties):
         :param capacity: the maximum number of objects the Container can hold
         :param collection_max_size: the maximum size of each collection
         :param strict: whether to enforce size restrictions with exceptions
-        :raises ValueError: if ``collection_max_size`` is less than ``capacity``
-        :return: new Container object
+        :return: new ``Container`` object
         """
         size = number_of_collections(
             capacity,
@@ -258,13 +257,14 @@ class Container(Persistent, ContainerProperties):
         :return: secondary groups removed from the container
         """
 
-    def has(self, id) -> bool:
+    def has(self, id) -> int:
         """
         Return a bool describing whether the object is already present in the
         database
         :param id: the identifier of the object
         :return: whether the object exists
         """
+        return sum(1 for group in self.groups if group.has_key(id))
 
     def read(self, id, default=None):
         """
@@ -273,20 +273,28 @@ class Container(Persistent, ContainerProperties):
         :param default: default value to return if the object does not exist
         :return: the desired object if it exists, or the default if provided
         """
+        for group in self.groups:
+            if ret := group.get(id):
+                return ret
+        return default
 
-    def write(self, id, obj) -> None:
+    def write(self, id, obj):
         """
         Save an object to the database at the given id location
         :param id: identifier for the object to be stored
         :param obj: the object to be stored
         """
+        if self.primary.has_key(id):
+            return self.primary.update({id: obj})
+        return self.primary.insert(id, obj)
 
-    def delete(self, id):
+    def delete(self, id) -> Tuple:
         """
         Remove an object from the database by the given id
         :param id: identifier of the object
         :return: removed object
         """
+        return tuple(group.pop(id) for group in self.groups if self.has(id))
 
     def __add__(self, other):
         """

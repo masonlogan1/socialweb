@@ -330,6 +330,7 @@ class Group(Persistent):
         split_collection = {_: {} for _ in range(len(self.collections))}
         for key, value in collection.items():
             split_collection[get_group_index(key, num_collections)][key] = value
+        split_collection = {k: v for k, v in split_collection.items() if v}
 
         for index, collection in split_collection.items():
             self.collections[index].update(collection)
