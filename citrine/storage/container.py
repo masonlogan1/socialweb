@@ -256,6 +256,20 @@ class Container(Persistent, ContainerProperties):
         :param transfer: whether to empty the secondary containers
         :return: secondary groups removed from the container
         """
+        if transfer:
+            for group in self.groups[1:]:
+                for key, value in group.items():
+                    # insert fails if the key is already in use
+                    self.primary.insert(key, group.pop(key))
+            discarded = list(self.groups[1:])
+            self.___groups___ = (self.groups[0],)
+            return discarded
+        else:
+            for group in self.groups[1:]:
+                for key, value in group.items():
+                    # insert fails if the key is already in use
+                    self.primary.insert(key, value)
+            return []
 
     def has(self, id) -> int:
         """

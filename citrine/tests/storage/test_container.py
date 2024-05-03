@@ -1020,11 +1020,442 @@ class ContainerReadWriteTests(TestCase):
         self.assertEqual(obj.has(id), expected)
 
 
+class ContainerInternalCondenseTests(TestCase):
+    """
+    Tests that a Container can condense its secondary containers into the
+    primary container.
+    """
+    def test_single_secondary_condense_without_transfer_without_overlap(self):
+        """
+        Tests that a Container can condense a single secondary container into
+        the primary container without damaging the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        groups = (primary, secondary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        secondary_keys = ['5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_values = ['val5.1', 'val6.1', 'val7.1', 'val8.1', 'val9.1']
+
+        keys = primary_keys + secondary_keys
+        values = primary_values + secondary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys:
+            self.assertFalse(obj.primary.has_key(key))
+
+        obj.condense(transfer=False)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that secondary group still has its contents
+        self.assertEqual(obj.groups[1], secondary)
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+
+    def test_single_secondary_condense_without_transfer_with_overlap(self):
+        """
+        Tests that a Container can condense a single secondary container into
+        the primary container without damaging the secondary containers.
+        Overlapping keys should keep the primary group's value
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        groups = (primary, secondary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        secondary_keys = ['4', '5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1']
+
+        keys = primary_keys + secondary_keys[2:]
+        values = primary_values + secondary_values[2:]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys[2:]:
+            self.assertFalse(obj.primary.has_key(key))
+
+        obj.condense(transfer=False)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that secondary group still has its contents
+        self.assertEqual(obj.groups[1], secondary)
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+
+    def test_multiple_secondary_condense_without_transfer_without_overlap(self):
+        """
+        Tests that a Container can condense multiple secondary containers into
+        the primary container without damaging the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        tertiary = Group.new(11)
+        groups = (primary, secondary, tertiary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2']
+        secondary_keys = ['3', '4', '5']
+        tertiary_keys = ['6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0']
+        secondary_values = ['val3.1', 'val4.1', 'val5.1']
+        tertiary_values = ['val6.2', 'val7.2', 'val8.2', 'val9.2']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys + tertiary_keys:
+            self.assertFalse(obj.primary.has_key(key))
+
+        obj.condense(transfer=False)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that secondary group still has its contents
+        self.assertEqual(obj.groups[1], secondary)
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+        # check that tertiary group still has its contents
+        self.assertEqual(obj.groups[2], tertiary)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+
+    def test_multiple_secondary_condense_without_transfer_with_overlap(self):
+        """
+        Tests that a Container can condense multiple secondary containers into
+        the primary container without damaging the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        tertiary = Group.new(11)
+        groups = (primary, secondary, tertiary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3']
+        secondary_keys = ['2', '3', '4', '5', '6']
+        tertiary_keys = ['5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0']
+        secondary_values = ['val2.1', 'val3.1', 'val4.1', 'val5.1', 'val6.1']
+        tertiary_values = ['val5.2', 'val6.2', 'val7.2', 'val8.2', 'val9.2']
+
+        keys = primary_keys + secondary_keys[2:] + tertiary_keys[2:]
+        values = primary_values + secondary_values[2:] + tertiary_values[2:]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys[2:] + tertiary_keys[2:]:
+            self.assertFalse(obj.primary.has_key(key))
+
+        obj.condense(transfer=False)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that secondary group still has its contents
+        self.assertEqual(obj.groups[1], secondary)
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+        # check that tertiary group still has its contents
+        self.assertEqual(obj.groups[2], tertiary)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+
+    def test_single_secondary_condense_with_transfer_without_overlap(self):
+        """
+        Tests that a Container can condense a single secondary container into
+        the primary container and emptying the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        groups = (primary, secondary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        secondary_keys = ['5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_values = ['val5.1', 'val6.1', 'val7.1', 'val8.1', 'val9.1']
+
+        keys = primary_keys + secondary_keys
+        values = primary_values + secondary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys:
+            self.assertFalse(obj.primary.has_key(key))
+
+        returned = obj.condense(transfer=True)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that the original groups have been drained
+        empty = 0
+        self.assertEqual(secondary.size, empty)
+
+        # check that the primary is the only group
+        self.assertEqual(obj.groups, (obj.primary,))
+
+        # check that we received the secondary group back
+        self.assertEqual(returned, [secondary,])
+
+    def test_single_secondary_condense_with_transfer_with_overlap(self):
+        """
+        Tests that a Container can condense a single secondary container into
+        the primary container and emptying the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        groups = (primary, secondary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        secondary_keys = ['4', '5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1']
+
+        keys = primary_keys + secondary_keys[2:]
+        values = primary_values + secondary_values[2:]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys[2:]:
+            self.assertFalse(obj.primary.has_key(key))
+
+        returned = obj.condense(transfer=True)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that the original groups have been drained
+        empty = 0
+        self.assertEqual(secondary.size, empty)
+
+        # check that the primary is the only group
+        self.assertEqual(obj.groups, (obj.primary,))
+
+        # check that we received the secondary group back
+        self.assertEqual(returned, [secondary])
+
+    def test_multiple_secondary_condense_with_transfer_without_overlap(self):
+        """
+        Tests that a Container can condense multiple secondary containers into
+        the primary container and emptying the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        tertiary = Group.new(11)
+        groups = (primary, secondary, tertiary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2']
+        secondary_keys = ['3', '4', '5']
+        tertiary_keys = ['6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0']
+        secondary_values = ['val3.1', 'val4.1', 'val5.1']
+        tertiary_values = ['val6.2', 'val7.2', 'val8.2', 'val9.2']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys + tertiary_keys:
+            self.assertFalse(obj.primary.has_key(key))
+
+        returned = obj.condense(transfer=True)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that the original groups have been drained
+        empty = 0
+        self.assertEqual(secondary.size, empty)
+        self.assertEqual(tertiary.size, empty)
+
+        # check that the primary is the only group
+        self.assertEqual(obj.groups, (obj.primary,))
+
+        # check that we received the secondary group back
+        self.assertEqual(returned, [secondary, tertiary])
+
+    def test_multiple_secondary_condense_with_transfer_with_overlap(self):
+        """
+        Tests that a Container can condense multiple secondary containers into
+        the primary container and emptying the secondary containers
+        """
+        primary = Group.new(3)
+        secondary = Group.new(7)
+        tertiary = Group.new(11)
+        groups = (primary, secondary, tertiary)
+        obj = container.Container(primary, groups)
+
+        primary_keys = ['0', '1', '2', '3']
+        secondary_keys = ['2', '3', '4', '5', '6']
+        tertiary_keys = ['5', '6', '7', '8', '9']
+
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0']
+        secondary_values = ['val2.1', 'val3.1', 'val4.1', 'val5.1', 'val6.1']
+        tertiary_values = ['val5.2', 'val6.2', 'val7.2', 'val8.2', 'val9.2']
+
+        keys = primary_keys + secondary_keys[2:] + tertiary_keys[2:]
+        values = primary_values + secondary_values[2:] + tertiary_values[2:]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # check that none of these keys are in the current primary
+        for key in secondary_keys[2:] + tertiary_keys[2:]:
+            self.assertFalse(obj.primary.has_key(key))
+
+        returned = obj.condense(transfer=True)
+
+        # check that all keys are in the new primary
+        for key in keys:
+            self.assertTrue(obj.primary.has_key(key))
+        # check that all values are correct
+        for key, value in zip(keys, values):
+            self.assertEquals(obj.primary.get(key), value)
+
+        # check that the original groups have been drained
+        empty = 0
+        self.assertEqual(secondary.size, empty)
+        self.assertEqual(tertiary.size, empty)
+
+        # check that the primary is the only group
+        self.assertEqual(obj.groups, (obj.primary,))
+
+        # check that we received the secondary group back
+        self.assertEqual(returned, [secondary, tertiary])
+
+
 class ContainerInternalResizeTests(TestCase):
     """
     Tests that a Container can manually and automatically resize its internal
     group in-place.
     """
+    def test_resize_without_transfer_or_condense(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it without emptying the previous
+        primary group or including any data from the secondary groups
+        """
+
+    def test_resize_with_transfer_without_condense(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it, emptying the previous primary,
+        and ignoring all secondary groups
+        """
+
+    def test_resize_without_transfer_with_condense(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, but leaves the
+        previous primary and all secondary groups intact
+        """
+
+    def test_resize_with_transfer_with_condense(self):
+        """
+        Test that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, emptying the
+        previous primary and all secondary groups and removing them from the
+        group listing
+        """
 
 
 if __name__ == '__main__':
