@@ -298,9 +298,9 @@ class Container(Persistent, ContainerProperties):
         :param id: identifier for the object to be stored
         :param obj: the object to be stored
         """
-        if self.primary.has_key(id):
+        if not (res := self.primary.insert(id, obj)):
             return self.primary.update({id: obj})
-        return self.primary.insert(id, obj)
+        return res
 
     def delete(self, id) -> Tuple:
         """
