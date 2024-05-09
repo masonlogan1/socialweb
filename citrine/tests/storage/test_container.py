@@ -1428,34 +1428,685 @@ class ContainerInternalResizeTests(TestCase):
     Tests that a Container can manually and automatically resize its internal
     group in-place.
     """
-    def test_resize_without_transfer_or_condense(self):
+    def test_single_group_resize_without_transfer_or_condense_no_overlap(self):
         """
         Tests that a Container can create a new primary group and copy all
         existing primary group content into it without emptying the previous
         primary group or including any data from the secondary groups
         """
+        primary = Group.new(3)
+        obj = container.Container(primary, (primary,))
 
-    def test_resize_with_transfer_without_condense(self):
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        obj.resize(new_capacity, transfer=False)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have two groups, the second being the previous primary
+        expected_num_groups = 2
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertEqual(obj.groups[1], primary)
+
+        # check the new primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key))
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key))
+            self.assertTrue(obj.primary.get(key), value)
+
+    def test_multiple_group_resize_without_transfer_or_condense_no_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it without emptying the previous
+        primary group or including any data from the secondary groups
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_keys = ['5', '6', '7', '8', '9']
+        secondary_values = ['val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+        tertiary_keys = ['10', '11', '12', '13', '14']
+        tertiary_values = ['val10.0', 'val11.0', 'val12.0', 'val13.0', 'val14.0']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=False)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have two groups, the second being the previous primary
+        expected_num_groups = 4
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertEqual(obj.groups[1], primary)
+
+        # check the new primary has all values from the old primary
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key))
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertTrue(obj.groups[1].get(key), value)
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertTrue(obj.groups[2].get(key), value)
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[3].has_key(key))
+            self.assertTrue(obj.groups[3].get(key), value)
+
+    def test_single_group_resize_with_transfer_without_condense_no_overlap(self):
         """
         Tests that a Container can create a new primary group and copy all
         existing primary group content into it, emptying the previous primary,
         and ignoring all secondary groups
         """
+        primary = Group.new(3)
+        obj = container.Container(primary, (primary,))
 
-    def test_resize_without_transfer_with_condense(self):
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        returned = obj.resize(new_capacity, transfer=True)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have only the new primary
+        expected_num_groups = 1
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has no values
+        self.assertEqual(primary.size, 0)
+
+    def test_multiple_group_resize_with_transfer_without_condense_no_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it, emptying the previous primary,
+        and ignoring all secondary groups
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_keys = ['5', '6', '7', '8', '9']
+        secondary_values = ['val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+        tertiary_keys = ['10', '11', '12', '13', '14']
+        tertiary_values = ['val10.0', 'val11.0', 'val12.0', 'val13.0',
+                           'val14.0']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=True)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have only the new primary, secondary, and tertiary
+        expected_num_groups = 3
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values taken from the old primary group
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has no values
+        self.assertEqual(removed_groups[0].size, 0)
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+
+    def test_single_group_resize_without_transfer_with_condense_no_overlap(self):
         """
         Tests that a Container can create a new primary group and copy all
         existing primary and secondary group content into it, but leaves the
         previous primary and all secondary groups intact
         """
+        primary = Group.new(3)
+        obj = container.Container(primary, (primary,))
 
-    def test_resize_with_transfer_with_condense(self):
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        obj.resize(new_capacity, transfer=False)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have two groups, the second being the previous primary
+        expected_num_groups = 2
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertEqual(obj.groups[1], primary)
+
+        # check the new primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key))
+            self.assertEqual(obj.primary.get(key), value)
+        # check the old primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key))
+            self.assertEqual(obj.primary.get(key), value)
+
+    def test_multiple_group_resize_without_transfer_with_condense_no_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, and leaves the
+        former primary and all secondary groups intact
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_keys = ['5', '6', '7', '8', '9']
+        secondary_values = ['val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+        tertiary_keys = ['10', '11', '12', '13', '14']
+        tertiary_values = ['val10.0', 'val11.0', 'val12.0', 'val13.0',
+                           'val14.0']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=False, condense=True)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have only the new primary, secondary, and tertiary
+        expected_num_groups = 4
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values taken from all old groups
+        for key, value in zip(keys, values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has ALL previous values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+            self.assertEqual(obj.groups[1].size, len(primary_keys))
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+            self.assertEqual(obj.groups[2].size, len(secondary_keys))
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[3].has_key(key))
+            self.assertEqual(obj.groups[3].get(key), value)
+            self.assertEqual(obj.groups[3].size, len(tertiary_keys))
+
+    def test_single_group_resize_with_transfer_with_condense_no_overlap(self):
         """
         Test that a Container can create a new primary group and copy all
         existing primary and secondary group content into it, emptying the
         previous primary and all secondary groups and removing them from the
         group listing
         """
+        primary = Group.new(3)
+        obj = container.Container(primary, (primary,))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        returned = obj.resize(new_capacity, condense=True, transfer=True)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have only the new primary
+        expected_num_groups = 1
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has all of its values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has no values
+        self.assertEqual(primary.size, 0)
+
+    def test_multiple_group_resize_with_transfer_with_condense_no_overlap(self):
+        """
+        Test that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, emptying the
+        previous primary and all secondary groups and removing them from the
+        group listing
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0']
+        secondary_keys = ['5', '6', '7', '8', '9']
+        secondary_values = ['val5.0', 'val6.0', 'val7.0', 'val8.0', 'val9.0']
+        tertiary_keys = ['10', '11', '12', '13', '14']
+        tertiary_values = ['val10.0', 'val11.0', 'val12.0', 'val13.0',
+                           'val14.0']
+
+        keys = primary_keys + secondary_keys + tertiary_keys
+        values = primary_values + secondary_values + tertiary_values
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=True, condense=True)
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have only the new primary
+        expected_num_groups = 1
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # we should get back the former groups, emptied of their contents
+        self.assertEqual(len(removed_groups), 3)
+        for group in removed_groups:
+            self.assertIn(group, [primary, secondary, tertiary])
+            self.assertEqual(group.size, 0)
+
+        # check the new primary has the values taken from all old groups
+        for key, value in zip(keys, values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+
+    def test_multiple_group_resize_without_transfer_or_condense_with_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it without emptying the previous
+        primary group or including any data from the secondary groups
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_keys = ['4', '5', '6', '7', '8', '9', '10']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1', 'val10.1']
+        tertiary_keys = ['9', '10', '11', '12', '13', '14']
+        tertiary_values = ['val9.2', 'val10.2', 'val11.2', 'val12.2', 'val13.2',
+                           'val14.2']
+
+        keys = primary_keys + secondary_keys[1:-1] + tertiary_keys[1:-1]
+        values = primary_values + secondary_values[1:-1] + tertiary_values[1:-1]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=False,
+                                    condense=False)
+
+        # should have removed nothing
+        self.assertEqual(removed_groups, [])
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have all groups plus new primary
+        expected_num_groups = 4
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values from the old primary
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has only its own values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+            self.assertEqual(obj.groups[1].size, len(primary_keys))
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+            self.assertEqual(obj.groups[2].size, len(secondary_keys))
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[3].has_key(key))
+            self.assertEqual(obj.groups[3].get(key), value)
+            self.assertEqual(obj.groups[3].size, len(tertiary_keys))
+
+    def test_multiple_group_resize_with_transfer_without_condense_with_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary group content into it, emptying the previous primary,
+        and ignoring all secondary groups
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_keys = ['4', '5', '6', '7', '8', '9', '10']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1', 'val10.1']
+        tertiary_keys = ['9', '10', '11', '12', '13', '14']
+        tertiary_values = ['val9.2', 'val10.2', 'val11.2', 'val12.2', 'val13.2',
+                           'val14.2']
+
+        keys = primary_keys + secondary_keys[1:-1] + tertiary_keys[1:-1]
+        values = primary_values + secondary_values[1:-1] + tertiary_values[1:-1]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=True,
+                                    condense=False)
+
+        # should have removed old primary
+        self.assertEqual(removed_groups, [primary])
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have new primary and former secondaries
+        expected_num_groups = 3
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values from the old primary
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+            self.assertEqual(obj.groups[1].size, len(secondary_keys))
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+            self.assertEqual(obj.groups[2].size, len(tertiary_keys))
+
+    def test_multiple_group_resize_without_transfer_with_condense_with_overlap(self):
+        """
+        Tests that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, but leaves the
+        previous primary and all secondary groups intact
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_keys = ['4', '5', '6', '7', '8', '9', '10']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1', 'val10.1']
+        tertiary_keys = ['9', '10', '11', '12', '13', '14']
+        tertiary_values = ['val9.2', 'val10.2', 'val11.2', 'val12.2', 'val13.2',
+                           'val14.2']
+
+        keys = primary_keys + secondary_keys[1:-1] + tertiary_keys[1:-1]
+        values = primary_values + secondary_values[1:-1] + tertiary_values[1:-1]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=False,
+                                    condense=True)
+
+        # should have removed nothing
+        self.assertEqual(removed_groups, [])
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have all groups plus new primary
+        expected_num_groups = 4
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values from all previous groups with
+        # correct priority
+        for key, value in zip(keys, values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
+        # check the old primary has only its own values
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.groups[1].has_key(key))
+            self.assertEqual(obj.groups[1].get(key), value)
+            self.assertEqual(obj.groups[1].size, len(primary_keys))
+        # check the secondary has all of its values
+        for key, value in zip(secondary_keys, secondary_values):
+            self.assertTrue(obj.groups[2].has_key(key))
+            self.assertEqual(obj.groups[2].get(key), value)
+            self.assertEqual(obj.groups[2].size, len(secondary_keys))
+        # check the tertiary has all of its values
+        for key, value in zip(tertiary_keys, tertiary_values):
+            self.assertTrue(obj.groups[3].has_key(key))
+            self.assertEqual(obj.groups[3].get(key), value)
+            self.assertEqual(obj.groups[3].size, len(tertiary_keys))
+
+    def test_multiple_group_resize_with_transfer_with_condense_with_overlap(self):
+        """
+        Test that a Container can create a new primary group and copy all
+        existing primary and secondary group content into it, emptying the
+        previous primary and all secondary groups and removing them from the
+        group listing
+        """
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+        obj = container.Container(primary, (primary, secondary, tertiary))
+
+        self.assertEqual(len(primary.collections), 3)
+        self.assertEqual(primary.max_size, 15000)
+
+        primary_keys = ['0', '1', '2', '3', '4', '5']
+        primary_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        secondary_keys = ['4', '5', '6', '7', '8', '9', '10']
+        secondary_values = ['val4.1', 'val5.1', 'val6.1', 'val7.1', 'val8.1',
+                            'val9.1', 'val10.1']
+        tertiary_keys = ['9', '10', '11', '12', '13', '14']
+        tertiary_values = ['val9.2', 'val10.2', 'val11.2', 'val12.2', 'val13.2',
+                           'val14.2']
+
+        keys = primary_keys + secondary_keys[1:-1] + tertiary_keys[1:-1]
+        values = primary_values + secondary_values[1:-1] + tertiary_values[1:-1]
+
+        for key, value in zip(primary_keys, primary_values):
+            primary.insert(key, value)
+        for key, value in zip(secondary_keys, secondary_values):
+            secondary.insert(key, value)
+        for key, value in zip(tertiary_keys, tertiary_values):
+            tertiary.insert(key, value)
+
+        # should create 5 collections
+        new_capacity = 25000
+        removed_groups = obj.resize(new_capacity, transfer=True, condense=True)
+
+        # should have removed all three prior groups
+        self.assertEqual(len(removed_groups), 3)
+        for group in removed_groups:
+            self.assertIn(group, [primary, secondary, tertiary])
+
+        expected_collections = 5
+        self.assertEqual(obj.primary.max_size, new_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_collections)
+
+        # should have all groups plus new primary
+        expected_num_groups = 1
+        self.assertEqual(len(obj.groups), expected_num_groups)
+        self.assertNotEqual(obj.primary, primary)
+
+        # check the new primary has the values from the old primary
+        for key, value in zip(primary_keys, primary_values):
+            self.assertTrue(obj.primary.has_key(key),
+                            f'no key "{key}" in primary: {list(obj.primary.keys())}')
+            self.assertTrue(obj.primary.get(key), value)
 
 
 if __name__ == '__main__':

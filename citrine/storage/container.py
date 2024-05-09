@@ -211,7 +211,9 @@ class Container(Persistent, ContainerProperties):
         return Container(primary, strict=strict)
 
 
-    def resize(self, capacity: int, condense=False, transfer=True) \
+    def resize(self, capacity: int,
+               max_collection_size: int = DEFAULT_COLLECTION_SIZE,
+               condense=False, transfer=True, transaction_manager=None) \
             -> List[Group]:
         """
         Changes the size of the container. The previous primary group will be
@@ -236,12 +238,49 @@ class Container(Persistent, ContainerProperties):
         action. This action is equivalent to  ``condense(transfer=True)``.
         See the documentation of ``condense`` for more information.
 
+        If ``transaction_manager`` is provided, each action will be performed
+        as an individual transaction.
+
         :param capacity: the desired new size
-        :param condense: whether to condense all secondary containers
+        :param max_collection_size: the maximum size of each ``Collection``
+        :param condense: whether to condense all secondary groups
+        :param transfer: whether to transfer objects between primary groups
+        :param transaction_manager: transaction manager to use, if any
         :return: groups removed from the container
         """
+        # create a new group with a prime number of containers capable of
+        # handling the capacity
+        size = number_of_collections(
+            capacity,
+            max_collection_size=max_collection_size
+        )
+        if size * capacity < max_collection_size:
+            collection_max_size = size * capacity
+        new_primary = Group.new(
+            size=size,
+            max_collection_size=max_collection_size,
+            strict=self.strict
+        )
 
-    def condense(self, transfer: bool = True) -> List[Group]:
+        # set the new group as the primary and makes the old primary a secondary
+        self.___groups___ = (new_primary,) + self.groups
+        self.___primary___ = new_primary
+
+        if condense:
+            removed = self.condense(transfer=transfer,
+                                    transaction_manager=transaction_manager)
+        else:
+            # if we only want to move over the data from the old primary,
+            # set aside all other groups, use condense, and put them back after
+            secondaries = self.groups[2:]
+            self.___groups___ = self.___groups___[:2]
+            removed = self.condense(transfer=transfer,
+                                    transaction_manager=transaction_manager)
+            self.___groups___ += secondaries
+        return removed
+
+    def condense(self, transfer: bool = True, transaction_manager=None) \
+            -> List[Group]:
         """
         Condenses all groups in the container into the primary group.
 
@@ -253,23 +292,29 @@ class Container(Persistent, ContainerProperties):
         groups will be removed from the container at the end of the operation
         and returned.
 
+        If ``transaction_manager`` is provided, each action will be performed
+        as an individual transaction.
+
         :param transfer: whether to empty the secondary containers
+        :param transaction_manager: transaction manager to use, if any
         :return: secondary groups removed from the container
         """
+        source_groups = self.groups[1:]
+
         if transfer:
-            for group in self.groups[1:]:
-                for key, value in group.items():
-                    # insert fails if the key is already in use
-                    self.primary.insert(key, group.pop(key))
+            fn = lambda group, key: self.primary.insert(key, group.pop(key))
+        else:
+            fn = lambda group, key: self.primary.insert(key, group.get(key))
+
+        for group in source_groups:
+            for key in list(group.keys()):
+                fn(group, key)
+
+        if transfer:
             discarded = list(self.groups[1:])
             self.___groups___ = (self.groups[0],)
             return discarded
-        else:
-            for group in self.groups[1:]:
-                for key, value in group.items():
-                    # insert fails if the key is already in use
-                    self.primary.insert(key, value)
-            return []
+        return []
 
     def has(self, id) -> int:
         """
