@@ -1,6 +1,7 @@
 from unittest import TestCase, main
 from unittest.mock import MagicMock, patch
 
+from tempfile import NamedTemporaryFile, TemporaryDirectory, mkdtemp, mkstemp
 from uuid import uuid4
 
 from ZODB import DB
@@ -2107,6 +2108,120 @@ class ContainerInternalResizeTests(TestCase):
             self.assertTrue(obj.primary.has_key(key),
                             f'no key "{key}" in primary: {list(obj.primary.keys())}')
             self.assertTrue(obj.primary.get(key), value)
+
+
+class ContainerPersistenceTests(TestCase):
+    """
+    Tests for ensuring that Container objects can be persisted to a ZODB.DB
+    or DB-like object
+    """
+
+    def setUp(self):
+        # set up a temporary filesystem database
+        self.temp_directory = TemporaryDirectory()
+        self.temp_db_file = NamedTemporaryFile(dir=self.temp_directory.name)
+        self.fs_db = DB(self.temp_db_file.name)
+
+        # set up a memorydb
+        self.memdb = DB(None)
+
+    def tearDown(self):
+        # safely close the filesystem db and cleanup the temporary directory
+        self.fs_db.close()
+        self.temp_db_file.close()
+        self.temp_directory.cleanup()
+
+        # close the memory db and explicitly clear it from memory
+        self.memdb.close()
+        del self.memdb
+
+    def test_write_empty_container_memdb(self):
+        """
+        Tests that an empty container can be written to an in-memory database
+        """
+
+    def test_write_empty_container_fsdb(self):
+        """
+        Tests that an empty container can be written to a filesystem database
+        """
+
+    def test_write_populated_container_memdb(self):
+        """
+        Tests that a container with objects can be written to an in-memory
+        database
+        """
+
+    def test_write_populated_container_fsdb(self):
+        """
+        Tests that a container with objects can be written to a filesystem
+        database
+        """
+
+    def test_write_and_load_empty_container_memdb(self):
+        """
+        Tests that an empty container can be created, saved to an in-memory
+        database, loaded, written to, and saved again
+        """
+
+    def test_write_and_load_empty_container_fsdb(self):
+        """
+        Tests that an empty container can be created, saved to a filesystem
+        database, loaded, written to, and saved again
+        """
+
+    def test_write_and_load_populated_container_memdb(self):
+        """
+        Tests that a container with objects can be created, saved to an
+        in-memory database, loaded, written to, and saved again
+        """
+
+    def test_write_and_load_populated_container_fsdb(self):
+        """
+        Tests that a container with objects can be created, saved to a
+        filesystem database, loaded, written to, and saved again
+        """
+
+    def test_delete_from_populated_container_memdb(self):
+        """
+        Tests that a container with objects can be loaded from an in-memory
+        database, have objects deleted from it, and be saved again
+        """
+
+    def test_delete_from_populated_container_fsdb(self):
+        """
+        Tests that a container with objects can be loaded from a filesystem
+        database, have objects deleted from it, and be saved again
+        """
+
+    def test_transaction_manager_for_condense_one_secondary(self):
+        """
+        Tests that a container with a single secondary group can use a
+        transaction manager for moving each object during a condense operation
+        """
+
+    def test_transaction_manager_for_condense_multiple_secondary(self):
+        """
+        Tests that a container with multiple secondary groups can use a
+        transaction manager for moving each object during a condense operation
+        """
+
+    def test_transaction_manager_for_resize_no_secondary(self):
+        """
+        Tests that a container with no secondary groups can use a transaction
+        manager for moving each object during a resize operation
+        """
+
+    def test_transaction_manager_for_resize_one_secondary(self):
+        """
+        Tests that a container with one secondary group can use a transaction
+        manager for moving each object during a resize operation
+        """
+
+    def test_transaction_manager_for_resize_multiple_secondary(self):
+        """
+        Tests that a container with multiple secondary groups can use a
+        transaction manager for moving each object during a resize operation
+        """
 
 
 if __name__ == '__main__':
