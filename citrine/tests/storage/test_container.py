@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, mkdtemp, mkstemp
 from uuid import uuid4
 
 from ZODB import DB
+from ZODB.POSException import POSKeyError
 
 from citrine.storage import container
 from citrine.storage.group import Group
@@ -2115,6 +2116,8 @@ class ContainerPersistenceTests(TestCase):
     Tests for ensuring that Container objects can be persisted to a ZODB.DB
     or DB-like object
     """
+    # fsdb = filesystem database
+    # memdb = in-memory database
 
     def setUp(self):
         # set up a temporary filesystem database
@@ -2139,59 +2142,531 @@ class ContainerPersistenceTests(TestCase):
         """
         Tests that an empty container can be written to an in-memory database
         """
+        # ensures primary group will be three collections with 100 max_size each
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+        expected_capacity = 300
+        expected_num_collections = 3
+        expected_collection_size = 100
+
+        # check that the object has the expected sizing
+        self.assertEqual(obj.capacity, expected_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_num_collections)
+        for collection in obj.primary.collections:
+            self.assertEqual(collection.max_size, expected_collection_size)
+
+        write_connection = self.memdb.open()
+        read_connection = self.memdb.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded, container.Container)
+
+        # check that the primary group has the expected sizing
+        self.assertEqual(loaded.capacity, expected_capacity)
+        self.assertEqual(len(loaded.primary.collections),
+                         expected_num_collections)
+        for collection in loaded.primary.collections:
+            self.assertEqual(collection.max_size, expected_collection_size)
 
     def test_write_empty_container_fsdb(self):
         """
         Tests that an empty container can be written to a filesystem database
         """
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+        expected_capacity = 300
+        expected_num_collections = 3
+        expected_collection_size = 100
+
+        # check that the object has the expected sizing
+        self.assertEqual(obj.capacity, expected_capacity)
+        self.assertEqual(len(obj.primary.collections), expected_num_collections)
+        for collection in obj.primary.collections:
+            self.assertEqual(collection.max_size, expected_collection_size)
+
+        write_connection = self.fs_db.open()
+        read_connection = self.fs_db.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded, container.Container)
+
+        # check that the primary group has the expected sizing
+        self.assertEqual(loaded.capacity, expected_capacity)
+        self.assertEqual(len(loaded.primary.collections), expected_num_collections)
+        for collection in loaded.primary.collections:
+            self.assertEqual(collection.max_size, expected_collection_size)
 
     def test_write_populated_container_memdb(self):
         """
         Tests that a container with objects can be written to an in-memory
         database
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0', ]
+        items = {k: v for k, v in zip(keys, values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in items.items():
+            obj.write(key, value)
+
+        write_connection = self.memdb.open()
+        read_connection = self.memdb.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded, container.Container)
+
+        # check that the container has all key-value pairs
+        for key, value in items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
 
     def test_write_populated_container_fsdb(self):
         """
         Tests that a container with objects can be written to a filesystem
         database
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',]
+        items = {k: v for k, v in zip(keys, values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in items.items():
+            obj.write(key, value)
+
+        write_connection = self.fs_db.open()
+        read_connection = self.fs_db.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded, container.Container)
+
+        # check that the container has all key-value pairs
+        for key, value in items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
 
     def test_write_and_load_empty_container_memdb(self):
         """
         Tests that an empty container can be created, saved to an in-memory
         database, loaded, written to, and saved again
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0', 'val5.0']
+        items = {k: v for k, v in zip(keys, values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        write_connection = self.memdb.open()
+        read_connection = self.memdb.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the loaded collection is as empty as it was when it went in
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(loaded.size, 0)
+
+        # insert the values
+        write_connection = self.memdb.open()
+        with write_connection.transaction_manager as tm:
+            for key, value in items.items():
+                loaded.write(key, value)
+            tm.commit()
+
+        # check that the object has all key-value pairs
+        self.assertEqual(loaded.size, len(keys))
+        for key, value in items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # remove obj
+        write_connection.close()
+        del loaded
+
+        # reload the object and check that everything was saved
+        reloaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(reloaded.size, len(keys))
+        for key, value in items.items():
+            self.assertTrue(reloaded.has(key))
+            self.assertEqual(reloaded.read(key), value)
 
     def test_write_and_load_empty_container_fsdb(self):
         """
         Tests that an empty container can be created, saved to a filesystem
         database, loaded, written to, and saved again
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0', 'val5.0']
+        items = {k: v for k, v in zip(keys, values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        write_connection = self.fs_db.open()
+        read_connection = self.fs_db.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the loaded collection is as empty as it was when it went in
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(loaded.size, 0)
+
+        # insert the values
+        write_connection = self.fs_db.open()
+        with write_connection.transaction_manager as tm:
+            for key, value in items.items():
+                loaded.write(key, value)
+            tm.commit()
+
+        # check that the object has all key-value pairs
+        self.assertEqual(loaded.size, len(keys))
+        for key, value in items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # remove obj
+        write_connection.close()
+        del loaded
+
+        # reload the object and check that everything was saved
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(loaded.size, len(keys))
+        for key, value in items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
 
     def test_write_and_load_populated_container_memdb(self):
         """
         Tests that a container with objects can be created, saved to an
         in-memory database, loaded, written to, and saved again
         """
+        initial_keys = ['0', '1', '2', '3', '4', '5']
+        initial_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        initial_items = {k: v for k, v in zip(initial_keys, initial_values)}
+        added_keys = ['6', '7', '8', '9', '10', '11']
+        added_values = ['val6.0', 'val7.0', 'val8.0', 'val9.0', 'val10.0',
+                        'val11.0']
+        added_items = {k: v for k, v in zip(added_keys, added_values)}
+
+        all_keys = initial_keys + added_keys
+        all_values = initial_values + added_values
+        all_items = {k: v for k, v in zip(all_keys, all_values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in initial_items.items():
+            obj.write(key, value)
+
+        write_connection = self.memdb.open()
+        read_connection = self.memdb.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the loaded collection is as empty as it was when it went in
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(loaded.size, len(initial_keys))
+
+        # check that the object has the initial set of values
+        self.assertEqual(loaded.size, len(initial_keys))
+        for key, value in initial_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # insert the second set of values
+        write_connection = self.memdb.open()
+        with write_connection.transaction_manager as tm:
+            for key, value in added_items.items():
+                loaded.write(key, value)
+            tm.commit()
+
+        # check that the object has all key-value pairs
+        self.assertEqual(loaded.size, len(all_keys))
+        for key, value in all_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # remove obj
+        write_connection.close()
+        del loaded
+
+        # reload the object and check that everything was saved
+        reloaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(reloaded.size, len(all_keys))
+        for key, value in all_items.items():
+            self.assertTrue(reloaded.has(key))
+            self.assertEqual(reloaded.read(key), value)
 
     def test_write_and_load_populated_container_fsdb(self):
         """
         Tests that a container with objects can be created, saved to a
         filesystem database, loaded, written to, and saved again
         """
+        initial_keys = ['0', '1', '2', '3', '4', '5']
+        initial_values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        initial_items = {k: v for k, v in zip(initial_keys, initial_values)}
+        added_keys = ['6', '7', '8', '9', '10', '11']
+        added_values = ['val6.0', 'val7.0', 'val8.0', 'val9.0', 'val10.0',
+                        'val11.0']
+        added_items = {k: v for k, v in zip(added_keys, added_values)}
+
+        all_keys = initial_keys + added_keys
+        all_values = initial_values + added_values
+        all_items = {k: v for k, v in zip(all_keys, all_values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in initial_items.items():
+            obj.write(key, value)
+
+        write_connection = self.fs_db.open()
+        read_connection = self.fs_db.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the loaded collection is as empty as it was when it went in
+        loaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(loaded.size, len(initial_keys))
+
+        # check that the object has the initial set of values
+        self.assertEqual(loaded.size, len(initial_keys))
+        for key, value in initial_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # insert the second set of values
+        write_connection = self.fs_db.open()
+        with write_connection.transaction_manager as tm:
+            for key, value in added_items.items():
+                loaded.write(key, value)
+            tm.commit()
+
+        # check that the object has all key-value pairs
+        self.assertEqual(loaded.size, len(all_keys))
+        for key, value in all_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # remove obj
+        write_connection.close()
+        del loaded
+
+        # reload the object and check that everything was saved
+        reloaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(reloaded.size, len(all_keys))
+        for key, value in all_items.items():
+            self.assertTrue(reloaded.has(key))
+            self.assertEqual(reloaded.read(key), value)
 
     def test_delete_from_populated_container_memdb(self):
         """
         Tests that a container with objects can be loaded from an in-memory
         database, have objects deleted from it, and be saved again
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0', 'val5.0']
+        items = {k: v for k, v in zip(keys, values)}
+
+        selected_key = '2'
+        expected_keys = ['0', '1', '3', '4', '5']
+        expected_values = ['val0.0', 'val1.0', 'val3.0', 'val4.0', 'val5.0']
+        expected_items = {k: v for k, v in zip(expected_keys, expected_values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in items.items():
+            obj.write(key, value)
+
+        write_connection = self.memdb.open()
+        read_connection = self.memdb.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        write_connection = self.memdb.open()
+
+        # delete a key
+        with write_connection.transaction_manager as tm:
+            loaded.delete(selected_key)
+
+        # test that object in memory has had the key removed
+        self.assertEqual(loaded.size, len(expected_keys))
+        self.assertFalse(loaded.has(selected_key))
+        for key, value in expected_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # reload the object from the db
+        write_connection.close()
+        del loaded
+
+        # check that the reloaded object has the expected values
+        reloaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(reloaded.size, len(expected_keys))
+        for key, value in expected_items.items():
+            self.assertTrue(reloaded.has(key))
+            self.assertEqual(reloaded.read(key), value)
 
     def test_delete_from_populated_container_fsdb(self):
         """
         Tests that a container with objects can be loaded from a filesystem
         database, have objects deleted from it, and be saved again
         """
+        keys = ['0', '1', '2', '3', '4', '5']
+        values = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0', 'val5.0']
+        items = {k: v for k, v in zip(keys, values)}
+
+        selected_key = '2'
+        expected_keys = ['0', '1', '3', '4', '5']
+        expected_values = ['val0.0', 'val1.0', 'val3.0', 'val4.0', 'val5.0']
+        expected_items = {k: v for k, v in zip(expected_keys, expected_values)}
+
+        obj = container.Container.new(capacity=300, collection_max_size=100)
+
+        for key, value in items.items():
+            obj.write(key, value)
+
+        write_connection = self.fs_db.open()
+        read_connection = self.fs_db.open()
+
+        # check first that the read connection does NOT have a container
+        self.assertIsNone(getattr(read_connection.root, 'container', None))
+
+        with write_connection.transaction_manager as tm:
+            write_connection.root.container = obj
+            tm.commit()
+
+        # remove obj
+        write_connection.close()
+        del obj
+
+        # check that the read connection now has a container AND that the
+        # container is the correct type
+        loaded = getattr(read_connection.root, 'container', None)
+        write_connection = self.fs_db.open()
+
+        # delete a key
+        with write_connection.transaction_manager as tm:
+            loaded.delete(selected_key)
+
+        # test that object in memory has had the key removed
+        self.assertEqual(loaded.size, len(expected_keys))
+        self.assertFalse(loaded.has(selected_key))
+        for key, value in expected_items.items():
+            self.assertTrue(loaded.has(key))
+            self.assertEqual(loaded.read(key), value)
+
+        # reload the object from the db
+        write_connection.close()
+        del loaded
+
+        # check that the reloaded object has the expected values
+        reloaded = getattr(read_connection.root, 'container', None)
+        self.assertEqual(reloaded.size, len(expected_keys))
+        for key, value in expected_items.items():
+            self.assertTrue(reloaded.has(key))
+            self.assertEqual(reloaded.read(key), value)
 
     def test_transaction_manager_for_condense_one_secondary(self):
         """

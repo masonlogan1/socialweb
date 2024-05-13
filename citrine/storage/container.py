@@ -127,6 +127,13 @@ class ContainerProperties:
         return self.meta.max_size
 
     @property
+    def capacity(self):
+        """
+        The maximum size of the primary group
+        """
+        return self.meta.capacity
+
+    @property
     def used(self) -> float:
         """
         The number of items in the primary group
@@ -209,7 +216,6 @@ class Container(Persistent, ContainerProperties):
             strict=strict
         )
         return Container(primary, strict=strict)
-
 
     def resize(self, capacity: int,
                max_collection_size: int = DEFAULT_COLLECTION_SIZE,
