@@ -269,7 +269,7 @@ class Container(Persistent, ContainerProperties):
             max_collection_size=max_collection_size
         )
         if size * capacity < max_collection_size:
-            collection_max_size = size * capacity
+            max_collection_size = size * capacity
         new_primary = Group.new(
             size=size,
             max_collection_size=max_collection_size,
