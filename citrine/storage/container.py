@@ -254,6 +254,14 @@ class Container(Persistent, ContainerProperties):
         :param transaction_manager: transaction manager to use, if any
         :return: groups removed from the container
         """
+        # NOTE: rather than putting a dummy in for instances where there is no
+        # transaction manager, if-else branches are used. This is a design
+        # choice to reduce the number of unnecessary 'commit()' actions if
+        # no transaction manager is present; one if-else branch uses a lot
+        # less processing power than three thousand useless commit()'s.
+        # Don't try to reinvent the wheel with a complex system, it will not
+        # scale like the ugly if-else method does. Trust me, I tried.
+
         # create a new group with a prime number of containers capable of
         # handling the capacity
         size = number_of_collections(
@@ -269,8 +277,14 @@ class Container(Persistent, ContainerProperties):
         )
 
         # set the new group as the primary and makes the old primary a secondary
-        self.___groups___ = (new_primary,) + self.groups
-        self.___primary___ = new_primary
+        if transaction_manager:
+            with transaction_manager as tm:
+                self.___groups___ = (new_primary,) + self.groups
+                self.___primary___ = new_primary
+                tm.commit()
+        else:
+            self.___groups___ = (new_primary,) + self.groups
+            self.___primary___ = new_primary
 
         if condense:
             removed = self.condense(transfer=transfer,
@@ -312,13 +326,25 @@ class Container(Persistent, ContainerProperties):
         else:
             fn = lambda group, key: self.primary.insert(key, group.get(key))
 
-        for group in source_groups:
-            for key in list(group.keys()):
-                fn(group, key)
+        if transaction_manager:
+            with transaction_manager as tm:
+                for group in source_groups:
+                    for key in list(group.keys()):
+                        fn(group, key)
+                        tm.commit()
+        else:
+            for group in source_groups:
+                for key in list(group.keys()):
+                    fn(group, key)
 
         if transfer:
             discarded = list(self.groups[1:])
-            self.___groups___ = (self.groups[0],)
+            if transaction_manager:
+                with transaction_manager as tm:
+                    self.___groups___ = (self.groups[0],)
+                    tm.commit()
+            else:
+                self.___groups___ = (self.groups[0],)
             return discarded
         return []
 

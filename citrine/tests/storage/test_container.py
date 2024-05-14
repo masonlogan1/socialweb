@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from tempfile import NamedTemporaryFile, TemporaryDirectory, mkdtemp, mkstemp
 from uuid import uuid4
@@ -2668,35 +2668,521 @@ class ContainerPersistenceTests(TestCase):
             self.assertTrue(reloaded.has(key))
             self.assertEqual(reloaded.read(key), value)
 
-    def test_transaction_manager_for_condense_one_secondary(self):
+    def test_transaction_manager_for_condense_one_secondary_no_transfer(self):
         """
         Tests that a container with a single secondary group can use a
         transaction manager for moving each object during a condense operation
         """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
 
-    def test_transaction_manager_for_condense_multiple_secondary(self):
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                        'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys = keys0+keys1
+        values = values0 + values1
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups)
+        obj.condense(transfer=False, transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys1)
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_condense_one_secondary_with_transfer(self):
+        """
+        Tests that a container with a single secondary group can use a
+        transaction manager for moving each object during a condense operation
+        """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                          'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                        'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys = keys0+keys1
+        values = values0 + values1
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is True (remove groups)
+        obj.condense(transfer=True, transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys1) + 1
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_condense_multiple_secondary_no_transfer(self):
         """
         Tests that a container with multiple secondary groups can use a
         transaction manager for moving each object during a condense operation
         """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
 
-    def test_transaction_manager_for_resize_no_secondary(self):
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys2 = ['12', '13', '14', '15', '16', '17']
+        values2 = ['val12.2', 'val13.2', 'val14.2', 'val15.2', 'val16.2',
+                   'val17.2']
+        items2 = {k: v for k, v in zip(keys2, values2)}
+
+        keys = keys0 + keys1 + keys2
+        values = values0 + values1 + values2
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+        for key, value in items2.items():
+            tertiary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary, tertiary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups)
+        obj.condense(transfer=False, transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys1 + keys2)
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_condense_multiple_secondary_with_transfer(self):
+        """
+        Tests that a container with multiple secondary groups can use a
+        transaction manager for moving each object during a condense operation
+        """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys2 = ['12', '13', '14', '15', '16', '17']
+        values2 = ['val12.2', 'val13.2', 'val14.2', 'val15.2', 'val16.2',
+                   'val17.2']
+        items2 = {k: v for k, v in zip(keys2, values2)}
+
+        keys = keys0 + keys1 + keys2
+        values = values0 + values1 + values2
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+        for key, value in items2.items():
+            tertiary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary, tertiary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is True (remove groups)
+        obj.condense(transfer=True, transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys1 + keys2) + 1
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_no_secondary_no_transfer(self):
         """
         Tests that a container with no secondary groups can use a transaction
         manager for moving each object during a resize operation
         """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
 
-    def test_transaction_manager_for_resize_one_secondary(self):
+        keys = keys0
+        values = values0
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary,))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=False, condense=True,
+                   transaction_manager=transaction_mock)
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys0) + 1
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_no_secondary_with_transfer(self):
+        """
+        Tests that a container with no secondary groups can use a transaction
+        manager for moving each object during a resize operation
+        """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys = keys0
+        values = values0
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary,))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=True, condense=True,
+                   transaction_manager=transaction_mock)
+        # commit on every key transfer plus the primary group change plus the
+        # removal of non-primary groups
+        expected_num_calls = len(keys0) + 2
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_one_secondary_no_transfer(self):
+        """
+        Tests that a container with no secondary groups can use a transaction
+        manager for moving each object during a resize operation
+        """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys = keys0 + keys1
+        values = values0 + values1
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=False, condense=True,
+                   transaction_manager=transaction_mock)
+        # commit on every key transfer plus the primary group change
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            len(keys0) + len(keys1) + 1,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {len(keys0) + len(keys1) + 1}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_one_secondary_with_transfer(self):
         """
         Tests that a container with one secondary group can use a transaction
         manager for moving each object during a resize operation
         """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
 
-    def test_transaction_manager_for_resize_multiple_secondary(self):
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys = keys0 + keys1
+        values = values0 + values1
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is True (remove groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=True, condense=True,
+                   transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys0 + keys1) + 2
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_multiple_secondary_no_transfer(self):
         """
         Tests that a container with multiple secondary groups can use a
         transaction manager for moving each object during a resize operation
         """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys2 = ['12', '13', '14', '15', '16', '17']
+        values2 = ['val12.2', 'val13.2', 'val14.2', 'val15.2', 'val16.2',
+                   'val17.2']
+        items2 = {k: v for k, v in zip(keys2, values2)}
+
+        keys = keys0 + keys1 + keys2
+        values = values0 + values1 + values2
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+        for key, value in items2.items():
+            tertiary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary, tertiary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is False (keep groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=False, condense=True,
+                   transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change
+        expected_num_calls = len(keys0 + keys1 + keys2) + 1
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
+
+    def test_transaction_manager_for_resize_multiple_secondary_with_transfer(self):
+        """
+        Tests that a container with multiple secondary groups can use a
+        transaction manager for moving each object during a resize operation
+        """
+        keys0 = ['0', '1', '2', '3', '4', '5']
+        values0 = ['val0.0', 'val1.0', 'val2.0', 'val3.0', 'val4.0',
+                   'val5.0']
+        items0 = {k: v for k, v in zip(keys0, values0)}
+
+        keys1 = ['6', '7', '8', '9', '10', '11']
+        values1 = ['val6.1', 'val7.1', 'val8.1', 'val9.1', 'val10.1',
+                   'val11.1']
+        items1 = {k: v for k, v in zip(keys1, values1)}
+
+        keys2 = ['12', '13', '14', '15', '16', '17']
+        values2 = ['val12.2', 'val13.2', 'val14.2', 'val15.2', 'val16.2',
+                   'val17.2']
+        items2 = {k: v for k, v in zip(keys2, values2)}
+
+        keys = keys0 + keys1 + keys2
+        values = values0 + values1 + values2
+        items = {k: v for k, v in zip(keys, values)}
+
+        primary = Group.new(3)
+        secondary = Group.new(3)
+        tertiary = Group.new(3)
+
+        for key, value in items0.items():
+            primary.insert(key, value)
+        for key, value in items1.items():
+            secondary.insert(key, value)
+        for key, value in items2.items():
+            tertiary.insert(key, value)
+
+        obj = container.Container(primary_group=primary,
+                                  groups=(primary, secondary, tertiary))
+
+        transaction_mock = MagicMock()
+
+        # test when transfer is True (remove groups) and condense is True
+        obj.resize(capacity=300, max_collection_size=100,
+                   transfer=True, condense=True,
+                   transaction_manager=transaction_mock)
+
+        # commit on every key transfer plus the primary group change plus the
+        # removal of non-primary groups
+        expected_num_calls = len(keys0 + keys1 + keys2) + 2
+        self.assertEqual(
+            transaction_mock.__enter__.return_value.commit.call_count,
+            expected_num_calls,
+            f'Called {transaction_mock.__enter__.return_value.commit.call_count} times; ' +
+            f'expected {expected_num_calls}'
+        )
+
+        # check that all values are found
+        for key, value in items.items():
+            self.assertTrue(obj.has(key))
+            self.assertEqual(obj.read(key), value)
 
 
 if __name__ == '__main__':
