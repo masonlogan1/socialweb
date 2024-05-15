@@ -6,7 +6,7 @@ __maintainer__ = "Mason Logan"
 __email__ = "citrine@masonlogan.com"
 __status__ = "Development"
 
-from citrine.storage.storage import ManagedStorage
+#from citrine.storage.storage import ManagedStorage
 from citrine.storage.transaction import (
     TransactionManager,
     ThreadTransactionManager
