@@ -1,0 +1,141 @@
+from unittest import TestCase, main
+from unittest.mock import MagicMock, call, patch
+
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+
+from ZODB.Connection import Connection
+from ZODB.FileStorage import FileStorage
+
+from citrine.connection_tools.container_connection import ContainerConnection
+from citrine.storage import containerdb
+from citrine.storage.container import Container
+
+
+# If the tests seem sparce, it's because the ContainerDb class is intended to
+#   serve as a representation of the object in storage. The database object
+#   itself does not have methods or functions used to directly modifying its
+#   contents; to do that a connection must first be made.
+#
+# The context manager for opening a temporary connection is only tested
+#   insofar as it is capable of creating a temporary connection and closing it
+#   at the end of the with statement. The actual functionality of the connection
+#   is not considered part of these tests.
+
+class ContainerDbConstructorTests(TestCase):
+    """
+    Tests that the ``ContainerDb`` class is able to load an existing database
+    with ``load``, create new ones using ``create``, and able to perform both
+    of these actions at once using ``new``
+    """
+
+    def setUp(self):
+        # set up a temporary directory and file
+        self.temp_directory = TemporaryDirectory()
+        self.temp_db_file = NamedTemporaryFile(dir=self.temp_directory.name)
+
+    def tearDown(self):
+        # safely close the filestorage file
+        self.temp_db_file.close()
+        self.temp_directory.cleanup()
+
+    def test_basic_constructor_from_filestorage(self):
+        """
+        Tests that the standard __init__ constructor creates a ContainerDb
+        object from a FileStorage object
+        """
+        storage = FileStorage(self.temp_db_file.name)
+
+        db = containerdb.ContainerDb(storage)
+
+        # check that we are getting the correct connection type
+        self.assertIsInstance(db.open(), ContainerConnection)
+
+        conn = db.open()
+        container = Container.new()
+        with conn.transaction_manager as tm:
+            conn.root.container = container
+            tm.commit()
+
+        # assuming the connection works, check that the db has the container
+        self.assertIsInstance(db.open().root.container, Container)
+
+    def test_basic_constructor_from_path_string(self):
+        """
+        Tests that the standard __init__ constructor creates a ContainerDb
+        object from a path string
+        """
+        storage = self.temp_db_file.name
+
+        db = containerdb.ContainerDb(storage)
+
+        # check that we are getting the correct connection type
+        self.assertIsInstance(db.open(), ContainerConnection)
+
+        conn = db.open()
+        container = Container.new()
+        with conn.transaction_manager as tm:
+            conn.root.container = container
+            tm.commit()
+
+        # assuming the connection works, check that the db has the container
+        self.assertIsInstance(db.open().root.container, Container)
+
+    def test_create_default_capacity(self):
+        """
+        Tests that the create method will create a new ContainerDb at the
+        provided path with the default capacity
+        """
+
+    def test_create_custom_capacity(self):
+        """
+        Tests that the create method will create a new ContainerDb at the
+        provided path with the provided capacity
+        """
+
+    def test_load(self):
+        """
+        Tests that the load method will open an existing ContainerDb object
+        and raise a FileNotFoundError if the files does not exist
+        """
+
+    def test_new_default_capacity(self):
+        """
+        Tests that the new method will create a new ContainerDb at the
+        provided path with the default capacity and then return ContainerDb
+        object
+        """
+
+    def test_new_custom_capacity(self):
+        """
+        Tests that the new method will create a new ContainerDb at the
+        provided path with the provided capacity and then return ContainerDb
+        object
+        """
+
+
+class ContainerDbContextManagerTests(TestCase):
+    """
+    Tests that the ``ContainerDb`` class is able to create a temporary
+    connection object when used as a context manager
+    """
+
+    def setUp(self):
+        # set up a temporary directory and file
+        self.temp_directory = TemporaryDirectory()
+        self.temp_db_file = NamedTemporaryFile(dir=self.temp_directory.name)
+
+    def tearDown(self):
+        # safely close the filestorage file
+        self.temp_db_file.close()
+        self.temp_directory.cleanup()
+
+    def test_with_statement(self):
+        """
+        Tests that a ContainerDb opens up a temporary connection when used
+        as a context manager and closes that connection at the end of the block
+        """
+
+
+
+if __name__ == '__main__':
+    main()
