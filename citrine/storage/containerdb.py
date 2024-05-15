@@ -241,10 +241,10 @@ class ContainerDb(DB):
                    strict=strict)
 
     @classmethod
-    def new(cls, capacity: int, file_name: str, create: bool = False,
-            read_only: bool = False, stop=None, quota=None, pack_gc=True,
-            pack_keep_old=True, packer=None, blob_dir=None,
-            strict: bool = False, pool_size: int = 7,
+    def new(cls, file_name: str, capacity: int = DEFAULT_CONTAINER_SIZE,
+            create: bool = False, read_only: bool = False, stop=None,
+            quota=None, pack_gc=True, pack_keep_old=True, packer=None,
+            blob_dir=None, strict: bool = False, pool_size: int = 7,
             pool_timeout: int = 2147483648, cache_size: int = 400,
             cache_size_bytes: int = 0, historical_pool_size: int = 3,
             historical_cache_size: int = 1000,
@@ -341,3 +341,17 @@ class ContainerDb(DB):
 
         :return: newly created ``ContainerDb`` object
         """
+        return cls.load(cls.create(file_name, capacity=capacity,
+                                   create=create, read_only=read_only,
+                                   stop=stop, quota=quota, pack_gc=pack_gc,
+                                   pack_keep_old=pack_keep_old, packer=packer,
+                                   blob_dir=blob_dir,
+                                   strict=strict,
+                                   ),
+                        pool_size=pool_size, pool_timeout=pool_timeout,
+                        cache_size=cache_size,
+                        historical_pool_size=historical_pool_size,
+                        historical_cache_size=historical_cache_size,
+                        historical_cache_size_bytes=historical_cache_size_bytes,
+                        databases=databases, xrefs=xrefs,
+                        large_record_size=large_record_size)

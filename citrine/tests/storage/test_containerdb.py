@@ -134,6 +134,11 @@ class ContainerDbConstructorTests(TestCase):
         provided path with the default capacity and then return ContainerDb
         object
         """
+        expected_capacity = 115000
+        db = containerdb.ContainerDb.new(self.temp_db_file.name)
+
+        conn = db.open()
+        self.assertEqual(conn.root.container.capacity, expected_capacity)
 
     def test_new_custom_capacity(self):
         """
@@ -141,6 +146,14 @@ class ContainerDbConstructorTests(TestCase):
         provided path with the provided capacity and then return ContainerDb
         object
         """
+        custom_capacity = 1000
+        db = containerdb.ContainerDb.new(
+            self.temp_db_file.name,
+            capacity=custom_capacity
+        )
+
+        conn = db.open()
+        self.assertEqual(conn.root.container.capacity, custom_capacity)
 
 
 class ContainerDbContextManagerTests(TestCase):
