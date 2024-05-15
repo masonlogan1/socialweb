@@ -177,7 +177,22 @@ class ContainerDbContextManagerTests(TestCase):
         Tests that a ContainerDb opens up a temporary connection when used
         as a context manager and closes that connection at the end of the block
         """
+        db = containerdb.ContainerDb.new(self.temp_db_file.name)
 
+        keys = ['key0', 'key1', 'key2', 'key3']
+        values = ['val0', 'val1', 'val2', 'val3']
+        items = {k: v for k, v in zip(keys, values)}
+
+        with db as connection:
+            with connection.transaction_manager as tm:
+                for key, value in items.items():
+                    connection.root.container.write(key, value)
+                tm.commit()
+
+        with db as connection:
+            for key, value in items.items():
+                self.assertTrue(connection.root.container.has(key))
+                self.assertEqual(connection.root.container.read(key), value)
 
 
 if __name__ == '__main__':

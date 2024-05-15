@@ -355,3 +355,15 @@ class ContainerDb(DB):
                         historical_cache_size_bytes=historical_cache_size_bytes,
                         databases=databases, xrefs=xrefs,
                         large_record_size=large_record_size)
+
+    def __enter__(self):
+        """
+        Provides a temporary connection that will close at the end of the
+        context management process
+        :return: connection object
+        """
+        self.__context_manager_connection = self.open()
+        return self.__context_manager_connection
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.__context_manager_connection.close()
