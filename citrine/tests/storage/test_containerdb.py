@@ -9,6 +9,7 @@ from ZODB.FileStorage import FileStorage
 from citrine.connection_tools.container_connection import ContainerConnection
 from citrine.storage import containerdb
 from citrine.storage.container import Container
+from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
 
 
 # If the tests seem sparce, it's because the ContainerDb class is intended to
@@ -20,6 +21,11 @@ from citrine.storage.container import Container
 #   insofar as it is capable of creating a temporary connection and closing it
 #   at the end of the with statement. The actual functionality of the connection
 #   is not considered part of these tests.
+
+
+# FUTURE: it would be great if we could test every parameter for the
+#   ContainerDb however most of these are implemented by Zope, and it would be
+#   an unhelpful use of time to create 20+ tests
 
 class ContainerDbConstructorTests(TestCase):
     """
@@ -85,12 +91,27 @@ class ContainerDbConstructorTests(TestCase):
         Tests that the create method will create a new ContainerDb at the
         provided path with the default capacity
         """
+        expected_capacity = 115000
+        storage = containerdb.ContainerDb.create(self.temp_db_file.name)
+        db = containerdb.ContainerDb(storage)
+
+        conn = db.open()
+        self.assertEqual(conn.root.container.capacity, expected_capacity)
 
     def test_create_custom_capacity(self):
         """
         Tests that the create method will create a new ContainerDb at the
         provided path with the provided capacity
         """
+        custom_capacity = 1000
+        storage = containerdb.ContainerDb.create(
+            self.temp_db_file.name,
+            capacity=custom_capacity
+        )
+        db = containerdb.ContainerDb(storage)
+
+        conn = db.open()
+        self.assertEqual(conn.root.container.capacity, custom_capacity)
 
     def test_load(self):
         """

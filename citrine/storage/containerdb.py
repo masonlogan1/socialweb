@@ -4,9 +4,11 @@ an implementation of ``ZODB.DB`` that provides an easy interface for managed
 storage using a ``Container`` object.
 """
 from ZODB import DB
+from ZODB.FileStorage import FileStorage
 
 from citrine.connection_tools.container_connection import ContainerConnection
 from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
+from citrine.storage.container import Container
 
 
 class ContainerDb(DB):
@@ -145,6 +147,19 @@ class ContainerDb(DB):
 
         :return: FileStorage object connecting back to the new ``ContainerDb``
         """
+        container = Container.new(capacity=capacity)
+        storage = FileStorage(file_name, create=create, read_only=read_only,
+                              stop=stop, quota=quota, pack_gc=pack_gc,
+                              pack_keep_old=pack_keep_old, packer=packer,
+                              blob_dir=blob_dir)
+        # store the container in the database
+        conn = DB(storage).open()
+        with conn.transaction_manager as tm:
+            conn.root.container = container
+            tm.commit()
+        conn.close()
+        return storage
+
 
     @classmethod
     def load(cls, storage, pool_size: int = 7,
