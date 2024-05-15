@@ -160,7 +160,6 @@ class ContainerDb(DB):
         conn.close()
         return storage
 
-
     @classmethod
     def load(cls, storage, pool_size: int = 7,
             pool_timeout: int = 2147483648, cache_size: int = 400,
@@ -230,6 +229,16 @@ class ContainerDb(DB):
 
         :return: ``ContainerDb`` at the location
         """
+        return cls(storage, pool_size=pool_size, pool_timeout=pool_timeout,
+                   cache_size=cache_size, cache_size_bytes=cache_size_bytes,
+                   historical_pool_size=historical_pool_size,
+                   historical_cache_size=historical_cache_size,
+                   historical_cache_size_bytes=historical_cache_size_bytes,
+                   historical_timeout=historical_timeout,
+                   database_name=database_name,
+                   databases=databases, xrefs=xrefs,
+                   large_record_size=large_record_size,
+                   strict=strict)
 
     @classmethod
     def new(cls, capacity: int, file_name: str, create: bool = False,

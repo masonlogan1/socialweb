@@ -118,6 +118,15 @@ class ContainerDbConstructorTests(TestCase):
         Tests that the load method will open an existing ContainerDb object
         and raise a FileNotFoundError if the files does not exist
         """
+        custom_capacity = 1000
+        storage = containerdb.ContainerDb.create(
+            self.temp_db_file.name,
+            capacity=custom_capacity
+        )
+        db = containerdb.ContainerDb.load(storage)
+
+        conn = db.open()
+        self.assertEqual(conn.root.container.capacity, custom_capacity)
 
     def test_new_default_capacity(self):
         """
