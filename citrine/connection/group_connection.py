@@ -7,8 +7,7 @@ from asyncio import run as aiorun
 from asyncio import TaskGroup
 from datetime import timedelta
 
-from citrine.citrinedb import CitrineDB
-from citrine.connection_tools.connection import CitrineConnection
+from citrine.connection.connection import CitrineConnection
 from citrine.exceptions import CitrineDuplicateIdError
 
 
@@ -19,7 +18,7 @@ class GroupReadConnection:
 
     USES ASYNCHRONOUS FUNCTIONALITY.
     """
-    def __init__(self, dbs: tuple[CitrineDB]|list[CitrineDB]|set[CitrineDB],
+    def __init__(self, dbs,
                  transaction_manager=None, **connection_args):
         """
         :param dbs: A list, set, or tuple of CitrineDB objects to connect to

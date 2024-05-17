@@ -11,6 +11,3 @@ import datetime
 
 __created__ = datetime.datetime(2024, 3, 5)
 __updated__ = datetime.datetime(2024, 3, 7)
-
-from citrine.connection import CitrineConnection
-from citrine.citrinedb import CitrineDB

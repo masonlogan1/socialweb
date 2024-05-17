@@ -6,7 +6,7 @@ storage using a ``Container`` object.
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
 
-from citrine.connection_tools.container_connection import ContainerConnection
+from citrine.connection.container_connection import ContainerConnection
 from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
 from citrine.storage.container import Container
 

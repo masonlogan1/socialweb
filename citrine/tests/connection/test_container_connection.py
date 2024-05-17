@@ -8,8 +8,8 @@ from ZODB import DB
 from ZODB.Connection import Connection
 from ZODB.FileStorage import FileStorage
 
-from citrine.connection_tools import container_connection
-from citrine.connection_tools.container_connection import \
+from citrine.connection import container_connection
+from citrine.connection.container_connection import \
     ContainerConnectionMeta
 from citrine.storage.container import Container
 from citrine.storage.containerdb import ContainerDb

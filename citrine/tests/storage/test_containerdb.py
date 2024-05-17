@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from ZODB.Connection import Connection
 from ZODB.FileStorage import FileStorage
 
-from citrine.connection_tools.container_connection import ContainerConnection
+from citrine.connection.container_connection import ContainerConnection
 from citrine.storage import containerdb
 from citrine.storage.container import Container
 from citrine.storage.consts import DEFAULT_CONTAINER_SIZE

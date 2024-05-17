@@ -4,7 +4,7 @@ Classes and functions for managing a single object database
 from ZODB import DB
 
 from citrine.exceptions import CitrineIncompatibleMethodError
-from citrine.connection_tools import ManagedConnection
+from citrine.connection import ManagedConnection
 
 from citrine.storage.transaction import TransactionManager
 

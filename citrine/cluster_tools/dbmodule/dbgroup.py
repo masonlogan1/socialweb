@@ -6,7 +6,6 @@ from os.path import join
 
 from ZODB import DB
 
-from citrine import CitrineDB
 from citrine.cluster_tools.dbmodule.dbmodule import DbModule, find_dbmodules
 from citrine.cluster_tools.clusterdb.container import ClusterRegistryContainer
 
@@ -90,7 +89,7 @@ class DbGroup:
         return {module.name: module for module in db_modules}
 
 
-class ManagedGroupDB(DbGroup, CitrineDB):
+class ManagedGroupDB(DbGroup, DB):
     """
     Data access and management object for an object database cluster.
 
@@ -136,7 +135,7 @@ class ManagedGroupDB(DbGroup, CitrineDB):
                  **storage_args):
         self.logger = logging.getLogger(f'{database_name}_cluster')
         DbGroup.__init__(self, root)
-        CitrineDB.__init__(self,
+        DB.__init__(self,
             storage=join(root, database_name), pool_size=pool_size,
             pool_timeout=pool_timeout, cache_size=cache_size,
             cache_size_bytes=cache_size_bytes,
