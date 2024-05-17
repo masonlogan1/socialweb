@@ -7,7 +7,6 @@ from asyncio import run as aiorun
 from asyncio import TaskGroup
 from datetime import timedelta
 
-from citrine.connection.connection import CitrineConnection
 from citrine.exceptions import CitrineDuplicateIdError
 
 
@@ -85,7 +84,7 @@ class GroupReadConnection:
                        if val.results() is not None}
         return results
 
-    async def __read_db(self, connection: CitrineConnection, id: str):
+    async def __read_db(self, connection, id: str):
         """
         Reads from a single connection asynchronously
         """
