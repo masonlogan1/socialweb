@@ -353,6 +353,7 @@ class ContainerDb(DB):
                         historical_pool_size=historical_pool_size,
                         historical_cache_size=historical_cache_size,
                         historical_cache_size_bytes=historical_cache_size_bytes,
+                        database_name=database_name,
                         databases=databases, xrefs=xrefs,
                         large_record_size=large_record_size)
 

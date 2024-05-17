@@ -3,7 +3,7 @@ import logging
 from persistent import Persistent
 from ZODB.Connection import Connection
 
-from citrine.persistence import CitrineThreadTransactionManager, autocommit
+from citrine.storage.transaction import ThreadTransactionManager, autocommit
 
 
 class ContainerConnectionMeta(Persistent):
@@ -118,7 +118,7 @@ class ContainerConnectionProperties:
         self.container.strict = value
 
 
-class ContainerConnection(Connection):
+class ContainerConnection(Connection, ContainerConnectionProperties):
     """
     Expansion of ``ZODB.Connection`` that obscures the under-the-hood functions
     in favor of ``create``, ``read``, ``update``, and ``delete`` methods.
@@ -129,7 +129,7 @@ class ContainerConnection(Connection):
         super().__init__(db=db, cache_size=cache_size, before=before,
                          cache_size_bytes=cache_size_bytes)
         self.transaction_manager = (transaction_manager or
-                                    CitrineThreadTransactionManager())
+                                    ThreadTransactionManager())
         self.auto_transaction = auto_transaction
         self.open(self.transaction_manager)
 

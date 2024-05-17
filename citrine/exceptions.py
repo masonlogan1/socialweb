@@ -30,3 +30,10 @@ class CitrineDuplicateIdError(Exception):
         if dbs:
             msg += f'; {", ".join(db.database_name for db in dbs)}'
         super().__init__(msg)
+
+class IncompatibleDatabaseError(Exception):
+    """
+    Exception thrown when a connection object dependent on some kind of
+    managed storage is given a database that is incompatible with the needs
+    of the connection
+    """
