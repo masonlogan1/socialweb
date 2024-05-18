@@ -51,7 +51,7 @@ class ContainerConnectionMetaTests(TestCase):
         Tests that the Container object is accurately provided
         """
         meta = ContainerConnectionMeta(self.mock_connection)
-        self.assertEqual(meta, self.sample_container)
+        self.assertEqual(meta.container, self.sample_container)
 
     def test_capacity(self):
         """
@@ -192,7 +192,11 @@ class ContainerConnectionConstructorTests(TestCase):
         Container object at root.container
         """
         db = DB(self.temp_db_file.name)
-        db.open().root.container = Container.new()
+        conn = db.open()
+        with conn.transaction_manager as tm:
+            conn.root.container = Container.new()
+            tm.commit()
+        conn.close()
 
         # as long as this doesn't throw an exception, it passes
         connection = container_connection.ContainerConnection(db)

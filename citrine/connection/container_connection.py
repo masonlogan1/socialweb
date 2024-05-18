@@ -3,6 +3,7 @@ import logging
 from persistent import Persistent
 from ZODB.Connection import Connection
 
+from citrine.exceptions import IncompatibleDatabaseError
 from citrine.storage.transaction import ThreadTransactionManager, autocommit
 
 
@@ -17,12 +18,14 @@ class ContainerConnectionMeta(Persistent):
         The Container object at the heart of the database
         :return:
         """
+        return self.obj.container
 
     @property
     def capacity(self):
         """
         The maximum writable size of the container
         """
+        return self.container.capacity
 
     @property
     def used(self) -> float:
@@ -30,24 +33,28 @@ class ContainerConnectionMeta(Persistent):
         The number of items in the writable container
         :return:
         """
+        return self.container.used
 
     @property
     def usage(self) -> float:
         """
         Percentage of the container's writable space that has been used
         """
+        return self.container.usage
 
     @property
     def status(self) -> int:
         """
         Enumerated type giving a brief summary of how full the container is
         """
+        return self.container.status
 
     @property
     def strict(self) -> bool:
         """
         Whether the ContainerConnection will enforce size limits with exceptions
         """
+        return self.container.strict
 
     def __init__(self, obj):
         self.obj = obj
@@ -128,12 +135,20 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
                  transaction_manager=None, auto_transaction=True):
         super().__init__(db=db, cache_size=cache_size, before=before,
                          cache_size_bytes=cache_size_bytes)
+        self.___metadata___ = ContainerConnectionMeta(self)
+
         self.transaction_manager = (transaction_manager or
                                     ThreadTransactionManager())
         self.auto_transaction = auto_transaction
         self.open(self.transaction_manager)
 
-        self.logger = getattr(self, 'logger', logging.getLogger(__name__))
+        self.___root___ = self.root
+
+        if not getattr(self.root, 'container', None):
+            raise IncompatibleDatabaseError(
+                f'Cannot open {db.database_name} as a ContainerDb; database ' +
+                f"lacks a Container object at 'root.container'"
+            )
 
     @autocommit
     def create(self, id, obj):
