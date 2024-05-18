@@ -37,3 +37,12 @@ class IncompatibleDatabaseError(Exception):
     managed storage is given a database that is incompatible with the needs
     of the connection
     """
+
+class ObjectOverwriteError(Exception):
+    """
+    Exception thrown when a write action in a database will overwrite an
+    existing object
+    """
+    def __init__(self, id):
+        msg = f"Overwrite not permitted for '{id}'"
+        super().__init__(msg)

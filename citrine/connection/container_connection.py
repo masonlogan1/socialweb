@@ -1,9 +1,11 @@
 import logging
 
+from collections.abc import Iterable
+
 from persistent import Persistent
 from ZODB.Connection import Connection
 
-from citrine.exceptions import IncompatibleDatabaseError
+from citrine.exceptions import IncompatibleDatabaseError, ObjectOverwriteError
 from citrine.storage.transaction import ThreadTransactionManager, autocommit
 
 
@@ -68,6 +70,7 @@ class ContainerConnectionProperties:
     # should be overridden by instances of implementing class
     ___metadata___ = None
     ___root___ = None
+    ___autocommit___ = None
 
     @property
     def container(self):
@@ -124,6 +127,21 @@ class ContainerConnectionProperties:
             raise TypeError("'strict' must be a boolean")
         self.container.strict = value
 
+    @property
+    def autocommit(self) -> bool:
+        """
+        Whether to automatically commit actions performed by ``create``,
+        ``update``, and ``delete``
+        """
+        return self.___autocommit___
+
+    @autocommit.setter
+    def autocommit(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("'autocommit' must be a boolean")
+        self.___autocommit___ = value
+        self.transaction_manager.autocommit = value
+
 
 class ContainerConnection(Connection, ContainerConnectionProperties):
     """
@@ -132,14 +150,14 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
     """
 
     def __init__(self, db, cache_size=400, before=None, cache_size_bytes=0,
-                 transaction_manager=None, auto_transaction=True):
+                 transaction_manager=None, autocommit=True):
         super().__init__(db=db, cache_size=cache_size, before=before,
                          cache_size_bytes=cache_size_bytes)
         self.___metadata___ = ContainerConnectionMeta(self)
+        self.___autocommit___ = autocommit
 
         self.transaction_manager = (transaction_manager or
                                     ThreadTransactionManager())
-        self.auto_transaction = auto_transaction
         self.open(self.transaction_manager)
 
         self.___root___ = self.root
@@ -158,6 +176,10 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :param id: database identifier
         :param obj: the object to be stored
         """
+        if not self.container.has(id):
+            return self.container.write(id, obj)
+        else:
+            raise ObjectOverwriteError(id=id)
 
     def read(self, id, default=None):
         """
@@ -167,6 +189,7 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :param id: database identifier
         :param default: value to return if no object is found
         """
+        return self.container.read(id, default)
 
     @autocommit
     def update(self, id, obj):
@@ -178,6 +201,9 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :param obj: the new value to be stored at the id
         :return: previous value at that id, if applicable
         """
+        previous = self.container.read(id, default=None)
+        self.container.write(id, obj)
+        return previous
 
     @autocommit
     def delete(self, id):
@@ -188,6 +214,7 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :param id: database identifier
         :return: the object removed from the database, if applicable
         """
+        return self.container.delete(id)
 
     def __getitem__(self, ids):
         """
@@ -197,6 +224,17 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :return: list of objects found from the ids OR single object if only one
         id is provided
         """
+        if isinstance(ids, str):
+            if not self.container.has(ids):
+                raise KeyError(f'{ids} not found')
+            return self.container.read(ids)
+        if not isinstance(ids, Iterable):
+            raise IndexError(f'index selector must be string or iterable of ' +
+                             f'strings, not {ids}')
+        results = [self.container.read(id) for id in ids]
+        if not any(results):
+            raise KeyError(f'No values found for any of {ids}')
+        return results
 
     def __enter__(self):
         """

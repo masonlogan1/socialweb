@@ -46,7 +46,25 @@ class ThreadTransactionManager(ZoThreadTransactionManager):
 
     def __init__(self):
         super().__init__()
-        self.manager = TransactionManager()
+        self.autocommit = True
+        self.logger = logging.getLogger('CTransManager')
+        self.logger.setLevel(logging.INFO)
+
+    def __enter__(self):
+        self.transaction_uuid = uuid.uuid4()
+        self.logger.info(f'START TRANSACTION {self.transaction_uuid}')
+        self.autocommit = False
+        return super().__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val is None:
+            self.commit()
+            self.logger.info(f'TRANSACTION {self.transaction_uuid} SUCCESSFUL')
+        else:
+            self.abort()
+            self.logger.error(f'TRANSACTION {self.transaction_uuid} FAILED')
+        self.autocommit = True
+        self.transaction_uuid = None
 
 
 def autocommit(fn):

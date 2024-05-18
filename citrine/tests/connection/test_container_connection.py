@@ -252,7 +252,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that all key-value pairs are present
         for key, value in items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
     def test_create_custom_type(self):
@@ -285,7 +285,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that all values are present and accurate
         for key, value in items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
     def test_read_builtin_type(self):
@@ -357,7 +357,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that initial insert worked
         for key, value in initial_items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
         # update values using connection method
@@ -366,7 +366,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that update worked
         for key, value in updated_items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
     def test_update_custom_type(self):
@@ -401,7 +401,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that initial insert worked
         for key, value in initial_items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
         # update values using connection method
@@ -410,7 +410,7 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
 
         # check that update worked
         for key, value in updated_items.items():
-            self.assertTrue(connection.root.container.has_key(key))
+            self.assertTrue(connection.root.container.has(key))
             self.assertEqual(connection.root.container.read(key), value)
 
     def test_delete_builtin_type(self):
@@ -434,8 +434,12 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
                 connection.root.container.write(key, value)
             tm.commit()
 
+        connection.delete(keys[1])
+
+        # check keys[1] is gone and that everything else is still there
+        self.assertFalse(connection.root.container.has(keys[1]))
         for key, value in expected_items.items():
-            self.assertEqual(connection.read(key), value)
+            self.assertEqual(connection.root.container.read(key), value)
 
     def test_delete_custom_type(self):
         """
@@ -463,8 +467,12 @@ class ContainerConnectionCreateReadUpdateDeleteTests(TestCase):
                 connection.root.container.write(key, value)
             tm.commit()
 
+        connection.delete(keys[1])
+
+        # check keys[1] is gone and that everything else is still there
+        self.assertFalse(connection.root.container.has(keys[1]))
         for key, value in expected_items.items():
-            self.assertEqual(connection.read(key), value)
+            self.assertEqual(connection.root.container.read(key), value)
 
     def test_no_autocommit(self):
         """
@@ -706,7 +714,7 @@ class ContainerConnectionContextManagerTests(TestCase):
             connection.update('key1', 'val1.1')
             connection.update('key0', 'val0.2')
             connection.delete('key2')
-            transaction.cancel()
+            transaction.abort()
 
         for key, value in expected.items():
             self.assertEqual(connection.read(key), value)
