@@ -1,18 +1,16 @@
 from unittest import TestCase, main
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from persistent import Persistent
 from ZODB import DB
-from ZODB.Connection import Connection
-from ZODB.FileStorage import FileStorage
 
 from citrine.connection import container_connection
 from citrine.connection.container_connection import \
     ContainerConnectionMeta
 from citrine.storage.container import Container
-from citrine.storage.containerdb import ContainerDb
+from citrine.client.container_client import ContainerDb
 
 from citrine.exceptions import IncompatibleDatabaseError
 

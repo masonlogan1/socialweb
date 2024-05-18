@@ -1,8 +1,3 @@
-"""
-Classes and functions for creating and working with ``ContainerDb`` objects,
-an implementation of ``ZODB.DB`` that provides an easy interface for managed
-storage using a ``Container`` object.
-"""
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
 
@@ -32,7 +27,7 @@ class ContainerDb(DB):
                  historical_cache_size_bytes: int = 0,
                  historical_timeout: int = 300, database_name: str = 'unnamed',
                  databases: dict = None, xrefs: bool = True,
-                 large_record_size: int = 16777216, strict: bool = False,
+                 large_record_size: int = 16777216,
                  **storage_args):
         """
         Creates a database object that uses a ``Container`` as a way of
@@ -95,17 +90,17 @@ class ContainerDb(DB):
              storage constructor if a path name or None is passed as
              the storage argument.
         """
-        super().__init__(storage=storage, pool_size=pool_size,
-                         pool_timeout=pool_timeout, cache_size=cache_size,
-                         cache_size_bytes=cache_size_bytes,
-                         historical_pool_size=historical_pool_size,
-                         historical_cache_size=historical_cache_size,
-                         historical_cache_size_bytes=
-                         historical_cache_size_bytes,
-                         historical_timeout=historical_timeout,
-                         database_name=database_name, databases=databases,
-                         xrefs=xrefs, large_record_size=large_record_size,
-                         **storage_args)
+        super().__init__(
+            storage=storage, pool_size=pool_size,
+            pool_timeout=pool_timeout, cache_size=cache_size,
+            cache_size_bytes=cache_size_bytes,
+            historical_pool_size=historical_pool_size,
+            historical_cache_size=historical_cache_size,
+            historical_cache_size_bytes=historical_cache_size_bytes,
+            historical_timeout=historical_timeout,
+            database_name=database_name, databases=databases,
+            xrefs=xrefs, large_record_size=large_record_size,
+            **storage_args)
 
     @classmethod
     def create(cls, file_name: str, capacity: int = DEFAULT_CONTAINER_SIZE,
@@ -162,13 +157,13 @@ class ContainerDb(DB):
 
     @classmethod
     def load(cls, storage, pool_size: int = 7,
-            pool_timeout: int = 2147483648, cache_size: int = 400,
-            cache_size_bytes: int = 0, historical_pool_size: int = 3,
-            historical_cache_size: int = 1000,
-            historical_cache_size_bytes: int = 0,
-            historical_timeout: int = 300, database_name: str = 'unnamed',
-            databases: dict = None, xrefs: bool = True,
-            large_record_size: int = 16777216, strict: bool = False):
+             pool_timeout: int = 2147483648, cache_size: int = 400,
+             cache_size_bytes: int = 0, historical_pool_size: int = 3,
+             historical_cache_size: int = 1000,
+             historical_cache_size_bytes: int = 0,
+             historical_timeout: int = 300, database_name: str = 'unnamed',
+             databases: dict = None, xrefs: bool = True,
+             large_record_size: int = 16777216):
         """
         Load a ``ContainerDb`` from the provided location
 
@@ -223,10 +218,6 @@ class ContainerDb(DB):
         larger than this, a warning is issued, suggesting that blobs should
         be used instead.
 
-        :param storage_args: Extra keyword arguments passed to a
-             storage constructor if a path name or None is passed as
-             the storage argument.
-
         :return: ``ContainerDb`` at the location
         """
         return cls(storage, pool_size=pool_size, pool_timeout=pool_timeout,
@@ -237,8 +228,7 @@ class ContainerDb(DB):
                    historical_timeout=historical_timeout,
                    database_name=database_name,
                    databases=databases, xrefs=xrefs,
-                   large_record_size=large_record_size,
-                   strict=strict)
+                   large_record_size=large_record_size)
 
     @classmethod
     def new(cls, file_name: str, capacity: int = DEFAULT_CONTAINER_SIZE,
@@ -285,12 +275,6 @@ class ContainerDb(DB):
 
         :param strict: Whether to enforce size maximums via exceptions
 
-        :param storage: the storage used by the database, such as a
-        ``ZODB.FileStorage.FileStorage.FileStorage``. This can be a string
-        path name to use a constructed ``ZODB.FileStorage.FileStorage.
-        FileStorage`` storage or ``None`` to use a constructed ``ZODB.
-        MappingStorage.MappingStorage``.
-
         :param pool_size: expected maximum number of open connections. Warnings
         are logged when this is exceeded and critical messages are logged if
         twice the pool size is exceeded.
@@ -336,9 +320,6 @@ class ContainerDb(DB):
         larger than this, a warning is issued, suggesting that blobs should
         be used instead.
 
-        :param storage_args: Extra keyword arguments passed to a storage
-        constructor if a path name or None is passed as the storage argument.
-
         :return: newly created ``ContainerDb`` object
         """
         return cls.load(cls.create(file_name, capacity=capacity,
@@ -350,6 +331,8 @@ class ContainerDb(DB):
                                    ),
                         pool_size=pool_size, pool_timeout=pool_timeout,
                         cache_size=cache_size,
+                        cache_size_bytes=cache_size_bytes,
+                        historical_timeout=historical_timeout,
                         historical_pool_size=historical_pool_size,
                         historical_cache_size=historical_cache_size,
                         historical_cache_size_bytes=historical_cache_size_bytes,

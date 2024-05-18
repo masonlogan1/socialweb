@@ -1,15 +1,12 @@
 from unittest import TestCase, main
-from unittest.mock import MagicMock, call, patch
 
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-from ZODB.Connection import Connection
 from ZODB.FileStorage import FileStorage
 
 from citrine.connection.container_connection import ContainerConnection
-from citrine.storage import containerdb
+from citrine.database import containerdb
 from citrine.storage.container import Container
-from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
 
 
 # If the tests seem sparce, it's because the ContainerDb class is intended to
