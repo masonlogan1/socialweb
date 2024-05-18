@@ -1,5 +1,7 @@
+import ZODB
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
+from ZODB.POSException import POSKeyError
 
 from citrine.connection.container_connection import ContainerConnection
 from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
@@ -90,6 +92,34 @@ class ContainerDb(DB):
              storage constructor if a path name or None is passed as
              the storage argument.
         """
+        try:
+            super().__init__(
+                storage=storage, pool_size=pool_size,
+                pool_timeout=pool_timeout, cache_size=cache_size,
+                cache_size_bytes=cache_size_bytes,
+                historical_pool_size=historical_pool_size,
+                historical_cache_size=historical_cache_size,
+                historical_cache_size_bytes=historical_cache_size_bytes,
+                historical_timeout=historical_timeout,
+                database_name=database_name, databases=databases,
+                xrefs=xrefs, large_record_size=large_record_size,
+                **storage_args)
+        except POSKeyError:
+            # often happens if the db is newly created
+            if not isinstance(storage, FileStorage):
+                # closing if storage is FileStorage will make the db unopenable
+                self.close()
+            db = DB(storage)
+            conn = db.open()
+            with conn.transaction_manager as tm:
+                # if this exists, do nothing, the exception is unrelated to
+                # the database being new!!
+                if not getattr(conn.root, 'container', None):
+                    conn.root.container = Container.new()
+                    tm.commit()
+            conn.close()
+            if not isinstance(storage, FileStorage):
+                db.close()
         super().__init__(
             storage=storage, pool_size=pool_size,
             pool_timeout=pool_timeout, cache_size=cache_size,

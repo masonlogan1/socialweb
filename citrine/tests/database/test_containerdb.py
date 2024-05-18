@@ -2,6 +2,7 @@ from unittest import TestCase, main
 
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
+from ZODB import DB
 from ZODB.FileStorage import FileStorage
 
 from citrine.connection.container_connection import ContainerConnection

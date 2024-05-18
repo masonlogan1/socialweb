@@ -148,6 +148,7 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
     Expansion of ``ZODB.Connection`` that obscures the under-the-hood functions
     in favor of ``create``, ``read``, ``update``, and ``delete`` methods.
     """
+    logger = logging.getLogger('ContainerConnection')
 
     def __init__(self, db, cache_size=400, before=None, cache_size_bytes=0,
                  transaction_manager=None, autocommit=True):
