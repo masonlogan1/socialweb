@@ -241,6 +241,8 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         """
         Creates a transaction block that will commit all actions at the end
         """
+        self.autocommit = False
+        return self.transaction_manager.begin()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
@@ -249,3 +251,5 @@ class ContainerConnection(Connection, ContainerConnectionProperties):
         :param exc_val:
         :param exc_tb:
         """
+        self.transaction_manager.commit()
+        self.autocommit = True

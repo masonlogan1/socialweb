@@ -681,7 +681,7 @@ class ContainerConnectionContextManagerTests(TestCase):
         db = ContainerDb.new(self.temp_db_file.name)
         connection = container_connection.ContainerConnection(db)
 
-        expected = {'key0': 'val0.2', 'key1': 'val1.1', 'key3': 'val3.0'}
+        expected = {'key0': 'val0.2', 'key1': 'val1.1', 'key3': 'val0.3'}
 
         with connection as transaction:
             connection.create('key0', 'val0.0')
@@ -690,11 +690,20 @@ class ContainerConnectionContextManagerTests(TestCase):
             connection.update('key0', 'val0.1')
             connection.update('key1', 'val1.1')
             connection.update('key0', 'val0.2')
+            connection.create('key3', 'val0.3')
             connection.delete('key2')
-            transaction.commit()
 
         for key, value in expected.items():
-            self.assertEqual(connection.read(key), value)
+            self.assertEqual(connection.root.container.read(key), value)
+
+        with connection as transaction:
+            connection.update('key0', TestType('val0.0', 'val0.1', 'val0.2'))
+            connection.update('key1', TestType('val1.0', 'val1.1', 'val1.2'))
+            connection.create('key2', TestType('val2.0', 'val2.1', 'val2.2'))
+            connection.update('key3', TestType('val3.0', 'val3.1', 'val3.3'))
+
+        for key in ['key0', 'key1', 'key2', 'key3']:
+            self.assertTrue(connection.root.container.read(key)._p_status, 'saved')
 
     def test_context_transaction_block_failure(self):
         """
@@ -717,7 +726,7 @@ class ContainerConnectionContextManagerTests(TestCase):
             transaction.abort()
 
         for key, value in expected.items():
-            self.assertEqual(connection.read(key), value)
+            self.assertFalse(connection.root.container.has(key))
 
 
 if __name__ == '__main__':
