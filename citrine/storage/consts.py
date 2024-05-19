@@ -1,0 +1,9 @@
+HEALTHY = 0
+ACCEPTABLE = 60
+ALERT = 70
+WARNING = 80
+CRITICAL = 90
+
+# default sizes for collections, groups, and containers
+DEFAULT_COLLECTION_SIZE = 5000
+DEFAULT_CONTAINER_SIZE = 100000
