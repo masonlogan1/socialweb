@@ -27,7 +27,6 @@ class ContainerClient(ContainerDb):
         raise NotImplementedError("'Create' process only valid for local " +
                                   "databases, not client databases")
 
-
     # "why are there so many kwargs??" BECAUSE THIS IS A COMPLEX PROCESS
     @classmethod
     def connect(cls, addr, storage_path, pool_size: int = 7,

@@ -6,6 +6,7 @@ from ZODB.POSException import POSKeyError
 from citrine.connection.container_connection import ContainerConnection
 from citrine.storage.consts import DEFAULT_CONTAINER_SIZE
 from citrine.storage.container import Container
+from citrine.storage.transaction import ThreadTransactionManager
 
 
 class ContainerDb(DB):
@@ -21,6 +22,11 @@ class ContainerDb(DB):
     """
 
     klass = ContainerConnection
+
+    def open(self, transaction_manager=None, at=None, before=None):
+        transaction_manager = transaction_manager or ThreadTransactionManager()
+        return super().open(transaction_manager=transaction_manager, at=at,
+                     before=before)
 
     def __init__(self, storage, pool_size: int = 7,
                  pool_timeout: int = 2147483648, cache_size: int = 400,
