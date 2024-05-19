@@ -1,5 +1,6 @@
 requests
-zodb
+ZODB
+ZEO
 dill
 validate-email
 cachetools==5.3.1
