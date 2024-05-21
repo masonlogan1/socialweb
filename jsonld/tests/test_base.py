@@ -6,12 +6,123 @@ class ContextualPropertyConstructor(TestCase):
     Tests for the methods a ContextualProperty can be created
     """
 
+    def test_name_only(self):
+        """
+        Tests that a ContextualProperty can be constructed with only the
+        name argument and have __name set
+        """
+
+    def test_fget_only(self):
+        """
+        Tests that a ContextualProperty can be constructed with only the
+        fget argument and have __fget set and the get method added to the
+        __fget_contexts
+        """
+
+    def test_fset_only(self):
+        """
+        Tests that a ContextualProperty can be constructed with only the
+        fset argument and have __fset set and the set method added to the
+        __fset_contexts
+        """
+
+    def test_fdel_only(self):
+        """
+        Tests that a ContextualProperty can be constructed with only the
+        fdel argument and have __fdel set and the del method added to the
+        __fdel_contexts
+        """
+
+    def test_doc_only(self):
+        """
+        Tests that a ContextualProperty can be constructed with only the doc
+        argument and that the property's __doc__ method returns the provided
+        text
+        """
+
+    def test_fget_fset(self):
+        """
+        Tests that a ContextualProperty can be constructed with the fget and
+        fset arguments, that the __fget and __fset functions will perform their
+        actions using the correct functions, and that __fget_contexts and
+        __fset_contexts contain the functions
+        """
+
+    def test_fset_fdel(self):
+        """
+        Tests that a ContextualProperty can be constructed with the fset and
+        fdel arguments, that the __fset and __fdel functions will perform their
+        actions using the correct functions, and that __fset_contexts and
+        __fdel_contexts contain the functions
+        """
+
+    def test_fget_fdel(self):
+        """
+        Tests that a ContextualProperty can be constructed with the fget and
+        fdel arguments, that the __fget and __fdel functions will perform their
+        actions using the correct functions, and that __fget_contexts and
+        __fdel_contexts contain the functions
+        """
+
+    def test_fget_fset_fdel(self):
+        """
+        Tests that a ContextualProperty can be constructed with all three
+        function arguments, __fget/__fset/__fdel methods perform their
+        actions using the correct functions, and that the context dicts
+        contain the functions
+        """
+
+    def test_fget_fset_fdel_doc(self):
+        """
+        Tests that a ContextualProperty can be constructed with all three
+        function arguments, __fget/__fset/__fdel methods perform their
+        actions using the correct functions, that the context dicts contain
+        the functions, and that the doc has been set
+        """
+
+    def test_fget_fset_fdel_doc_name(self):
+        """
+        Tests that a ContextualProperty can be constructed with all three
+        function arguments, __fget/__fset/__fdel methods perform their
+        actions using the correct functions, that the context dicts contain
+        the functions, and that the doc and name have been set
+        """
+
 
 class ContextualPropertyGetter(TestCase):
     """
     Tests to ensure that a ContextualProperty's getter and getter_context
     work as expected
     """
+    def test_fget_default_only(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        getter function it will execute that function
+        """
+
+    def test_fget_one_additional_context(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected
+        """
+
+    def test_fget_multiple_additional_contexts(self):
+        """
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected
+        """
+
+    def test_fget_nonexistent_context_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty getter is used with a nonexistent
+        context, a MissingContextError is raised
+        """
+
+    def test_no_fget_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty has no getter, an AttributeError
+        is raised with a message matching the default from property
+        """
 
 
 class ContextualPropertySetter(TestCase):
@@ -19,6 +130,35 @@ class ContextualPropertySetter(TestCase):
     Tests to ensure that a ContextualProperty's setter and setter_context
     work as expected
     """
+    def test_fset_default_only(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        getter function it will execute that function
+        """
+
+    def test_fset_one_additional_context(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected
+        """
+
+    def test_fset_multiple_additional_contexts(self):
+        """
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected
+        """
+
+    def test_fset_nonexistent_context_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty getter is used with a nonexistent
+        context, a MissingContextError is raised
+        """
+
+    def test_no_fset_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty has no getter, an AttributeError
+        is raised with a message matching the default from property
+        """
 
 
 class ContextualPropertyDeleter(TestCase):
@@ -26,6 +166,35 @@ class ContextualPropertyDeleter(TestCase):
     Tests to ensure that a ContextualProperty's deleter and deleter_context
     work as expected
     """
+    def test_fdel_default_only(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        getter function it will execute that function
+        """
+
+    def test_fdel_one_additional_context(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected
+        """
+
+    def test_fdel_multiple_additional_contexts(self):
+        """
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected
+        """
+
+    def test_fdel_nonexistent_context_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty getter is used with a nonexistent
+        context, a MissingContextError is raised
+        """
+
+    def test_no_fdel_raises_MissingContextError(self):
+        """
+        Tests that when a ContextualProperty has no getter, an AttributeError
+        is raised with a message matching the default from property
+        """
 
 
 class ContextualPropertyFunction(TestCase):
@@ -33,6 +202,12 @@ class ContextualPropertyFunction(TestCase):
     Tests to ensure that the contextualproperty function works as a simplified
     decorator for creating contextualproperty objects on classes
     """
+
+    def test_decorator(self):
+        """
+        Tests that when the contextualproperty function is used as a decorator,
+        it will create a new ContextualProperty on a class
+        """
 
 
 class NamespacedObjectConstructor(TestCase):
