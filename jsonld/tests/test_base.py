@@ -215,6 +215,14 @@ class NamespacedObjectConstructor(TestCase):
     Tests to ensure that the NamespacedObject constructor works as expected
     """
 
+    # there's really no defined constructor, so we just need to make sure an
+    # object CAN be created
+    def test_standard_constructor(self):
+        """
+        Tests a constructor without an assigned namespace to ensure the
+        object can be created
+        """
+
 
 class NamespacedObjectGetters(TestCase):
     """
@@ -226,12 +234,47 @@ class NamespacedObjectGetters(TestCase):
     JSON_DATA_CONTEXT will return nothing
     """
 
+    def test_namespace_standard_context(self):
+        """
+        Tests that an object implementing get_namespace works as expected
+        """
+
+    def test_no_namespace(self):
+        """
+        Test that an object without a namespace produces a None value
+        """
+
+    def test_json_data_context_namespace(self):
+        """
+        Test that an object with the JSON_DATA_CONTEXT context returns None as
+        its namespace
+        """
+
 
 class NamespacedObjectSetters(TestCase):
     """
     Tests to ensure that the NamespacedObject __namespace__ setter can change
     the class namespace
     """
+
+    def test_namespace_change_outside_class_change_context(self):
+        """
+        Tests that a namespace value cannot be changed outside the
+        class change context
+        """
+
+    def test_namespace_change_with_class_change_context(self):
+        """
+        Tests that when an object is in the class change context, the
+        namespace value can be changed
+        """
+
+    def test_namespace_reset_on_delete(self):
+        """
+        Tests that when the namespace property is deleted, it does not remove
+        the namespace entirely but rather resets it to the default for that
+        class (reverses changes done under class change context)
+        """
 
 
 class JsonContextAwareManagerTests(TestCase):
@@ -243,6 +286,37 @@ class JsonContextAwareManagerTests(TestCase):
     context value.
     """
 
+    def test_json_context_constructor(self):
+        """
+        Tests that a context manager can be constructed and has an
+        active context, an active flag, and an empty stack
+        """
+
+    def test_json_context_callable_adds_to_stack(self):
+        """
+        Tests that a json context manager can be called to add a new item to
+        the stop of the stack, but does not set the active flag
+        """
+
+    def test_json_context_aware_manager_single_context(self):
+        """
+        Tests that when a JsonContextAwareManager is called and used as a
+        context manager, it automatically sets the provided value as the new
+        context, adds it to the stack, and marks the active flag; also tests
+        that when the context manager ends, the stack is empty, context is None,
+        and the active flag is unset
+        """
+
+    def test_json_context_aware_manager_nested_contexts(self):
+        """
+        Tests that when the same JsonContextAwareManager is used as a context
+        manager in a nested way, the last applied context will be the active
+        context, the stack will be in the correct order, and the active flag
+        will be set; also tests that when the context manager ends at each
+        level, the active context is returned to the next item on the stack
+        and the active flag remains marked until the stack is completely empty
+        """
+
 
 class JsonPropertyTests(TestCase):
     """
@@ -252,6 +326,41 @@ class JsonPropertyTests(TestCase):
     __get_registration__ and __set_registration__ methods work independently
     """
 
+    def test_get_property_name(self):
+        """
+        Tests that __get_property_name__ will return the name of a single
+        property, raise a ValueError if more or less than one property is
+        present, will cache the name in __property_name__, and will refresh
+        the cache if refresh == True
+        """
+
+    def test_get_registration(self):
+        """
+        Tests that __get_registration__ will return a 4-tuple of values
+        containing the fget, fset, fdel, and doc properties of the property
+        identified by cls.__property_name__, will cache the registration in
+        __registration__, and will refresh the cache if refresh == True
+        """
+
+    def test_constructor_single_property(self):
+        """
+        Tests that a JsonProperty object with a single property will
+        successfully instantiate, pick up the property name, and create
+        the registration from the property's getter/setter/deleter/doc
+        """
+
+    def test_constructor_multiple_properties(self):
+        """
+        Tests that a JsonProperty object with multiple properties will
+        raise a ValueError
+        """
+
+    def test_constructor_no_properties(self):
+        """
+        Tests that a JsonProperty object with no properties will raise a
+        ValueError
+        """
+
 
 class PropertyAwareObjectConstructor(TestCase):
     """
@@ -259,12 +368,58 @@ class PropertyAwareObjectConstructor(TestCase):
     the names of all associated properties and create a JsonContextAwareManager
     """
 
+    def test_get_properties(self):
+        """
+        Tests that __get_properties__ will return the names of all properties
+        """
+
+    def test_construction_without_additional_properties(self):
+        """
+        Tests that a PropertyAwareObject can be created even when no
+        properties are found
+        """
+
+    def test_construction_with_one_property(self):
+        """
+        Tests that a PropertyAwareObject can be created and pick up the
+        details for a single property
+        """
+
+    def test_constructor_with_multiple_properties(self):
+        """
+        Test that a PropertyAwareObject ccan be created and pick up the
+        details for multiple properties
+        """
+
+    def test_constructor_context_manager(self):
+        """
+        Test that a PropertyAwareObject has a context manager when created
+        """
+
 
 class PropertyAwareObjectIterator(TestCase):
     """
     Tests that when a PropertyAwareObject is iterated over, it yields
     name-property pairs of all properties in the object
     """
+
+    def test_iterator_with_no_properties(self):
+        """
+        Tests that a PropertyAwareObject can be iterated over without throwing
+        an exception when no properties are present
+        """
+
+    def test_iterator_with_one_property(self):
+        """
+        Tests that a PropertyAwareObject can be iterated over when a single
+        property is present
+        """
+
+    def test_iterator_with_multiple_properties(self):
+        """
+        Tests that a PropertyAwareObject can be iterated over when multiple
+        properties are present
+        """
 
 
 class PropertyAwareObjectGetitem(TestCase):
@@ -274,6 +429,36 @@ class PropertyAwareObjectGetitem(TestCase):
     if a value in the indexes is not a valid property it will raise a
     KeyError
     """
+
+    def test_get_nonexistent_property(self):
+        """
+        Tests that when a single invalid key is used as an index on a
+        PropertyAwareObject, it will raise a KeyError
+        """
+
+    def test_get_multiple_nonexistent_properties(self):
+        """
+        Tests that when multiple invalid keys are used as indexes on a
+        PropertyAwareObject, it will raise a KeyError
+        """
+
+    def test_get_single_property(self):
+        """
+        Tests that a PropertyAwareObject returns a dictionary with a single
+        key-value pair matching the requested property
+        """
+
+    def test_get_multiple_properties(self):
+        """
+        Tests that a PropertyAwareObject returns a dictionary with multiple
+        key-value pairs matching the requested properties
+        """
+
+    def test_get_multiple_properties_some_nonexistent(self):
+        """
+        Tests that even if some properties are present, a KeyError is raised
+        if any of the indexes are not present
+        """
 
 
 if __name__ == '__main__':
