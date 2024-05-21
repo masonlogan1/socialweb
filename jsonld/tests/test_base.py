@@ -11,6 +11,7 @@ class ContextualPropertyConstructor(TestCase):
         Tests that a ContextualProperty can be constructed with only the
         name argument and have __name set
         """
+        assert False
 
     def test_fget_only(self):
         """
@@ -18,6 +19,7 @@ class ContextualPropertyConstructor(TestCase):
         fget argument and have __fget set and the get method added to the
         __fget_contexts
         """
+        assert False
 
     def test_fset_only(self):
         """
@@ -25,6 +27,7 @@ class ContextualPropertyConstructor(TestCase):
         fset argument and have __fset set and the set method added to the
         __fset_contexts
         """
+        assert False
 
     def test_fdel_only(self):
         """
@@ -32,6 +35,7 @@ class ContextualPropertyConstructor(TestCase):
         fdel argument and have __fdel set and the del method added to the
         __fdel_contexts
         """
+        assert False
 
     def test_doc_only(self):
         """
@@ -39,6 +43,7 @@ class ContextualPropertyConstructor(TestCase):
         argument and that the property's __doc__ method returns the provided
         text
         """
+        assert False
 
     def test_fget_fset(self):
         """
@@ -47,6 +52,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fget_contexts and
         __fset_contexts contain the functions
         """
+        assert False
 
     def test_fset_fdel(self):
         """
@@ -55,6 +61,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fset_contexts and
         __fdel_contexts contain the functions
         """
+        assert False
 
     def test_fget_fdel(self):
         """
@@ -63,6 +70,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fget_contexts and
         __fdel_contexts contain the functions
         """
+        assert False
 
     def test_fget_fset_fdel(self):
         """
@@ -71,6 +79,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that the context dicts
         contain the functions
         """
+        assert False
 
     def test_fget_fset_fdel_doc(self):
         """
@@ -79,6 +88,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, that the context dicts contain
         the functions, and that the doc has been set
         """
+        assert False
 
     def test_fget_fset_fdel_doc_name(self):
         """
@@ -87,6 +97,7 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, that the context dicts contain
         the functions, and that the doc and name have been set
         """
+        assert False
 
 
 class ContextualPropertyGetter(TestCase):
@@ -99,30 +110,35 @@ class ContextualPropertyGetter(TestCase):
         Tests that when a ContextualProperty only has the initially provided
         getter function it will execute that function
         """
+        assert False
 
     def test_fget_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
         function, both the default and secondary functions work as expected
         """
+        assert False
 
     def test_fget_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
         context function, all functions (including default) work as expected
         """
+        assert False
 
     def test_fget_nonexistent_context_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty getter is used with a nonexistent
         context, a MissingContextError is raised
         """
+        assert False
 
     def test_no_fget_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty has no getter, an AttributeError
         is raised with a message matching the default from property
         """
+        assert False
 
 
 class ContextualPropertySetter(TestCase):
@@ -135,30 +151,35 @@ class ContextualPropertySetter(TestCase):
         Tests that when a ContextualProperty only has the initially provided
         getter function it will execute that function
         """
+        assert False
 
     def test_fset_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
         function, both the default and secondary functions work as expected
         """
+        assert False
 
     def test_fset_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
         context function, all functions (including default) work as expected
         """
+        assert False
 
     def test_fset_nonexistent_context_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty getter is used with a nonexistent
         context, a MissingContextError is raised
         """
+        assert False
 
     def test_no_fset_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty has no getter, an AttributeError
         is raised with a message matching the default from property
         """
+        assert False
 
 
 class ContextualPropertyDeleter(TestCase):
@@ -171,30 +192,35 @@ class ContextualPropertyDeleter(TestCase):
         Tests that when a ContextualProperty only has the initially provided
         getter function it will execute that function
         """
+        assert False
 
     def test_fdel_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
         function, both the default and secondary functions work as expected
         """
+        assert False
 
     def test_fdel_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
         context function, all functions (including default) work as expected
         """
+        assert False
 
     def test_fdel_nonexistent_context_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty getter is used with a nonexistent
         context, a MissingContextError is raised
         """
+        assert False
 
     def test_no_fdel_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty has no getter, an AttributeError
         is raised with a message matching the default from property
         """
+        assert False
 
 
 class ContextualPropertyFunction(TestCase):
@@ -208,6 +234,7 @@ class ContextualPropertyFunction(TestCase):
         Tests that when the contextualproperty function is used as a decorator,
         it will create a new ContextualProperty on a class
         """
+        assert False
 
 
 class NamespacedObjectConstructor(TestCase):
@@ -222,6 +249,7 @@ class NamespacedObjectConstructor(TestCase):
         Tests a constructor without an assigned namespace to ensure the
         object can be created
         """
+        assert False
 
 
 class NamespacedObjectGetters(TestCase):
@@ -238,17 +266,20 @@ class NamespacedObjectGetters(TestCase):
         """
         Tests that an object implementing get_namespace works as expected
         """
+        assert False
 
     def test_no_namespace(self):
         """
         Test that an object without a namespace produces a None value
         """
+        assert False
 
     def test_json_data_context_namespace(self):
         """
         Test that an object with the JSON_DATA_CONTEXT context returns None as
         its namespace
         """
+        assert False
 
 
 class NamespacedObjectSetters(TestCase):
@@ -262,12 +293,14 @@ class NamespacedObjectSetters(TestCase):
         Tests that a namespace value cannot be changed outside the
         class change context
         """
+        assert False
 
     def test_namespace_change_with_class_change_context(self):
         """
         Tests that when an object is in the class change context, the
         namespace value can be changed
         """
+        assert False
 
     def test_namespace_reset_on_delete(self):
         """
@@ -275,6 +308,7 @@ class NamespacedObjectSetters(TestCase):
         the namespace entirely but rather resets it to the default for that
         class (reverses changes done under class change context)
         """
+        assert False
 
 
 class JsonContextAwareManagerTests(TestCase):
@@ -291,12 +325,14 @@ class JsonContextAwareManagerTests(TestCase):
         Tests that a context manager can be constructed and has an
         active context, an active flag, and an empty stack
         """
+        assert False
 
     def test_json_context_callable_adds_to_stack(self):
         """
         Tests that a json context manager can be called to add a new item to
         the stop of the stack, but does not set the active flag
         """
+        assert False
 
     def test_json_context_aware_manager_single_context(self):
         """
@@ -306,6 +342,7 @@ class JsonContextAwareManagerTests(TestCase):
         that when the context manager ends, the stack is empty, context is None,
         and the active flag is unset
         """
+        assert False
 
     def test_json_context_aware_manager_nested_contexts(self):
         """
@@ -316,6 +353,7 @@ class JsonContextAwareManagerTests(TestCase):
         level, the active context is returned to the next item on the stack
         and the active flag remains marked until the stack is completely empty
         """
+        assert False
 
 
 class JsonPropertyTests(TestCase):
@@ -333,6 +371,7 @@ class JsonPropertyTests(TestCase):
         present, will cache the name in __property_name__, and will refresh
         the cache if refresh == True
         """
+        assert False
 
     def test_get_registration(self):
         """
@@ -341,6 +380,7 @@ class JsonPropertyTests(TestCase):
         identified by cls.__property_name__, will cache the registration in
         __registration__, and will refresh the cache if refresh == True
         """
+        assert False
 
     def test_constructor_single_property(self):
         """
@@ -348,18 +388,21 @@ class JsonPropertyTests(TestCase):
         successfully instantiate, pick up the property name, and create
         the registration from the property's getter/setter/deleter/doc
         """
+        assert False
 
     def test_constructor_multiple_properties(self):
         """
         Tests that a JsonProperty object with multiple properties will
         raise a ValueError
         """
+        assert False
 
     def test_constructor_no_properties(self):
         """
         Tests that a JsonProperty object with no properties will raise a
         ValueError
         """
+        assert False
 
 
 class PropertyAwareObjectConstructor(TestCase):
@@ -372,29 +415,34 @@ class PropertyAwareObjectConstructor(TestCase):
         """
         Tests that __get_properties__ will return the names of all properties
         """
+        assert False
 
     def test_construction_without_additional_properties(self):
         """
         Tests that a PropertyAwareObject can be created even when no
         properties are found
         """
+        assert False
 
     def test_construction_with_one_property(self):
         """
         Tests that a PropertyAwareObject can be created and pick up the
         details for a single property
         """
+        assert False
 
     def test_constructor_with_multiple_properties(self):
         """
         Test that a PropertyAwareObject ccan be created and pick up the
         details for multiple properties
         """
+        assert False
 
     def test_constructor_context_manager(self):
         """
         Test that a PropertyAwareObject has a context manager when created
         """
+        assert False
 
 
 class PropertyAwareObjectIterator(TestCase):
@@ -408,18 +456,21 @@ class PropertyAwareObjectIterator(TestCase):
         Tests that a PropertyAwareObject can be iterated over without throwing
         an exception when no properties are present
         """
+        assert False
 
     def test_iterator_with_one_property(self):
         """
         Tests that a PropertyAwareObject can be iterated over when a single
         property is present
         """
+        assert False
 
     def test_iterator_with_multiple_properties(self):
         """
         Tests that a PropertyAwareObject can be iterated over when multiple
         properties are present
         """
+        assert False
 
 
 class PropertyAwareObjectGetitem(TestCase):
@@ -435,30 +486,35 @@ class PropertyAwareObjectGetitem(TestCase):
         Tests that when a single invalid key is used as an index on a
         PropertyAwareObject, it will raise a KeyError
         """
+        assert False
 
     def test_get_multiple_nonexistent_properties(self):
         """
         Tests that when multiple invalid keys are used as indexes on a
         PropertyAwareObject, it will raise a KeyError
         """
+        assert False
 
     def test_get_single_property(self):
         """
         Tests that a PropertyAwareObject returns a dictionary with a single
         key-value pair matching the requested property
         """
+        assert False
 
     def test_get_multiple_properties(self):
         """
         Tests that a PropertyAwareObject returns a dictionary with multiple
         key-value pairs matching the requested properties
         """
+        assert False
 
     def test_get_multiple_properties_some_nonexistent(self):
         """
         Tests that even if some properties are present, a KeyError is raised
         if any of the indexes are not present
         """
+        assert False
 
 
 if __name__ == '__main__':
