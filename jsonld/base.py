@@ -6,6 +6,7 @@ import logging
 from copy import copy
 from itertools import chain
 
+from jsonld.exceptions import MissingContextError
 from jsonld.utils import JSON_DATA_CONTEXT, CLASS_CHANGE_CONTEXT
 
 logger = logging.getLogger(__name__)
@@ -19,23 +20,27 @@ class ContextualProperty(property):
     properties
     """
 
-    def __NO_GETTER(self, *args, **kwargs):
-        raise AttributeError(f"""can't get attribute{
-        "'"+self.__name+"'" if self.__name else ''}""")
+    def __NO_GETTER(self, obj, *args, **kwargs):
+        raise MissingContextError(context=obj.__context__.context,
+                                  name=self.__name,
+                                  type='getter')
 
-    def __NO_SETTER(self, *args, **kwargs):
-        raise AttributeError(f"""can't set attribute{
-        "'"+self.__name+"'" if self.__name else ''}""")
+    def __NO_SETTER(self, obj, val, *args, **kwargs):
+        raise MissingContextError(context=obj.__context__.context,
+                                  name=self.__name,
+                                  type='setter')
 
-    def __NO_DELETER(self, *args, **kwargs):
-        raise AttributeError(f"""can't delete attribute{
-        "'"+self.__name+"'" if self.__name else ''}""")
+    def __NO_DELETER(self, obj, *args, **kwargs):
+        raise MissingContextError(context=obj.__context__.context,
+                                  name=self.__name,
+                                  type='deleter')
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
         self.__name = name
         self.__fget_contexts = {None: fget or self.__NO_GETTER}
         self.__fset_contexts = {None: fset or self.__NO_SETTER}
         self.__fdel_contexts = {None: fdel or self.__NO_DELETER}
+        self.__doc__ = doc
 
         # replaces functions with wrappers that determine what actually gets
         # called based on the owning object's __context__
@@ -59,8 +64,7 @@ class ContextualProperty(property):
         :param obj: the object to retrieve data from
         :return: the context-dependent data
         """
-        # if the context is not recognized, revert to None so we get the default
-        # function
+        # if the context is not recognized, use None (default function)
         context = self.get_context(obj)
         return self.__fget_contexts.get(
             context if context in self.__fget_contexts.keys() else None)(obj)
@@ -174,7 +178,7 @@ def contextualproperty(fn) -> ContextualProperty:
     # there are ways to make this part of the class but I'm not doing it. I
     # have spent way too much time making this thing work and I am not about to
     # drive myself insane over this one design choice.
-    return ContextualProperty(fget=fn, doc=fn.__doc__)
+    return ContextualProperty(fget=fn, name=fn.__name__, doc=fn.__doc__)
 
 
 class NamespacedObject:

@@ -1,4 +1,8 @@
 from unittest import TestCase, main
+from unittest.mock import patch, MagicMock
+
+from jsonld import base
+from jsonld.exceptions import MissingContextError
 
 
 class ContextualPropertyConstructor(TestCase):
@@ -11,7 +15,30 @@ class ContextualPropertyConstructor(TestCase):
         Tests that a ContextualProperty can be constructed with only the
         name argument and have __name set
         """
-        assert False
+        sample_name = 'sample_name'
+
+        prop = base.ContextualProperty(name=sample_name)
+
+        # check the name matches
+        self.assertEqual(getattr(prop, '_ContextualProperty__name', 'bad_name'),
+                         sample_name)
+
+        # check that fget, fset, and fdel use their fallback functions
+        empty_fget_contexts = {None: prop._ContextualProperty__NO_GETTER}
+        empty_fset_contexts = {None: prop._ContextualProperty__NO_SETTER}
+        empty_fdel_contexts = {None: prop._ContextualProperty__NO_DELETER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            empty_fget_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            empty_fset_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            empty_fdel_contexts
+        )
 
     def test_fget_only(self):
         """
@@ -19,7 +46,32 @@ class ContextualPropertyConstructor(TestCase):
         fget argument and have __fget set and the get method added to the
         __fget_contexts
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_input = MagicMock()
+
+        prop = base.ContextualProperty(fget=sample_fget)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_input)
+        sample_fget.assert_called_once_with(sample_input)
+
+        # check that fset and fdel use their fallback functions
+        empty_fset_contexts = {None: prop._ContextualProperty__NO_SETTER}
+        empty_fdel_contexts = {None: prop._ContextualProperty__NO_DELETER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            empty_fset_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            empty_fdel_contexts
+        )
 
     def test_fset_only(self):
         """
@@ -27,7 +79,33 @@ class ContextualPropertyConstructor(TestCase):
         fset argument and have __fset set and the set method added to the
         __fset_contexts
         """
-        assert False
+        sample_fset = MagicMock()
+        sample_input_obj = MagicMock()
+        sample_input_val = MagicMock()
+
+        prop = base.ContextualProperty(fset=sample_fset)
+
+        # check that the fset contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fset(sample_input_obj, sample_input_val)
+        sample_fset.assert_called_once_with(sample_input_obj, sample_input_val)
+
+        # check that fget and fdel use their fallback functions
+        empty_fget_contexts = {None: prop._ContextualProperty__NO_GETTER}
+        empty_fdel_contexts = {None: prop._ContextualProperty__NO_DELETER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            empty_fget_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            empty_fdel_contexts
+        )
 
     def test_fdel_only(self):
         """
@@ -35,7 +113,32 @@ class ContextualPropertyConstructor(TestCase):
         fdel argument and have __fdel set and the del method added to the
         __fdel_contexts
         """
-        assert False
+        sample_fdel = MagicMock()
+        sample_input = MagicMock()
+
+        prop = base.ContextualProperty(fdel=sample_fdel)
+
+        # check that the fdel contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_input)
+        sample_fdel.assert_called_once_with(sample_input)
+
+        # check that fget and fset use their fallback functions
+        empty_fget_contexts = {None: prop._ContextualProperty__NO_GETTER}
+        empty_fset_contexts = {None: prop._ContextualProperty__NO_SETTER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            empty_fget_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            empty_fset_contexts
+        )
 
     def test_doc_only(self):
         """
@@ -43,7 +146,29 @@ class ContextualPropertyConstructor(TestCase):
         argument and that the property's __doc__ method returns the provided
         text
         """
-        assert False
+        sample_doc = 'sample doc sample doc sample doc'
+
+        prop = base.ContextualProperty(doc=sample_doc)
+
+        # check the name matches
+        self.assertEqual(prop.__doc__, sample_doc)
+
+        # check that fget, fset, and fdel use their fallback functions
+        empty_fget_contexts = {None: prop._ContextualProperty__NO_GETTER}
+        empty_fset_contexts = {None: prop._ContextualProperty__NO_SETTER}
+        empty_fdel_contexts = {None: prop._ContextualProperty__NO_DELETER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            empty_fget_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            empty_fset_contexts
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            empty_fdel_contexts
+        )
 
     def test_fget_fset(self):
         """
@@ -52,7 +177,42 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fget_contexts and
         __fset_contexts contain the functions
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_fget_input = MagicMock()
+
+        sample_fset = MagicMock()
+        sample_fset_input_obj = MagicMock()
+        sample_fset_input_val = MagicMock()
+
+        prop = base.ContextualProperty(fget=sample_fget, fset=sample_fset)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_fget_input)
+        sample_fget.assert_called_once_with(sample_fget_input)
+        # check that when __fset is run, the provided fset is used by default
+        prop._ContextualProperty__fset(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        sample_fset.assert_called_once_with(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+
+        # check that fdel uses its fallback function
+        empty_fdel_contexts = {None: prop._ContextualProperty__NO_DELETER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            empty_fdel_contexts
+        )
 
     def test_fset_fdel(self):
         """
@@ -61,7 +221,42 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fset_contexts and
         __fdel_contexts contain the functions
         """
-        assert False
+        sample_fset = MagicMock()
+        sample_fset_input_obj = MagicMock()
+        sample_fset_input_val = MagicMock()
+
+        sample_fdel = MagicMock()
+        sample_fdel_input = MagicMock()
+
+        prop = base.ContextualProperty(fset=sample_fset, fdel=sample_fdel)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fset is run, the provided fset is used by default
+        prop._ContextualProperty__fset(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        sample_fset.assert_called_once_with(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_fdel_input)
+        sample_fdel.assert_called_once_with(sample_fdel_input)
+
+        # check that fget uses its fallback function
+        empty_fget_contexts = {None: prop._ContextualProperty__NO_GETTER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            empty_fget_contexts
+        )
 
     def test_fget_fdel(self):
         """
@@ -70,7 +265,37 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that __fget_contexts and
         __fdel_contexts contain the functions
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_fget_input = MagicMock()
+
+        sample_fdel = MagicMock()
+        sample_fdel_input = MagicMock()
+
+        prop = base.ContextualProperty(fget=sample_fget, fdel=sample_fdel)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_fget_input)
+        sample_fget.assert_called_once_with(sample_fget_input)
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_fdel_input)
+        sample_fdel.assert_called_once_with(sample_fdel_input)
+
+        # check that fset uses its fallback function
+        empty_fset_contexts = {None: prop._ContextualProperty__NO_SETTER}
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            empty_fset_contexts
+        )
 
     def test_fget_fset_fdel(self):
         """
@@ -79,7 +304,46 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, and that the context dicts
         contain the functions
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_fget_input = MagicMock()
+
+        sample_fset = MagicMock()
+        sample_fset_input_obj = MagicMock()
+        sample_fset_input_val = MagicMock()
+
+        sample_fdel = MagicMock()
+        sample_fdel_input = MagicMock()
+
+        prop = base.ContextualProperty(fget=sample_fget, fset=sample_fset,
+                                       fdel=sample_fdel)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_fget_input)
+        sample_fget.assert_called_once_with(sample_fget_input)
+        # check that when __fset is run, the provided fset is used by default
+        prop._ContextualProperty__fset(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        sample_fset.assert_called_once_with(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_fdel_input)
+        sample_fdel.assert_called_once_with(sample_fdel_input)
 
     def test_fget_fset_fdel_doc(self):
         """
@@ -88,7 +352,50 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, that the context dicts contain
         the functions, and that the doc has been set
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_fget_input = MagicMock()
+
+        sample_fset = MagicMock()
+        sample_fset_input_obj = MagicMock()
+        sample_fset_input_val = MagicMock()
+
+        sample_fdel = MagicMock()
+        sample_fdel_input = MagicMock()
+
+        sample_doc = 'sample_doc sample_doc sample_doc'
+
+        prop = base.ContextualProperty(fget=sample_fget, fset=sample_fset,
+                                       fdel=sample_fdel, doc=sample_doc)
+
+        self.assertEqual(prop.__doc__, sample_doc)
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_fget_input)
+        sample_fget.assert_called_once_with(sample_fget_input)
+        # check that when __fset is run, the provided fset is used by default
+        prop._ContextualProperty__fset(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        sample_fset.assert_called_once_with(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_fdel_input)
+        sample_fdel.assert_called_once_with(sample_fdel_input)
 
     def test_fget_fset_fdel_doc_name(self):
         """
@@ -97,7 +404,57 @@ class ContextualPropertyConstructor(TestCase):
         actions using the correct functions, that the context dicts contain
         the functions, and that the doc and name have been set
         """
-        assert False
+        sample_fget = MagicMock()
+        sample_fget_input = MagicMock()
+
+        sample_fset = MagicMock()
+        sample_fset_input_obj = MagicMock()
+        sample_fset_input_val = MagicMock()
+
+        sample_fdel = MagicMock()
+        sample_fdel_input = MagicMock()
+
+        sample_doc = 'sample_doc sample_doc sample_doc'
+
+        sample_name = 'sample name'
+
+        prop = base.ContextualProperty(fget=sample_fget, fset=sample_fset,
+                                       fdel=sample_fdel, doc=sample_doc,
+                                       name=sample_name)
+
+        self.assertEqual(prop.__doc__, sample_doc)
+
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__name', ''), sample_name
+        )
+
+        # check that the fget contexts dict has our function mapped to None
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fget_contexts', {}),
+            {None: sample_fget}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fset_contexts', {}),
+            {None: sample_fset}
+        )
+        self.assertEqual(
+            getattr(prop, '_ContextualProperty__fdel_contexts', {}),
+            {None: sample_fdel}
+        )
+
+        # check that when __fget is run, the provided fget is used by default
+        prop._ContextualProperty__fget(sample_fget_input)
+        sample_fget.assert_called_once_with(sample_fget_input)
+        # check that when __fset is run, the provided fset is used by default
+        prop._ContextualProperty__fset(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        sample_fset.assert_called_once_with(
+            sample_fset_input_obj, sample_fset_input_val
+        )
+        # check that when __fdel is run, the provided fdel is used by default
+        prop._ContextualProperty__fdel(sample_fdel_input)
+        sample_fdel.assert_called_once_with(sample_fdel_input)
 
 
 class ContextualPropertyGetter(TestCase):
@@ -108,37 +465,219 @@ class ContextualPropertyGetter(TestCase):
     def test_fget_default_only(self):
         """
         Tests that when a ContextualProperty only has the initially provided
-        getter function it will execute that function
+        getter function it will execute that function. Creates the property
+        by using the constructor
         """
-        assert False
+        # returns the .attr attribute of whatever is passed in
+        getter_fn = lambda obj: obj.attr
+
+        sample_value = 'sample_value'
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr=sample_value, __context__=context_mock)
+
+        prop = base.ContextualProperty(fget=getter_fn)
+        prop.getter_context('other context'),
+
+        result = prop.fget(obj)
+
+        self.assertEqual(result, sample_value)
+
+    def test_fget_default_only_decorator(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        getter function it will execute that function. Creates the property
+        using the decorator
+        """
+        default_val = 'default_val'
+
+        class TestClass:
+            @base.ContextualProperty
+            def attr(self):
+                return default_val
+
+        sample = TestClass()
+
+        self.assertEqual(sample.attr, default_val)
 
     def test_fget_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
-        function, both the default and secondary functions work as expected
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        getter_fn = lambda obj: obj.attr0
+        alt_getter_1 = lambda obj: obj.attr1
+
+        sample_attr0 = 'sample_value 0'
+        sample_attr1 = 'sample_value 1'
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr0=sample_attr0, attr1=sample_attr1,
+                        __context__=context_mock)
+
+        prop = base.ContextualProperty(fget=getter_fn)
+        prop.getter_context('alt context 1')(alt_getter_1)
+
+        # test default
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr0)
+
+        #test alt context 1
+        context_mock.context = 'alt context 1'
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr1)
+
+    def test_fget_one_additional_context_decorator(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the decorator
+        """
+        default_val = 'default val'
+        context_val_0 = 'context value 0'
+
+        context_0 = 'context_0'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+            @base.ContextualProperty
+            def attr(self):
+                return default_val
+
+            @attr.getter_context(context_0)
+            def attr(self):
+                return context_val_0
+
+        sample = TestClass()
+
+        # test default
+        self.assertEqual(sample.attr, default_val)
+
+        # test alt context 1
+        sample.__context__.context = context_0
+        self.assertEqual(sample.attr, context_val_0)
+
 
     def test_fget_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
-        context function, all functions (including default) work as expected
+        context function, all functions (including default) work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        getter_fn = lambda obj: obj.attr0
+        alt_getter_1 = lambda obj: obj.attr1
+        alt_getter_2 = lambda obj: obj.attr2
+
+        sample_attr0 = 'sample_value 0'
+        sample_attr1 = 'sample_value 1'
+        sample_attr2 = 'sample_value 2'
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr0=sample_attr0, attr1=sample_attr1,
+                        attr2=sample_attr2, __context__=context_mock)
+
+        prop = base.ContextualProperty(fget=getter_fn)
+        prop.getter_context('alt context 1')(alt_getter_1)
+        prop.getter_context('alt context 2')(alt_getter_2)
+
+        # test default
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr0)
+
+        # test alt context 1
+        context_mock.context = 'alt context 1'
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr1)
+
+        # test alt context 2
+        context_mock.context = 'alt context 2'
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr2)
+
+    def test_fget_multiple_additional_contexts_decorator(self):
+        """
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected.
+        Creates the property by using the decorator
+        """
+        default_val = 'default val'
+        context_val_0 = 'context value 0'
+        context_val_1 = 'context value 1'
+
+        context_0 = 'context_0'
+        context_1 = 'context_1'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.ContextualProperty
+            def attr(self):
+                return default_val
+
+            @attr.getter_context(context_0)
+            def attr(self):
+                return context_val_0
+
+            @attr.getter_context(context_1)
+            def attr(self):
+                return context_val_1
+
+        sample = TestClass()
+
+        # test default
+        self.assertEqual(sample.attr, default_val)
+
+        # test alt context 0
+        sample.__context__.context = context_0
+        self.assertEqual(sample.attr, context_val_0)
+
+        # test alt context 1
+        sample.__context__.context = context_1
+        self.assertEqual(sample.attr, context_val_1)
 
     def test_fget_nonexistent_context_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty getter is used with a nonexistent
-        context, a MissingContextError is raised
+        context and no default, a MissingContextError is raised. Creates the
+        property by using the constructor
         """
-        assert False
+        alt_getter_1 = lambda obj: obj.attr1
+        sample_attr1 = 'sample_value 1'
+        context_mock = MagicMock(context=None)
+
+        obj = MagicMock(attr1=sample_attr1, __context__=context_mock)
+
+        prop = base.ContextualProperty(name='test_prop')
+        prop.getter_context('alt context 1')(alt_getter_1)
+
+        # test that registered contexts can be accessed
+        context_mock.context = 'alt context 1'
+        result = prop.fget(obj)
+        self.assertEqual(result, sample_attr1)
+
+        # nonexistent context
+        context_mock.context = 'bad context'
+        msg = ("ContextualProperty has no default getter for 'test_prop' " +
+               "and is missing context 'bad context'")
+        with self.assertRaises(MissingContextError, msg=msg):
+            result = prop.fget(obj)
 
     def test_no_fget_raises_MissingContextError(self):
         """
         Tests that when a ContextualProperty has no getter, an AttributeError
-        is raised with a message matching the default from property
+        is raised with a message matching the default from property. Creates
+        the property by using the constructor
         """
-        assert False
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(__context__=context_mock)
+
+        prop = base.ContextualProperty()
+        msg = "ContextualProperty has no default getter"
+        with self.assertRaises(MissingContextError, msg=msg):
+            result = prop.fget(obj)
+
+        prop = base.ContextualProperty(name='test_prop')
+        msg = "ContextualProperty has no default getter for 'test_prop'"
+        with self.assertRaises(MissingContextError, msg=msg):
+            result = prop.fget(obj)
 
 
 class ContextualPropertySetter(TestCase):
@@ -149,37 +688,261 @@ class ContextualPropertySetter(TestCase):
     def test_fset_default_only(self):
         """
         Tests that when a ContextualProperty only has the initially provided
-        getter function it will execute that function
+        getter function it will execute that function. Creates the property
+        by using the constructor
         """
-        assert False
+        setter_fn = lambda obj, val: setattr(obj, 'attr', val)
+
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
+
+        prop = base.ContextualProperty(fset=setter_fn)
+
+        # test default
+        sample_value = 'val0.'
+        expected_value = sample_value
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fset_default_only_decorator(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        getter function it will execute that function. Creates the property
+        by using the decorator
+        """
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.setter
+            def attr(self, val):
+                setattr(self, '_attr', val)
+
+        sample = TestClass()
+
+        # test default
+        default_val = 'default value'
+        expected_value = default_val
+        sample.attr = default_val
+        self.assertEqual(sample.attr, expected_value)
 
     def test_fset_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
-        function, both the default and secondary functions work as expected
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        setter_fn = lambda obj, val: setattr(obj, 'attr', val)
+        alt_setter_1 = lambda obj, val: setattr(obj, 'attr', f'{val}1')
+
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
+
+        prop = base.ContextualProperty(fset=setter_fn)
+        prop.setter_context('alt context 1')(alt_setter_1)
+
+        # test default
+        sample_value = 'val0.'
+        expected_value = sample_value
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 1
+        context_mock.context = 'alt context 1'
+        sample_value = 'val0.'
+        expected_value = 'val0.1'
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fset_one_additional_context_decorator(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the decorator
+        """
+
+        context_0 = 'context_0'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.setter
+            def attr(self, val):
+                setattr(self, '_attr', val)
+
+            @attr.setter_context(context_0)
+            def attr(self, val):
+                setattr(self, '_attr', val+'_0')
+
+        sample = TestClass()
+
+        # test default
+        default_val = 'default value'
+        expected_value = default_val
+        sample.attr = default_val
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 1
+        sample.__context__.context = context_0
+        context_val_0 = 'context value'
+        expected_value = context_val_0 + '_0'
+        sample.attr = context_val_0
+        self.assertEqual(sample.attr, expected_value)
 
     def test_fset_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
-        context function, all functions (including default) work as expected
+        context function, all functions (including default) work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        setter_fn = lambda obj, val: setattr(obj, 'attr', val)
+        alt_setter_1 = lambda obj, val: setattr(obj, 'attr', f'{val}1')
+        alt_setter_2 = lambda obj, val: setattr(obj, 'attr', f'{val}2')
 
-    def test_fset_nonexistent_context_raises_MissingContextError(self):
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
+
+        prop = base.ContextualProperty(fset=setter_fn)
+        prop.setter_context('alt context 1')(alt_setter_1)
+        prop.setter_context('alt context 2')(alt_setter_2)
+
+        # test default
+        sample_value = 'val'
+        expected_value = sample_value
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 1
+        context_mock.context = 'alt context 1'
+        sample_value = 'val'
+        expected_value = 'val1'
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 2
+        context_mock.context = 'alt context 2'
+        sample_value = 'val'
+        expected_value = 'val2'
+        result = prop.fset(obj, sample_value)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fset_multiple_additional_contexts_decorator(self):
+        """
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected.
+        Creates the property by using the decorator
+        """
+        context_0 = 'context_0'
+        context_1 = 'context_1'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.setter
+            def attr(self, val):
+                setattr(self, '_attr', val)
+
+            @attr.setter_context(context_0)
+            def attr(self, val):
+                setattr(self, '_attr', val + '_0')
+
+            @attr.setter_context(context_1)
+            def attr(self, val):
+                setattr(self, '_attr', val + '_1')
+
+        sample = TestClass()
+
+        # test default
+        default_val = 'default value'
+        expected_value = default_val
+        sample.attr = default_val
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 0
+        sample.__context__.context = context_0
+        context_val_0 = 'context value'
+        expected_value = context_val_0 + '_0'
+        sample.attr = context_val_0
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 1
+        sample.__context__.context = context_1
+        context_val_1 = 'context value'
+        expected_value = context_val_1 + '_1'
+        sample.attr = context_val_1
+        self.assertEqual(sample.attr, expected_value)
+
+    def test_fset_nonexistent_context_raises_MissingContextError_decorator(self):
         """
         Tests that when a ContextualProperty getter is used with a nonexistent
-        context, a MissingContextError is raised
+        context and no default, a MissingContextError is raised. Creates the
+        property by using the decorator
         """
-        assert False
+        context_0 = 'context_0'
 
-    def test_no_fset_raises_MissingContextError(self):
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.setter_context(context_0)
+            def attr(self, val):
+                setattr(self, '_attr', val + '_0')
+
+        sample = TestClass()
+
+        # test that an explicitly defined setter works
+        sample.__context__.context = context_0
+        context_val_0 = 'context value'
+        expected_value = context_val_0 + '_0'
+        sample.attr = context_val_0
+        self.assertEqual(sample.attr, expected_value)
+
+        # test that trying to set without a default fails
+        sample.__context__.context = 'nonexistent context'
+        new_value = "can't set"
+        msg = ("ContextualProperty has no default setter for 'attr' and is " +
+               "missing context 'nonexistent context'")
+        with self.assertRaises(MissingContextError, msg=msg):
+            sample.attr = new_value
+
+    def test_no_fset_raises_MissingContextError_decorator(self):
         """
         Tests that when a ContextualProperty has no getter, an AttributeError
-        is raised with a message matching the default from property
+        is raised with a message matching the default from property. Creates
+        the property by using the decorator
         """
-        assert False
+        context_0 = 'context_0'
+        context_1 = 'context_1'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+        sample = TestClass()
+
+        # test that trying to set with no setter raises an exception
+        new_value = "can't set"
+        msg = "ContextualProperty has no default setter for 'attr'"
+        with self.assertRaises(MissingContextError, msg=msg):
+            sample.attr = new_value
 
 
 class ContextualPropertyDeleter(TestCase):
@@ -190,37 +953,252 @@ class ContextualPropertyDeleter(TestCase):
     def test_fdel_default_only(self):
         """
         Tests that when a ContextualProperty only has the initially provided
-        getter function it will execute that function
+        deleter function it will execute that function. Creates the
+        property by using the decorator
         """
-        assert False
+        deleter_fn = lambda obj: setattr(obj, 'attr', 'deleted')
+
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
+
+        prop = base.ContextualProperty(fdel=deleter_fn)
+
+        # test default
+        expected_value = 'deleted'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fdel_default_only_decorator(self):
+        """
+        Tests that when a ContextualProperty only has the initially provided
+        deleter function it will execute that function. Creates the
+        property by using the decorator
+        """
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.deleter
+            def attr(self):
+                setattr(self, '_attr', 'deleted')
+
+        sample = TestClass()
+
+        # test default
+        expected_value = 'deleted'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
 
     def test_fdel_one_additional_context(self):
         """
         Tests that when a ContextualProperty has one additional context
-        function, both the default and secondary functions work as expected
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        deleter_fn = lambda obj: setattr(obj, 'attr', 'deleted')
+        alt_deleter_1 = lambda obj: setattr(obj, 'attr', f'deleted1')
+
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
+
+        prop = base.ContextualProperty(fdel=deleter_fn)
+        prop.deleter_context('alt context 1')(alt_deleter_1)
+
+        # test default
+        expected_value = 'deleted'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 1
+        context_mock.context = 'alt context 1'
+        expected_value = 'deleted1'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fdel_one_additional_context_decorator(self):
+        """
+        Tests that when a ContextualProperty has one additional context
+        function, both the default and secondary functions work as expected.
+        Creates the property by using the decorator
+        """
+        context_0 = 'context_0'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.deleter
+            def attr(self):
+                setattr(self, '_attr', 'deleted')
+
+            @attr.deleter_context(context_0)
+            def attr(self):
+                setattr(self, '_attr', 'deleted_0')
+
+        sample = TestClass()
+
+        # test default
+        expected_value = 'deleted'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 1
+        sample.__context__.context = context_0
+        expected_value = 'deleted_0'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
 
     def test_fdel_multiple_additional_contexts(self):
         """
         Tests that when a ContextualProperty has more than one additional
-        context function, all functions (including default) work as expected
+        context function, all functions (including default) work as expected.
+        Creates the property by using the constructor
         """
-        assert False
+        deleter_fn = lambda obj: setattr(obj, 'attr', 'deleted')
+        alt_deleter_1 = lambda obj: setattr(obj, 'attr', f'deleted1')
+        alt_deleter_2 = lambda obj: setattr(obj, 'attr', f'deleted2')
 
-    def test_fdel_nonexistent_context_raises_MissingContextError(self):
-        """
-        Tests that when a ContextualProperty getter is used with a nonexistent
-        context, a MissingContextError is raised
-        """
-        assert False
+        context_mock = MagicMock(context=None)
+        obj = MagicMock(attr='', __context__=context_mock)
 
-    def test_no_fdel_raises_MissingContextError(self):
+        prop = base.ContextualProperty(fdel=deleter_fn)
+        prop.deleter_context('alt context 1')(alt_deleter_1)
+        prop.deleter_context('alt context 2')(alt_deleter_2)
+
+        # test default
+        expected_value = 'deleted'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 1
+        context_mock.context = 'alt context 1'
+        expected_value = 'deleted1'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+        # test alt context 2
+        context_mock.context = 'alt context 2'
+        expected_value = 'deleted2'
+        prop.fdel(obj)
+        self.assertEqual(obj.attr, expected_value)
+
+    def test_fdel_multiple_additional_contexts_decorator(self):
         """
-        Tests that when a ContextualProperty has no getter, an AttributeError
-        is raised with a message matching the default from property
+        Tests that when a ContextualProperty has more than one additional
+        context function, all functions (including default) work as expected.
+        Creates the property by using the decorator
         """
-        assert False
+        context_0 = 'context_0'
+        context_1 = 'context_1'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.deleter
+            def attr(self):
+                setattr(self, '_attr', 'deleted')
+
+            @attr.deleter_context(context_0)
+            def attr(self):
+                setattr(self, '_attr', 'deleted_0')
+
+            @attr.deleter_context(context_1)
+            def attr(self):
+                setattr(self, '_attr', 'deleted_1')
+
+        sample = TestClass()
+
+        # test default
+        expected_value = 'deleted'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 0
+        sample.__context__.context = context_0
+        expected_value = 'deleted_0'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
+
+        # test alt context 1
+        sample.__context__.context = context_1
+        expected_value = 'deleted_1'
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
+
+
+    def test_fset_nonexistent_context_raises_MissingContextError_decorator(
+            self):
+        """
+        Tests that when a ContextualProperty deleter is used with a nonexistent
+        context and no default, a MissingContextError is raised. Creates the
+        property by using the decorator
+        """
+        context_0 = 'context_0'
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+            @attr.setter
+            def attr(self, val):
+                setattr(self, '_attr', val)
+
+            @attr.deleter_context(context_0)
+            def attr(self):
+                # not actually deleting, just marking we were in this method
+                setattr(self, '_attr', 'deleted_0')
+
+        sample = TestClass()
+
+        # test that an explicitly defined setter works
+        sample.__context__.context = context_0
+        context_val_0 = 'context value'
+        expected_value = 'deleted_0'
+        sample.attr = context_val_0
+        del sample.attr
+        self.assertEqual(sample.attr, expected_value)
+
+        # test that trying to set without a default fails
+        sample.__context__.context = 'nonexistent context'
+        msg = ("ContextualProperty has no default deleter for 'attr' and is " +
+               "missing context 'nonexistent context'")
+        with self.assertRaises(MissingContextError, msg=msg):
+            del sample.attr
+
+    def test_no_fset_raises_MissingContextError_decorator(self):
+        """
+        Tests that when a ContextualProperty has no default deleter, a
+        MissingContextError is raised with a message matching the default from
+        property. Creates the property by using the decorator
+        """
+
+        class TestClass:
+            __context__ = MagicMock(context=None)
+
+            @base.contextualproperty
+            def attr(self):
+                return getattr(self, '_attr', None)
+
+        sample = TestClass()
+
+        # test that trying to set with no setter raises an exception
+        msg = "ContextualProperty has no default setter for 'attr'"
+        with self.assertRaises(MissingContextError, msg=msg):
+            del sample.attr
 
 
 class ContextualPropertyFunction(TestCase):
@@ -234,7 +1212,21 @@ class ContextualPropertyFunction(TestCase):
         Tests that when the contextualproperty function is used as a decorator,
         it will create a new ContextualProperty on a class
         """
-        assert False
+        def test_function(obj):
+            """testdoc"""
+            return 'test value'
+
+        prop = base.contextualproperty(test_function)
+
+        expected_name = 'test_function'
+        expected_doc = 'testdoc'
+        expected_fget = test_function
+
+        self.assertEqual(prop._ContextualProperty__fget_contexts[None],
+                         expected_fget)
+        self.assertEqual(prop._ContextualProperty__name, expected_name)
+        self.assertEqual(prop.__doc__, expected_doc)
+
 
 
 class NamespacedObjectConstructor(TestCase):
