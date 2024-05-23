@@ -2,7 +2,7 @@ from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
 
 from jsonld import base
-from jsonld.base import NamespacedObject
+from jsonld.base import NamespacedObject, JsonContextAwareManager
 from jsonld.exceptions import MissingContextError
 from jsonld.utils import CLASS_CHANGE_CONTEXT, JSON_DATA_CONTEXT
 
@@ -1381,14 +1381,31 @@ class JsonContextAwareManagerTests(TestCase):
         Tests that a context manager can be constructed and has an
         active context, an active flag, and an empty stack
         """
-        assert False
+        obj = JsonContextAwareManager()
+
+        self.assertIsInstance(obj._stack, list)
+        self.assertIsNone(obj.context)
+        self.assertFalse(obj.active)
 
     def test_json_context_callable_adds_to_stack(self):
         """
         Tests that a json context manager can be called to add a new item to
         the stop of the stack, but does not set the active flag
         """
-        assert False
+        sample_context0 = 'sample_context0'
+        sample_context1 = 'sample_context1'
+
+        obj = JsonContextAwareManager()
+
+        obj(sample_context0)
+        self.assertEqual(obj._stack, [None])
+        self.assertEqual(obj.context, sample_context0)
+        self.assertFalse(obj.active)
+
+        obj(sample_context1)
+        self.assertEqual(obj._stack, [None, sample_context0])
+        self.assertEqual(obj.context, sample_context1)
+        self.assertFalse(obj.active)
 
     def test_json_context_aware_manager_single_context(self):
         """
@@ -1398,7 +1415,14 @@ class JsonContextAwareManagerTests(TestCase):
         that when the context manager ends, the stack is empty, context is None,
         and the active flag is unset
         """
-        assert False
+        sample_context0 = 'sample_context0'
+
+        obj = JsonContextAwareManager()
+
+        with obj(sample_context0):
+            self.assertEqual(obj._stack, [None])
+            self.assertEqual(obj.context, sample_context0)
+            self.assertTrue(obj.active)
 
     def test_json_context_aware_manager_nested_contexts(self):
         """
@@ -1409,7 +1433,31 @@ class JsonContextAwareManagerTests(TestCase):
         level, the active context is returned to the next item on the stack
         and the active flag remains marked until the stack is completely empty
         """
-        assert False
+        sample_context0 = 'sample_context0'
+        sample_context1 = 'sample_context1'
+
+        obj = JsonContextAwareManager()
+
+        with obj(sample_context0):
+            # check values before nesting
+            self.assertEqual(obj._stack, [None])
+            self.assertEqual(obj.context, sample_context0)
+            self.assertTrue(obj.active)
+
+            with obj(sample_context1):
+                # check nested values are as expected
+                self.assertEqual(obj._stack, [None, sample_context0])
+                self.assertEqual(obj.context, sample_context1)
+                self.assertTrue(obj.active)
+
+            # check that un-nesting was successful
+            self.assertEqual(obj._stack, [None])
+            self.assertEqual(obj.context, sample_context0)
+            self.assertTrue(obj.active)
+
+        self.assertEqual(obj._stack, [])
+        self.assertEqual(obj.context, None)
+        self.assertFalse(obj.active)
 
 
 class JsonPropertyTests(TestCase):

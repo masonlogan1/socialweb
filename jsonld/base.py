@@ -227,12 +227,12 @@ class JsonContextAwareManager:
     """
 
     def __init__(self):
-        self.__stack = list()
+        self._stack = list()
         self.context = None
         self.active = False
 
     def __call__(self, context=None, *args, **kwargs):
-        self.__stack.append(self.context)
+        self._stack.append(self.context)
         self.context = context
         return self
 
@@ -241,8 +241,8 @@ class JsonContextAwareManager:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.context = None if not self.__stack else self.__stack.pop()
-        self.active = False
+        self.context = None if not self._stack else self._stack.pop()
+        self.active = len(self._stack) > 0
 
 
 class JsonProperty(NamespacedObject):
