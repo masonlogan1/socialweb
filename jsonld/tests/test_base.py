@@ -1475,7 +1475,39 @@ class JsonPropertyTests(TestCase):
         present, will cache the name in __property_name__, and will refresh
         the cache if refresh == True
         """
-        assert False
+        sample_fget = lambda obj: getattr(obj, 'attr', None)
+        sample_fset = lambda obj, val: setattr(obj, 'attr', val)
+        sample_fdel = lambda obj: delattr(obj, 'attr')
+        sample_doc = 'sample doc sample doc sample doc'
+
+        sample_prop = base.ContextualProperty(
+            fget=sample_fget, fset=sample_fset, fdel=sample_fdel, doc=sample_doc
+        )
+
+        class TestObject(base.JsonProperty):
+            """"""
+
+        # should raise an exception if less than one property is present
+        msg = ('"JsonProperty" objects must have one and only one property, +'
+               'found 0 for TestObject')
+        with self.assertRaises(ValueError, msg=msg):
+            name = TestObject.__get_property_name__()
+
+        # should return the correct name if one property is present
+        TestObject.prop = sample_prop
+        name = TestObject.__get_property_name__()
+        self.assertEqual(name, 'prop')
+
+        # should raise an exception if more than one property is present
+        msg = ('"JsonProperty" objects must have one and only one property, ' +
+               'found 2 for TestObject')
+        TestObject.prop2 = sample_prop
+        # name was cached, so unless we refresh we should still see that value
+        name = TestObject.__get_property_name__()
+        self.assertEqual(name, 'prop')
+        # refresh will force the value to update
+        with self.assertRaises(ValueError):
+            name = TestObject.__get_property_name__(refresh=True)
 
     def test_get_registration(self):
         """
@@ -1484,29 +1516,43 @@ class JsonPropertyTests(TestCase):
         identified by cls.__property_name__, will cache the registration in
         __registration__, and will refresh the cache if refresh == True
         """
-        assert False
+        sample_fget = lambda obj: getattr(obj, 'attr', None)
+        sample_fset = lambda obj, val: setattr(obj, 'attr', val)
+        sample_fdel = lambda obj: delattr(obj, 'attr')
+        sample_doc = 'sample doc sample doc sample doc'
 
-    def test_constructor_single_property(self):
-        """
-        Tests that a JsonProperty object with a single property will
-        successfully instantiate, pick up the property name, and create
-        the registration from the property's getter/setter/deleter/doc
-        """
-        assert False
+        sample_prop = base.ContextualProperty(
+            fget=sample_fget, fset=sample_fset, fdel=sample_fdel, doc=sample_doc
+        )
 
-    def test_constructor_multiple_properties(self):
-        """
-        Tests that a JsonProperty object with multiple properties will
-        raise a ValueError
-        """
-        assert False
+        class TestObject(base.JsonProperty):
+            """"""
 
-    def test_constructor_no_properties(self):
-        """
-        Tests that a JsonProperty object with no properties will raise a
-        ValueError
-        """
-        assert False
+        # should raise an exception if less than one property is present
+        msg = ('"JsonProperty" objects must have one and only one property, +'
+               'found 0 for TestObject')
+        with self.assertRaises(ValueError, msg=msg):
+            registration = TestObject.__get_registration__()
+
+        # should return the correct name if one property is present
+        TestObject.prop = sample_prop
+        registration = TestObject.__get_registration__()
+        expected = (sample_prop.fget, sample_prop.fset, sample_prop.fdel,
+                    sample_prop.__doc__)
+        self.assertEqual(registration, expected)
+
+        # should raise an exception if more than one property is present
+        msg = ('"JsonProperty" objects must have one and only one property, ' +
+               'found 2 for TestObject')
+        TestObject.prop2 = sample_prop
+        # name was cached, so unless we refresh we should still see that value
+        registration = TestObject.__get_registration__()
+        expected = (sample_prop.fget, sample_prop.fset, sample_prop.fdel,
+                    sample_prop.__doc__)
+        self.assertEqual(registration, expected)
+        # refresh will force the value to update
+        with self.assertRaises(ValueError):
+            registration = TestObject.__get_registration__(refresh=True)
 
 
 class PropertyAwareObjectConstructor(TestCase):
