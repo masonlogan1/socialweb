@@ -2,7 +2,9 @@ from unittest import TestCase, main
 from unittest.mock import patch, MagicMock
 
 from jsonld import base
+from jsonld.base import NamespacedObject
 from jsonld.exceptions import MissingContextError
+from jsonld.utils import CLASS_CHANGE_CONTEXT, JSON_DATA_CONTEXT
 
 
 class ContextualPropertyConstructor(TestCase):
@@ -1241,7 +1243,8 @@ class NamespacedObjectConstructor(TestCase):
         Tests a constructor without an assigned namespace to ensure the
         object can be created
         """
-        assert False
+        obj = NamespacedObject()
+        self.assertIsInstance(obj, NamespacedObject)
 
 
 class NamespacedObjectGetters(TestCase):
@@ -1253,25 +1256,45 @@ class NamespacedObjectGetters(TestCase):
     namespace, and that attempting to access the NamespacedObject in the
     JSON_DATA_CONTEXT will return nothing
     """
+    sample_namespace = 'sample_namespace'
+
+    class ImplementingClass(base.NamespacedObject):
+        __context__ = MagicMock(context=None)
+
+        @classmethod
+        def __get_namespace__(cls):
+            return 'sample_namespace'
 
     def test_namespace_standard_context(self):
         """
         Tests that an object implementing get_namespace works as expected
         """
-        assert False
+        # test that we can get the __namespace__ based on the overridden
+        # __get_namespace__ method
+        obj = self.ImplementingClass()
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
 
     def test_no_namespace(self):
         """
         Test that an object without a namespace produces a None value
         """
-        assert False
+        obj = base.NamespacedObject()
+        self.assertIsNone(obj.__namespace__)
 
     def test_json_data_context_namespace(self):
         """
         Test that an object with the JSON_DATA_CONTEXT context returns None as
         its namespace
         """
-        assert False
+        # check the default namespace
+        obj = self.ImplementingClass()
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
+
+        # test that if the object's context is the JSON_DATA_CONTEXT the
+        # __namespace__ value will show as None
+        obj.__context__.context = JSON_DATA_CONTEXT
+        self.assertIsNone(obj.__namespace__)
+        obj.__context__.context = None
 
 
 class NamespacedObjectSetters(TestCase):
@@ -1280,19 +1303,48 @@ class NamespacedObjectSetters(TestCase):
     the class namespace
     """
 
+    def setUp(self):
+        self.sample_namespace = 'sample_namespace'
+
+        class ImplementingClass(base.NamespacedObject):
+            __context__ = MagicMock(context=None)
+
+            @classmethod
+            def __get_namespace__(cls):
+                return 'sample_namespace'
+
+        self.ImplementingClass = ImplementingClass
+
     def test_namespace_change_outside_class_change_context(self):
         """
         Tests that a namespace value cannot be changed outside the
         class change context
         """
-        assert False
+        # test that we can get the __namespace__ based on the overridden
+        # __get_namespace__ method
+        obj = self.ImplementingClass()
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
+
+        # test that we cannot change the __namespace__ value without the
+        # correct context
+        with self.assertRaises(MissingContextError):
+            obj.__namespace__ = 'cannot change'
 
     def test_namespace_change_with_class_change_context(self):
         """
         Tests that when an object is in the class change context, the
         namespace value can be changed
         """
-        assert False
+        # test that we can get the __namespace__ based on the overridden
+        # __get_namespace__ method
+        obj = self.ImplementingClass()
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
+
+        # test that we can change the __namespace__ in the CLASS_CHANGE_CONTEXT
+        new_namespace = 'changed'
+        obj.__context__.context = CLASS_CHANGE_CONTEXT
+        obj.__namespace__ = new_namespace
+        self.assertEqual(obj.__namespace__, new_namespace)
 
     def test_namespace_reset_on_delete(self):
         """
@@ -1300,7 +1352,19 @@ class NamespacedObjectSetters(TestCase):
         the namespace entirely but rather resets it to the default for that
         class (reverses changes done under class change context)
         """
-        assert False
+        # check default namespace
+        obj = self.ImplementingClass()
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
+
+        # check namespace change
+        new_namespace = 'changed'
+        obj.__context__.context = CLASS_CHANGE_CONTEXT
+        obj.__namespace__ = new_namespace
+        self.assertEqual(obj.__namespace__, new_namespace)
+
+        # test that the namespace is REVERTED TO DEFAULT on delete
+        del obj.__namespace__
+        self.assertEqual(obj.__namespace__, self.sample_namespace)
 
 
 class JsonContextAwareManagerTests(TestCase):

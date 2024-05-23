@@ -182,20 +182,36 @@ def contextualproperty(fn) -> ContextualProperty:
 
 
 class NamespacedObject:
+    """
+    Object that has a ``__namespace__`` property that derives the namespace of
+    the object from the output of the class method ``__get_namespace__``.
+    Has special handling for JSON_DATA_CONTEXT to avoid producing output when
+    run through a property processing engine
+
+    Intended to function as a base class for objects that have a namespace.
+    """
+
     @contextualproperty
-    # we're making this a property exclusively because it makes it possible to
-    # have a one-time setter
     def __namespace__(self):
         return self.__class__.__get_namespace__()
 
     @__namespace__.setter_context(CLASS_CHANGE_CONTEXT)
     def __namespace__(self, new_ns):
+        """Stores the previous namespace fn and replaces it with the new one"""
+        self.__old_ns_fns__ = getattr(self, '__old_ns_fns__', [])
+        self.__old_ns_fns__.append(self.__get_namespace__)
         self.__class__.__get_namespace__ = lambda: new_ns
 
     @__namespace__.getter_context(JSON_DATA_CONTEXT)
     def __namespace__(self):
         # we don't want this to show up in the json output!!
         return None
+
+    @__namespace__.deleter
+    def __namespace__(self):
+        """Resets __namespace__ to the original value"""
+        self.__class__.__get_namespace__ = getattr(
+            self, '__old_ns_fns__', [])[0]
 
     @classmethod
     def __get_namespace__(cls):
