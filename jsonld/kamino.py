@@ -136,7 +136,7 @@ class ClassCloner:
         # locate anything callable and wrap it so output values will be mapped,
         # when applicable
         for name, method in cls.__dict__.items():
-            if callable(method):
+            if callable(method) and not name.startswith('__'):
                 setattr(cls, name, wrapper(method))
 
     def wrap_properties(self, cls):

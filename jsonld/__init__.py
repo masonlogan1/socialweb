@@ -1,6 +1,7 @@
 from jsonld.jsonld import PropertyJsonLD, ApplicationActivityJson
 from jsonld.base import JsonProperty, contextualproperty
-from jsonld.utils import JSON_LD_KEYMAP, JSON_DATA_CONTEXT, jsonld_get
+from jsonld.utils import (JSON_LD_KEYMAP, JSON_DATA_CONTEXT,
+                          SINGLE_NODE_CONTEXT, jsonld_get)
 from jsonld.engine.jsonld_engine import JsonLdEngine
 from jsonld.package import JsonLdPackage
 

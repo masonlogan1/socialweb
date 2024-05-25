@@ -9,15 +9,17 @@ handled correctly.
 import logging
 from datetime import datetime, timedelta
 from jsonld import JsonProperty, contextualproperty, \
-    JSON_DATA_CONTEXT
+    JSON_DATA_CONTEXT, SINGLE_NODE_CONTEXT
 from jsonld.tools import validate_url
 from jsonld.tools import is_activity_datetime, \
     parse_activitystream_datetime, datetime_str, timedelta_str
 from jsonld.tools import is_nonnegative
 from jsonld.tools import SetterValidator
 
-from activitystreams.models import Object, Link, Collection, \
+from activitystreams.models import Link, Collection, \
     CollectionPage, ACTIVITYSTREAMS_NS
+
+from activitystreams.models import Object as ObjectModel
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,12 +72,12 @@ class Type(ActivityStreamsProperty):
     """
     @contextualproperty
     def type(self):
-        return getattr(self, '__type___', None)
+        return getattr(self, '___type___', None)
 
     @type.setter
     @SetterValidator(types=(str,)).check
     def type(self, val):
-        setattr(self, '__type___', val)
+        setattr(self, '___type___', val)
 
 
 class Attachment(ActivityStreamsProperty):
@@ -95,9 +97,15 @@ class Attachment(ActivityStreamsProperty):
     def attachment(self):
         return getattr(self, '___attachment___', None)
 
+    @attachment.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def attachment(self):
+        return getattr(self, '___attachment___', None)
+
     @attachment.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def attachment(self, val):
         self.___attachment___ = val
 
@@ -119,9 +127,15 @@ class AttributedTo(ActivityStreamsProperty):
     def attributedTo(self):
         return getattr(self, '___attributedTo___', None)
 
+    @attributedTo.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def attributedTo(self):
+        return getattr(self, '___attributedTo___', None)
+
     @attributedTo.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def attributedTo(self, val):
         self.___attributedTo___ = val
 
@@ -144,9 +158,15 @@ class Actor(ActivityStreamsProperty):
     def actor(self):
         return getattr(self, '___actor___', None)
 
+    @actor.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def actor(self):
+        return getattr(self, '___actor___', None)
+
     @actor.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def actor(self, val):
         self.___actor___ = val
 
@@ -167,9 +187,15 @@ class Audience(ActivityStreamsProperty):
     def audience(self):
         return getattr(self, '___audience___', None)
 
+    @audience.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def audience(self):
+        return getattr(self, '___audience___', None)
+
     @audience.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def audience(self, val):
         self.___audience___ = val
 
@@ -190,9 +216,15 @@ class Bcc(ActivityStreamsProperty):
     def bcc(self):
         return getattr(self, '___bcc___', None)
 
+    @bcc.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def bcc(self):
+        return getattr(self, '___bcc___', None)
+
     @bcc.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def bcc(self, val):
         self.___bcc___ = val
 
@@ -213,9 +245,15 @@ class Bto(ActivityStreamsProperty):
     def bto(self):
         return getattr(self, '___bto___', None)
 
+    @bto.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def bto(self):
+        return getattr(self, '___bto___', None)
+
     @bto.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def bto(self, val):
         self.___bto___ = val
 
@@ -236,9 +274,15 @@ class Cc(ActivityStreamsProperty):
     def cc(self):
         return getattr(self, '___cc___', None)
 
+    @cc.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def cc(self):
+        return getattr(self, '___cc___', None)
+
     @cc.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def cc(self, val):
         self.___cc___ = val
 
@@ -264,9 +308,15 @@ class Context(ActivityStreamsProperty):
     def context(self):
         return getattr(self, '___context___', None)
 
+    @context.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def context(self):
+        return getattr(self, '___context___', None)
+
     @context.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def context(self, val):
         self.___context___ = val
 
@@ -284,6 +334,12 @@ class Current(ActivityStreamsProperty):
 
     @current.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def current(self):
+        return getattr(self, '___current___', None)
+
+    @current.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def current(self):
         return getattr(self, '___current___', None)
 
@@ -310,6 +366,12 @@ class First(ActivityStreamsProperty):
     def first(self):
         return getattr(self, '___first___', None)
 
+    @first.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def first(self):
+        return getattr(self, '___first___', None)
+
     @first.setter
     @Link.from_str
     @SetterValidator(types=(CollectionPage, Link), functional=True).check
@@ -332,9 +394,15 @@ class Generator(ActivityStreamsProperty):
     def generator(self):
         return getattr(self, '___generator___', None)
 
+    @generator.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def generator(self):
+        return getattr(self, '___generator___', None)
+
     @generator.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def generator(self, val):
         self.___generator___ = val
 
@@ -356,9 +424,15 @@ class Icon(ActivityStreamsProperty):
     def icon(self):
         return getattr(self, '___icon___', None)
 
+    @icon.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def icon(self):
+        return getattr(self, '___icon___', None)
+
     @icon.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def icon(self, val):
         self.___icon___ = val
 
@@ -380,9 +454,15 @@ class Image(ActivityStreamsProperty):
     def image(self):
         return getattr(self, '___image___', None)
 
+    @image.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def image(self):
+        return getattr(self, '___image___', None)
+
     @image.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def image(self, val):
         self.___image___ = val
 
@@ -403,9 +483,15 @@ class InReplyTo(ActivityStreamsProperty):
     def inReplyTo(self):
         return getattr(self, '___inReplyTo___', None)
 
+    @inReplyTo.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def inReplyTo(self):
+        return getattr(self, '___inReplyTo___', None)
+
     @inReplyTo.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def inReplyTo(self, val):
         self.___inReplyTo___ = val
 
@@ -426,9 +512,15 @@ class Instrument(ActivityStreamsProperty):
     def instrument(self):
         return getattr(self, '___instrument___', None)
 
+    @instrument.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def instrument(self):
+        return getattr(self, '___instrument___', None)
+
     @instrument.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def instrument(self, val):
         self.___instrument___ = val
 
@@ -446,6 +538,12 @@ class Last(ActivityStreamsProperty):
 
     @last.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def last(self):
+        return getattr(self, '___last___', None)
+
+    @last.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def last(self):
         return getattr(self, '___last___', None)
 
@@ -472,9 +570,15 @@ class Location(ActivityStreamsProperty):
     def location(self):
         return getattr(self, '___location___', None)
 
+    @location.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def location(self):
+        return getattr(self, '___location___', None)
+
     @location.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def location(self, val):
         self.___location___ = val
 
@@ -495,9 +599,15 @@ class Items(ActivityStreamsProperty):
     def items(self):
         return getattr(self, '___items___', None)
 
+    @items.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def items(self):
+        return getattr(self, '___items___', None)
+
     @items.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def items(self, val):
         self.___items___ = val
 
@@ -518,9 +628,15 @@ class OrderedItems(ActivityStreamsProperty):
     def orderedItems(self):
         return getattr(self, '___orderedItems___', None)
 
+    @orderedItems.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def orderedItems(self):
+        return getattr(self, '___orderedItems___', None)
+
     @orderedItems.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def orderedItems(self, val):
         self.___orderedItems___ = val
 
@@ -541,9 +657,15 @@ class UnorderedItems(ActivityStreamsProperty):
     def unorderedItems(self):
         return getattr(self, '___unorderedItems___', None)
 
+    @unorderedItems.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def unorderedItems(self):
+        return getattr(self, '___unorderedItems___', None)
+
     @unorderedItems.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def unorderedItems(self, val):
         self.___unorderedItems___ = val
 
@@ -565,9 +687,15 @@ class OneOf(ActivityStreamsProperty):
     def oneOf(self):
         return getattr(self, '___oneOf___', None)
 
+    @oneOf.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def oneOf(self):
+        return getattr(self, '___oneOf___', None)
+
     @oneOf.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def oneOf(self, val):
         self.___oneOf___ = val
 
@@ -589,9 +717,15 @@ class AnyOf(ActivityStreamsProperty):
     def anyOf(self):
         return getattr(self, '___anyOf___', None)
 
+    @anyOf.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def anyOf(self):
+        return getattr(self, '___anyOf___', None)
+
     @anyOf.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def anyOf(self, val):
         self.___anyOf___ = val
 
@@ -615,9 +749,15 @@ class Closed(ActivityStreamsProperty):
             return datetime_str(val)
         return val
 
+    @closed.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def closed(self):
+        return getattr(self, '___closed___', None)
+
     @closed.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link, datetime, bool)).check
+    @SetterValidator(types=(ObjectModel, Link, datetime, bool)).check
     def closed(self, val):
         self.___closed___ = val
 
@@ -640,9 +780,15 @@ class Origin(ActivityStreamsProperty):
     def origin(self):
         return getattr(self, '___origin___', None)
 
+    @origin.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def origin(self):
+        return getattr(self, '___origin___', None)
+
     @origin.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def origin(self, val):
         self.___origin___ = val
 
@@ -659,6 +805,12 @@ class Next(ActivityStreamsProperty):
 
     @next.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def next(self):
+        return getattr(self, '___next___', None)
+
+    @next.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def next(self):
         return getattr(self, '___next___', None)
 
@@ -689,9 +841,15 @@ class Object(ActivityStreamsProperty):
     def object(self):
         return getattr(self, '___object___', None)
 
+    @object.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def object(self):
+        return getattr(self, '___object___', None)
+
     @object.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def object(self, val):
         self.___object___ = val
 
@@ -708,6 +866,12 @@ class Prev(ActivityStreamsProperty):
 
     @prev.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def prev(self):
+        return getattr(self, '___prev___', None)
+
+    @prev.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def prev(self):
         return getattr(self, '___prev___', None)
 
@@ -733,9 +897,15 @@ class Preview(ActivityStreamsProperty):
     def preview(self):
         return getattr(self, '___preview___', None)
 
+    @preview.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def preview(self):
+        return getattr(self, '___preview___', None)
+
     @preview.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def preview(self, val):
         self.___preview___ = val
 
@@ -757,9 +927,15 @@ class Result(ActivityStreamsProperty):
     def result(self):
         return getattr(self, '___result___', None)
 
+    @result.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def result(self):
+        return getattr(self, '___result___', None)
+
     @result.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def result(self, val):
         self.___result___ = val
 
@@ -777,6 +953,12 @@ class Replies(ActivityStreamsProperty):
 
     @replies.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def replies(self):
+        return getattr(self, '___replies___', None)
+
+    @replies.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def replies(self):
         return getattr(self, '___replies___', None)
 
@@ -805,9 +987,15 @@ class Tag(ActivityStreamsProperty):
     def tag(self):
         return getattr(self, '___tag___', None)
 
+    @tag.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def tag(self):
+        return getattr(self, '___tag___', None)
+
     @tag.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link, dict)).check
+    @SetterValidator(types=(ObjectModel, Link, dict)).check
     def tag(self, val):
         self.___tag___ = val
 
@@ -832,9 +1020,15 @@ class Target(ActivityStreamsProperty):
     def target(self):
         return getattr(self, '___target___', None)
 
+    @target.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def target(self):
+        return getattr(self, '___target___', None)
+
     @target.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def target(self, val):
         self.___target___ = val
 
@@ -855,9 +1049,15 @@ class To(ActivityStreamsProperty):
     def to(self):
         return getattr(self, '___to___', None)
 
+    @to.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def to(self):
+        return getattr(self, '___to___', None)
+
     @to.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link)).check
+    @SetterValidator(types=(ObjectModel, Link)).check
     def to(self, val):
         self.___to___ = val
 
@@ -873,6 +1073,11 @@ class Url(ActivityStreamsProperty):
         return getattr(self, '___url___', None)
 
     @url.getter_context(JSON_DATA_CONTEXT)
+    @Link.href_only
+    def url(self):
+        return getattr(self, '___url___', None)
+
+    @url.getter_context(SINGLE_NODE_CONTEXT)
     @Link.href_only
     def url(self):
         return getattr(self, '___url___', None)
@@ -1041,6 +1246,12 @@ class PartOf(ActivityStreamsProperty):
 
     @partOf.getter_context(JSON_DATA_CONTEXT)
     @Link.href_only
+    def partOf(self):
+        return getattr(self, '___partOf___', None)
+
+    @partOf.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
     def partOf(self):
         return getattr(self, '___partOf___', None)
 
@@ -1338,9 +1549,15 @@ class Subject(ActivityStreamsProperty):
     def subject(self):
         return getattr(self, '___subject___', None)
 
+    @subject.getter_context(SINGLE_NODE_CONTEXT)
+    @Link.href_only
+    @ObjectModel.id_only
+    def subject(self):
+        return getattr(self, '___subject___', None)
+
     @subject.setter
     @Link.from_str
-    @SetterValidator(types=(Object, Link), functional=True).check
+    @SetterValidator(types=(ObjectModel, Link), functional=True).check
     def subject(self, val):
         self.___subject___ = val
 
@@ -1355,8 +1572,13 @@ class Relationship(ActivityStreamsProperty):
     def relationship(self):
         return getattr(self, '___relationship___', None)
 
+    @relationship.getter_context(SINGLE_NODE_CONTEXT)
+    @ObjectModel.id_only
+    def relationship(self):
+        return getattr(self, '___relationship___', None)
+
     @relationship.setter
-    @SetterValidator(types=(Object, str)).check
+    @SetterValidator(types=(ObjectModel, str)).check
     def relationship(self, val):
         self.___relationship___ = val
 
@@ -1371,8 +1593,13 @@ class Describes(ActivityStreamsProperty):
     def describes(self):
         return getattr(self, '___describes___', None)
 
+    @describes.getter_context(SINGLE_NODE_CONTEXT)
+    @ObjectModel.id_only
+    def describes(self):
+        return getattr(self, '___describes___', None)
+
     @describes.setter
-    @SetterValidator(types=(Object,), functional=True).check
+    @SetterValidator(types=(ObjectModel,), functional=True).check
     def describes(self, val):
         self.___describes___ = val
 
@@ -1387,8 +1614,13 @@ class FormerType(ActivityStreamsProperty):
     def formerType(self):
         return getattr(self, '___formerType___', None)
 
+    @formerType.getter_context(SINGLE_NODE_CONTEXT)
+    @ObjectModel.id_only
+    def formerType(self):
+        return getattr(self, '___formerType___', None)
+
     @formerType.setter
-    @SetterValidator(types=(Object,)).check
+    @SetterValidator(types=(ObjectModel,)).check
     def formerType(self, val):
         self.___formerType___ = val
 

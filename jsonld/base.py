@@ -260,15 +260,14 @@ class JsonProperty(NamespacedObject):
     def __init__(self):
         self.__property_name__ = self.__get_property_name__()
         self.__registration__ = self.__get_registration__()
+        self.__property__ = self.__get_property__()
 
-    def __getattr__(self, item):
-        if item == '__registration__' and not hasattr(self, '__registration__'):
-            self.__registration__ = self.__get_registration__()
-            return self.__registration__
-        if item not in self.__dict__.keys():
-            raise ValueError(f"'{self.__class__.__name__}' has no " +
-                             f"attribute '{item}'")
-        return self.__dict__[item]
+    @classmethod
+    def __get_property__(cls, refresh=False):
+        if not hasattr(cls, '__property__') or refresh:
+            prop_name = cls.__get_property_name__(refresh=refresh)
+            cls.__property__ = getattr(cls, prop_name)
+        return cls.__property__
 
     @classmethod
     def __get_property_name__(cls, refresh=False):
@@ -309,6 +308,18 @@ class JsonProperty(NamespacedObject):
             else:
                 cls.__registration__ = None
         return cls.__registration__
+
+    def __getattr__(self, item):
+        if (not hasattr(self, '__property_name__') or
+                not hasattr(self, '__registration__') or
+                not hasattr(self, '__property__')):
+            self.__get_registration__()
+            self.__get_property__()
+        if not hasattr(self, item):
+            raise AttributeError(item, f"'{self.__class__}' object has no "
+                                       f"attribute '{item}'")
+        return self.__dict__[item]
+
 
 
 class PropertyAwareObject(NamespacedObject):

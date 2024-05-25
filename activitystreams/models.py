@@ -37,12 +37,12 @@ class Object(ApplicationActivityJson):
     Vocabulary, including other Core types such as Activity,
     IntransitiveActivity, Collection and OrderedCollection.
     """
-    type = "Object"
+    ___type___ = "Object"
 
     @classmethod
     def __get_namespace__(cls):
         # provides namespacing logic for ALL derived children
-        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
+        return f'{ACTIVITYSTREAMS_NS}#{cls.___type___}'
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -83,6 +83,26 @@ class Object(ApplicationActivityJson):
         self.mediaType = mediaType
         self.duration = duration
 
+    @classmethod
+    def id_only(cls, fget):
+        """
+        Decorator for getting only the href value back from a link
+        :param get_func: getter function being decorated
+        :return: the href of the link
+        """
+        def decorator(obj):
+            val = fget(obj)
+            if not val:
+                return val
+            with val.switch_context(obj.__context__.context):
+                if isinstance(val, list):
+                    # some systems use url in lieu of an id, so we accommodate
+                    return [getattr(item, 'id', None) or getattr(item, 'url', None)
+                            for item in val]
+                return getattr(val, 'id', None) or getattr(val, 'url', None)
+
+        return decorator
+
 
 class Link(ApplicationActivityJson):
     """
@@ -94,12 +114,12 @@ class Link(ApplicationActivityJson):
     resource identified by the href. Properties of the Link are properties of
     the reference as opposed to properties of the resource
     """
-    type = "Link"
+    ___type___ = "Link"
 
     @classmethod
     def __get_namespace__(cls):
         # provides namespacing logic for ALL derived children
-        return f'{ACTIVITYSTREAMS_NS}#{cls.type}'
+        return f'{ACTIVITYSTREAMS_NS}#{cls.___type___}'
 
     def __init__(self, href=None, rel=None, mediaType=None, name=None,
                  hreflang=None, height=None, width=None, preview=None,
@@ -147,7 +167,7 @@ class Link(ApplicationActivityJson):
             resp_data = jsonld_get(link)
         except Exception as e:
             # if we hit an error, pass the data through
-            logger.exception(f'Encountered an error expanding url {link}')
+            logger.error(f'Encountered an error expanding url {link}')
             return None
 
         try:
@@ -159,7 +179,7 @@ class Link(ApplicationActivityJson):
                 new_obj = cls.__jsonld_engine__.from_json(resp_data)
         except Exception as e:
             # if we fail to form the new object, pass the data through
-            logger.exception(f'Encountered an error forming object ' +
+            logger.error(f'Encountered an error forming object ' +
                              f'from {link}\n{e}')
             return None
         return new_obj
@@ -252,7 +272,7 @@ class Activity(Object):
     not carry any specific semantics about the kind of action being taken.
     :arg actor:
     """
-    type = "Activity"
+    ___type___ = "Activity"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -291,7 +311,7 @@ class IntransitiveActivity(Activity):
     intransitive actions (actions that do not require an object to make sense).
     The object property is therefore inappropriate for these activities.
     """
-    type = "IntransitiveActivity"
+    ___type___ = "IntransitiveActivity"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -325,7 +345,7 @@ class Collection(Object):
     Refer to the Activity Streams 2.0 Core specification for a complete
     description of the Collection type.
     """
-    type = "Collection"
+    ___type___ = "Collection"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -372,7 +392,7 @@ class OrderedCollection(Collection):
     A subtype of Collection in which members of the logical collection are
     assumed to always be strictly ordered.
     """
-    type = "OrderedCollection"
+    ___type___ = "OrderedCollection"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -405,7 +425,7 @@ class CollectionPage(Collection):
     Activity Streams 2.0 Core for a complete description of the CollectionPage
     object.
     """
-    type = "CollectionPage"
+    ___type___ = "CollectionPage"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -441,7 +461,7 @@ class OrderedCollectionPage(OrderedCollection, CollectionPage):
     Refer to the Activity Streams 2.0 Core for a complete description of the
     OrderedCollectionPage object.
     """
-    type = "OrderedCollectionPage"
+    ___type___ = "OrderedCollectionPage"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -492,14 +512,14 @@ class Accept(Activity):
     used in certain circumstances to indicate the context into which the
     object has been accepted.
     """
-    type = "Accept"
+    ___type___ = "Accept"
 
 
 class TentativeAccept(Accept):
     """
     A specialization of Accept indicating that the acceptance is tentative.
     """
-    type = "TentativeAccept"
+    ___type___ = "TentativeAccept"
 
 
 class Add(Activity):
@@ -509,7 +529,7 @@ class Add(Activity):
     determined implicitly by context. The origin can be used to identify the
     context from which the object originated.
     """
-    type = "Add"
+    ___type___ = "Add"
 
 
 class Arrive(IntransitiveActivity):
@@ -518,14 +538,14 @@ class Arrive(IntransitiveActivity):
     location. The origin can be used to identify the context from which the
     actor originated. The target typically has no defined meaning.
     """
-    type = "Arrive"
+    ___type___ = "Arrive"
 
 
 class Create(Activity):
     """
     Indicates that the actor has created the object.
     """
-    type = "Create"
+    ___type___ = "Create"
 
 
 class Delete(Activity):
@@ -533,7 +553,7 @@ class Delete(Activity):
     Indicates that the actor has deleted the object. If specified, the origin
     indicates the context from which the object was deleted.
     """
-    type = "Delete"
+    ___type___ = "Delete"
 
 
 class Follow(Activity):
@@ -543,7 +563,7 @@ class Follow(Activity):
     interested in any activity performed by or on the object. The target and
     origin typically have no defined meaning.
     """
-    type = "Follow"
+    ___type___ = "Follow"
 
 
 class Ignore(Activity):
@@ -551,7 +571,7 @@ class Ignore(Activity):
     Indicates that the actor is ignoring the object. The target and origin
     typically have no defined meaning.
     """
-    type = "Ignore"
+    ___type___ = "Ignore"
 
 
 class Join(Activity):
@@ -559,7 +579,7 @@ class Join(Activity):
     Indicates that the actor has joined the object. The target and origin
     typically have no defined meaning.
     """
-    type = "Join"
+    ___type___ = "Join"
 
 
 class Leave(Activity):
@@ -567,7 +587,7 @@ class Leave(Activity):
     Indicates that the actor has left the object. The target and origin
     typically have no meaning.
     """
-    type = "Leave"
+    ___type___ = "Leave"
 
 
 class Like(Activity):
@@ -575,7 +595,7 @@ class Like(Activity):
     Indicates that the actor likes, recommends or endorses the object. The
     target and origin typically have no defined meaning.
     """
-    type = "Like"
+    ___type___ = "Like"
 
 
 class Offer(Activity):
@@ -583,7 +603,7 @@ class Offer(Activity):
     Indicates that the actor is offering the object. If specified, the target
     indicates the entity to which the object is being offered.
     """
-    type = "Offer"
+    ___type___ = "Offer"
 
 
 class Invite(Offer):
@@ -591,7 +611,7 @@ class Invite(Offer):
     A specialization of Offer in which the actor is extending an invitation
     for the object to the target.
     """
-    type = "Invite"
+    ___type___ = "Invite"
 
 
 class Reject(Activity):
@@ -599,14 +619,14 @@ class Reject(Activity):
     Indicates that the actor is rejecting the object. The target and origin
     typically have no defined meaning.
     """
-    type = "Reject"
+    ___type___ = "Reject"
 
 
 class TentativeReject(Reject):
     """
     A specialization of Reject in which the rejection is considered tentative.
     """
-    type = "TentativeReject"
+    ___type___ = "TentativeReject"
 
 
 class Remove(Activity):
@@ -614,7 +634,7 @@ class Remove(Activity):
     Indicates that the actor is removing the object. If specified,
     the origin indicates the context from which the object is being removed.
     """
-    type = "Remove"
+    ___type___ = "Remove"
 
 
 class Undo(Activity):
@@ -627,7 +647,7 @@ class Undo(Activity):
 
     The target and origin typically have no defined meaning.
     """
-    type = "Undo"
+    ___type___ = "Undo"
 
 
 class Update(Activity):
@@ -638,28 +658,28 @@ class Update(Activity):
 
     The target and origin typically have no defined meaning.
     """
-    type = "Update"
+    ___type___ = "Update"
 
 
 class View(Activity):
     """
     Indicates that the actor has viewed the object.
     """
-    type = "View"
+    ___type___ = "View"
 
 
 class Listen(Activity):
     """
     Indicates that the actor has listened to the object.
     """
-    type = "Listen"
+    ___type___ = "Listen"
 
 
 class Read(Activity):
     """
     Indicates that the actor has read the object.
     """
-    type = "Read"
+    ___type___ = "Read"
 
 
 class Move(Activity):
@@ -667,7 +687,7 @@ class Move(Activity):
     Indicates that the actor has moved object from origin to target. If the
     origin or target are not specified, either can be determined by context.
     """
-    type = "Move"
+    ___type___ = "Move"
 
 
 class Travel(IntransitiveActivity):
@@ -676,7 +696,7 @@ class Travel(IntransitiveActivity):
     IntransitiveObject whose actor specifies the direct object. If the target
     or origin are not specified, either can be determined by context.
     """
-    type = "Travel"
+    ___type___ = "Travel"
 
 
 class Announce(Activity):
@@ -685,7 +705,7 @@ class Announce(Activity):
 
     The origin typically has no defined meaning.
     """
-    type = "Announce"
+    ___type___ = "Announce"
 
 
 class Block(Ignore):
@@ -695,7 +715,7 @@ class Block(Ignore):
     one user to block activities or content of other users. The target and
     origin typically have no defined meaning.
     """
-    type = "Block"
+    ___type___ = "Block"
 
 
 class Flag(Activity):
@@ -704,14 +724,14 @@ class Flag(Activity):
     the sense common to many social platforms as reporting content as being
     inappropriate for any number of reasons.
     """
-    type = "Flag"
+    ___type___ = "Flag"
 
 
 class Dislike(Activity):
     """
     Indicates that the actor dislikes the object.
     """
-    type = "Dislike"
+    ___type___ = "Dislike"
 
 
 class Question(IntransitiveActivity):
@@ -724,7 +744,7 @@ class Question(IntransitiveActivity):
     Either of the anyOf and oneOf properties MAY be used to express possible
     answers, but a Question object MUST NOT have both properties.
     """
-    type = "Question"
+    ___type___ = "Question"
 
     def __init__(self, id=None, type=None, attachment=None, attributedTo=None,
                  audience=None, content=None, context=None, name=None,
@@ -767,35 +787,35 @@ class Application(Object):
     """
     Describes a software application.
     """
-    type = "Application"
+    ___type___ = "Application"
 
 
 class Group(Object):
     """
     Represents a formal or informal collective of Actors.
     """
-    type = "Group"
+    ___type___ = "Group"
 
 
 class Organization(Object):
     """
     Represents an organization.
     """
-    type = "Organization"
+    ___type___ = "Organization"
 
 
 class Person(Object):
     """
     Represents an individual person.
     """
-    type = "Person"
+    ___type___ = "Person"
 
 
 class Service(Object):
     """
     Represents a service of any kind.
     """
-    type = "Service"
+    ___type___ = "Service"
 
 
 # ==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
@@ -811,7 +831,7 @@ class Relationship(Object):
     Describes a relationship between two individuals. The subject and object
     properties are used to identify the connected individuals.
     """
-    type = "Relationship"
+    ___type___ = "Relationship"
 
     def __init__(self, id, subject=None, object=None, relationship=None,
                  **kwargs):
@@ -825,35 +845,35 @@ class Article(Object):
     """
     Represents any kind of multi-paragraph written work.
     """
-    type = "Article"
+    ___type___ = "Article"
 
 
 class Document(Object):
     """
     Represents a document of any kind.
     """
-    type = "Document"
+    ___type___ = "Document"
 
 
 class Audio(Document):
     """
     Represents an audio document of any kind.
     """
-    type = "Audio"
+    ___type___ = "Audio"
 
 
 class Image(Document):
     """
     An image document of any kind
     """
-    type = "Image"
+    ___type___ = "Image"
 
 
 class Video(Document):
     """
     Represents a video document of any kind.
     """
-    type = "Video"
+    ___type___ = "Video"
 
 
 class Note(Object):
@@ -861,21 +881,21 @@ class Note(Object):
     Represents a short written work typically less than a single paragraph in
     length.
     """
-    type = "Note"
+    ___type___ = "Note"
 
 
 class Page(Document):
     """
     Represents a Web Page.
     """
-    type = "Page"
+    ___type___ = "Page"
 
 
 class Event(Object):
     """
     Represents any kind of event.
     """
-    type = "Event"
+    ___type___ = "Event"
 
 
 class Place(Object):
@@ -883,7 +903,7 @@ class Place(Object):
     Represents a logical or physical location. See 5.3 Representing Places
     for additional information.
     """
-    type = "Place"
+    ___type___ = "Place"
 
     def __init__(self, id, accuracy=None, altitude=None, latitude=None,
                  longitude=None, radius=None, units=None, **kwargs):
@@ -902,7 +922,7 @@ class Profile(Object):
     used to describe Actor Type objects. The describes property is used to
     reference the object being described by the profile.
     """
-    type = "Profile"
+    ___type___ = "Profile"
 
     def __init__(self, id, describes=None, **kwargs):
         super().__init__(id, **kwargs)
@@ -915,7 +935,7 @@ class Tombstone(Object):
     used in Collections to signify that there used to be an object at this
     position, but it has been deleted.
     """
-    type = "Tombstone"
+    ___type___ = "Tombstone"
 
     def __init__(self, id, former_type=None, deleted=None, **kwargs):
         super().__init__(id, **kwargs)
@@ -927,4 +947,4 @@ class Mention(Link):
     """
     A specialized Link that represents a @mention.
     """
-    type = "Mention"
+    ___type___ = "Mention"

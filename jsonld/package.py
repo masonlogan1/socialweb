@@ -107,8 +107,10 @@ class JsonLdPackage(ClassCloner):
         :param object_class: PropertyAwareObject to accept the new property
         :return:
         """
+        # setattr(object_class, property_class.__get_property_name__(),
+        #         property(*property_class.__get_registration__()))
         setattr(object_class, property_class.__get_property_name__(),
-                property(*property_class.__get_registration__()))
+                property_class.__get_property__())
 
     def link_properties(self, property_namespaces: Iterable[str],
                         object_namespace: str):

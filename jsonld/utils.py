@@ -5,6 +5,7 @@ import requests
 
 JSON_DATA_CONTEXT = '_JSONLD_OUTPUT_CONTEXT_'
 CLASS_CHANGE_CONTEXT = 'CLASS_CHANGE_CONTEXT'
+SINGLE_NODE_CONTEXT = '_JSONLD_SINGLE_NODE_CONTEXT_'
 
 JSON_LD_KEYMAP = {
     'abase': '@base',
@@ -38,6 +39,7 @@ DEFAULT_CONTEXT = "http://www.w3.org/ns/activitystreams#"
 DEFAULT_HEADERS = {
     "Accept": "application/ld+json, application/activity+json, application/json"
 }
+
 
 def jsonld_get(url, headers: dict = None, json=True):
     """

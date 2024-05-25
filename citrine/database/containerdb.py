@@ -126,17 +126,17 @@ class ContainerDb(DB):
             conn.close()
             if not isinstance(storage, FileStorage):
                 db.close()
-        super().__init__(
-            storage=storage, pool_size=pool_size,
-            pool_timeout=pool_timeout, cache_size=cache_size,
-            cache_size_bytes=cache_size_bytes,
-            historical_pool_size=historical_pool_size,
-            historical_cache_size=historical_cache_size,
-            historical_cache_size_bytes=historical_cache_size_bytes,
-            historical_timeout=historical_timeout,
-            database_name=database_name, databases=databases,
-            xrefs=xrefs, large_record_size=large_record_size,
-            **storage_args)
+            super().__init__(
+                storage=storage, pool_size=pool_size,
+                pool_timeout=pool_timeout, cache_size=cache_size,
+                cache_size_bytes=cache_size_bytes,
+                historical_pool_size=historical_pool_size,
+                historical_cache_size=historical_cache_size,
+                historical_cache_size_bytes=historical_cache_size_bytes,
+                historical_timeout=historical_timeout,
+                database_name=database_name, databases=databases,
+                xrefs=xrefs, large_record_size=large_record_size,
+                **storage_args)
 
     @classmethod
     def create(cls, file_name: str, capacity: int = DEFAULT_CONTAINER_SIZE,
