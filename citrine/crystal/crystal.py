@@ -42,6 +42,10 @@ def property_override(crystal, prop, attr_name,
         def crystal_fset(obj, val):
             old_fset(obj, val)
             setattr(obj.__crystal__, attr_name, prop.fget(obj))
+            # if autocommit is set on this object, commit on set
+            if getattr(obj.__crystal__, 'autocommit', False):
+                if getattr(obj.__crystal__, '_p_jar', None):
+                    obj.__crystal__._p_jar.transaction_manager.get().commit()
         return crystal_fset
 
     def fdel_wrapper(old_fdel):
@@ -219,6 +223,7 @@ class Crystal(Persistent):
                 new_class = load_from_crystallization_cache(obj.__class__)
                 # change the object's class to the cached one
                 obj.__class__ = new_class
+                obj.__crystal__ = new
                 return new
 
             # this class will override the current class
@@ -244,6 +249,7 @@ class Crystal(Persistent):
 
             # change the object's class to the newly manufactured one
             obj.__class__ = new_class
+            obj.__crystal__ = new
 
         return new
 

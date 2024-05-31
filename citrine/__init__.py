@@ -16,3 +16,5 @@ from citrine.client import CitrineClient
 from citrine.connection import CitrineConnection
 from citrine.crystal import Crystal
 from citrine.database import CitrineDB
+from citrine.transaction import CitrineTransaction
+from citrine.transaction import CitrineThreadTransaction

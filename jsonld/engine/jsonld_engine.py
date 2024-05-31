@@ -17,7 +17,7 @@ class JsonLdEngine(PropertyJsonIntake):
         :param packages: the packages to load into the engine
         """
         # keeps a copy of all the packages provided
-        packages = (packages,) if packages is not Iterable else packages
+        packages = (packages,) if not isinstance(packages, Iterable) else packages
         self.___packages___ = packages
         if not self.packages:
             raise ValueError(f'No packages provided!')
@@ -50,11 +50,22 @@ class JsonLdEngine(PropertyJsonIntake):
         for name, cls in self.class_registry.items():
             # adds the object classes as attributes on the engine
             if hasattr(self, cls.__name__):
-                self.logger.warning(
+                self.logger.error(
                     f'Name {cls.__name__} conflicts with existing attribute, ' +
                     f'engine may be become unstable!'
                 )
-            setattr(self, cls.__name__, cls)
+            self._add_class_to_engine(cls)
+
+    def _add_class_to_engine(self, cls, name=None):
+        """
+
+        :param cls: the class to make available as an attribute of the engine
+        :param name: the name to use
+        :return:
+        """
+        name = name if name else cls.__name__
+        self.logger.info(f"Adding {cls.__name__} to engine as '{name}'")
+        setattr(self, name, cls)
 
     def register_class(self, name, cls):
         """
