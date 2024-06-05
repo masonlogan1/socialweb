@@ -1565,34 +1565,98 @@ class PropertyAwareObjectConstructor(TestCase):
         """
         Tests that __get_properties__ will return the names of all properties
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
+
+            @property
+            def prop1(self):
+                """Property 1"""
+                return self._prop1
+
+        props = TestObj.__get_properties__()
+        expected = ('prop0', 'prop1', '__namespace__')
+
+        self.assertEqual(tuple(sorted(props)),
+                         tuple(sorted(expected)))
 
     def test_construction_without_additional_properties(self):
         """
         Tests that a PropertyAwareObject can be created even when no
         properties are found
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            """object with no properties"""
+
+        obj = TestObj()
+        expected = ('__namespace__',)
+
+        self.assertEqual(tuple(sorted(obj.__properties__)),
+                         tuple(sorted(expected)))
 
     def test_construction_with_one_property(self):
         """
         Tests that a PropertyAwareObject can be created and pick up the
         details for a single property
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
+
+        obj = TestObj()
+        expected = ('prop0', '__namespace__',)
+
+        self.assertEqual(tuple(sorted(obj.__properties__)),
+                         tuple(sorted(expected)))
 
     def test_constructor_with_multiple_properties(self):
         """
-        Test that a PropertyAwareObject ccan be created and pick up the
+        Test that a PropertyAwareObject can be created and pick up the
         details for multiple properties
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
+
+            @property
+            def prop1(self):
+                """Property 1"""
+                return self._prop1
+
+            @property
+            def prop2(self):
+                """Property 2"""
+                return self._prop2
+
+        obj = TestObj()
+        expected = ('prop0', 'prop1', 'prop2', '__namespace__',)
+
+        self.assertEqual(tuple(sorted(obj.__properties__)),
+                         tuple(sorted(expected)))
 
     def test_constructor_context_manager(self):
         """
         Test that a PropertyAwareObject has a context manager when created
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
+
+        obj = TestObj()
+        self.assertIsInstance(obj.__context__, base.JsonContextAwareManager)
 
 
 class PropertyAwareObjectIterator(TestCase):
@@ -1606,65 +1670,43 @@ class PropertyAwareObjectIterator(TestCase):
         Tests that a PropertyAwareObject can be iterated over without throwing
         an exception when no properties are present
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            """class with no properties"""
 
     def test_iterator_with_one_property(self):
         """
         Tests that a PropertyAwareObject can be iterated over when a single
         property is present
         """
-        assert False
+
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
 
     def test_iterator_with_multiple_properties(self):
         """
         Tests that a PropertyAwareObject can be iterated over when multiple
         properties are present
         """
-        assert False
 
+        class TestObj(base.PropertyAwareObject):
+            @property
+            def prop0(self):
+                """Property 0"""
+                return self._prop0
 
-class PropertyAwareObjectGetitem(TestCase):
-    """
-    Tests that when a PropertyAwareObject is accessed with indexes it will
-    return a dictionary mapping property names to their properties, and that
-    if a value in the indexes is not a valid property it will raise a
-    KeyError
-    """
+            @property
+            def prop1(self):
+                """Property 1"""
+                return self._prop1
 
-    def test_get_nonexistent_property(self):
-        """
-        Tests that when a single invalid key is used as an index on a
-        PropertyAwareObject, it will raise a KeyError
-        """
-        assert False
-
-    def test_get_multiple_nonexistent_properties(self):
-        """
-        Tests that when multiple invalid keys are used as indexes on a
-        PropertyAwareObject, it will raise a KeyError
-        """
-        assert False
-
-    def test_get_single_property(self):
-        """
-        Tests that a PropertyAwareObject returns a dictionary with a single
-        key-value pair matching the requested property
-        """
-        assert False
-
-    def test_get_multiple_properties(self):
-        """
-        Tests that a PropertyAwareObject returns a dictionary with multiple
-        key-value pairs matching the requested properties
-        """
-        assert False
-
-    def test_get_multiple_properties_some_nonexistent(self):
-        """
-        Tests that even if some properties are present, a KeyError is raised
-        if any of the indexes are not present
-        """
-        assert False
+            @property
+            def prop2(self):
+                """Property 2"""
+                return self._prop2
 
 
 if __name__ == '__main__':
