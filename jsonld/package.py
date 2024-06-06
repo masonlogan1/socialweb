@@ -158,8 +158,11 @@ class JsonLdPackage(ClassCloner):
                            if prp.__get_namespace__() not in new_namespaces)
         properties = kept_props + other.properties
 
+        property_mapping = {**other.property_mapping, **self.property_mapping}
+
         return JsonLdPackage(namespace=self.namespace, objects=objects,
-                             properties=properties)
+                             properties=properties,
+                             property_mapping=property_mapping)
 
     def __sub__(self, other):
         if not isinstance(other, JsonLdPackage):

@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from typing import Iterable as typeIterable
 
 from jsonld.engine.json_input import PropertyJsonIntake
+from jsonld.exceptions import NoPackagesProvidedError
 from jsonld.package import JsonLdPackage
 
 
@@ -20,7 +21,7 @@ class JsonLdEngine(PropertyJsonIntake):
         packages = (packages,) if not isinstance(packages, Iterable) else packages
         self.___packages___ = packages
         if not self.packages:
-            raise ValueError(f'No packages provided!')
+            raise NoPackagesProvidedError()
 
         self.logger = logging.getLogger(f'JsonLdEngine')
 

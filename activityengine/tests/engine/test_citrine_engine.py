@@ -2,7 +2,10 @@ from unittest import TestCase, main
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 from citrine import CitrineDB
-from jsonld import JsonLdPackage
+from jsonld.exceptions import NoPackagesProvidedError
+
+from activityengine.tests.engine.testutils import (test_package_0,
+                                                   test_package_1)
 
 from activityengine.engine import citrine_engine as ce
 
@@ -32,53 +35,86 @@ class CitrineEngineConstructor(TestCase):
 
     def test_connect_to_existing_db_no_packages(self):
         """
-        Tests that a new ``CitrineEngine`` object can be created using the
-        ``__init__`` constructor using no packages
+        Tests that attempting to create a ``CitrineEngine`` object without
+        providing packages will raise a ``NoPackagesProvidedError``
         """
-
+        with self.assertRaises(NoPackagesProvidedError):
+            db = ce.CitrineEngine(self.temp_db_file.name)
 
     def test_connect_to_existing_db_one_package(self):
         """
         Tests that a new ``CitrineEngine`` object can be created using the
         ``__init__`` constructor using one package
         """
+        package0 = test_package_0
+
+        db = ce.CitrineEngine(self.temp_db_file.name, packages=package0)
+
+        self.assertEqual(db.packages, (package0,))
 
     def test_connect_to_existing_db_multiple_packages(self):
         """
         Tests that a new ``CitrineEngine`` object can be created using the
         ``__init__` constructor using multiple packages
         """
+        package0 = test_package_0
+        package1 = test_package_1
+
+        db = ce.CitrineEngine(self.temp_db_file.name,
+                              packages=(package0, package1))
+
+        self.assertEqual(db.packages, (package0, package1))
 
     def test_load_existing_db_no_packages(self):
         """
-        Tests that a ``CitrineEngine.load`` will load an object from an
-        existing filesystem db, providing no packages
+        Tests that using ``CitrineEngine.load`` without providing packages will
+        raise a ``NoPackagesProvidedError``
         """
+        with self.assertRaises(NoPackagesProvidedError):
+            db = ce.CitrineEngine.load(self.temp_db_file.name)
 
     def test_load_existing_db_one_package(self):
         """
         Tests that a ``CitrineEngine.load`` will load an object from an
         existing filesystem db, providing one package
         """
+        package0 = test_package_0
+
+        db = ce.CitrineEngine.load(self.temp_db_file.name, packages=package0)
+
+        self.assertEqual(db.packages, (package0,))
 
     def test_load_existing_db_multiple_packages(self):
         """
         Tests that a ``CitrineEngine.load`` will load an object from an
         existing filesystem db, providing multiple packages
         """
+        package0 = test_package_0
+        package1 = test_package_1
+
+        db = ce.CitrineEngine.load(self.temp_db_file.name,
+                              packages=(package0, package1))
+
+        self.assertEqual(db.packages, (package0, package1))
 
     def test_create_filesystem_db(self):
         """
         Tests that the ``CitrineEngine.create`` method can be used to create
         a new filesystem db and return a ``Filesystem`` object
         """
+        path = self.temp_directory.name
+        fs = ce.CitrineEngine.create(path + 'tmp.db')
+
+        # if this loads, it worked
+        db = ce.CitrineEngine.load(fs, packages=(test_package_0,))
 
     def test_new_no_packages(self):
         """
-        Tests that the ``CitrineEngine.new`` method can be used to create
-        a new filesystem db and return a ``CitrineEngine`` object
-        with no packages loaded
+        Tests that the ``CitrineEngine.new`` method without providing packages
+        will raise a ``NoPackagesProvidedError``
         """
+        with self.assertRaises(NoPackagesProvidedError):
+            db = ce.CitrineEngine.new(self.temp_directory.name + 'tmp.db')
 
     def test_new_one_package(self):
         """
@@ -86,6 +122,10 @@ class CitrineEngineConstructor(TestCase):
         a new filesystem db and return a ``CitrineEngine`` object
         with a single package loaded
         """
+        path = self.temp_directory.name
+        db = ce.CitrineEngine.new(path + 'tmp.db', packages=(test_package_0,))
+
+        self.assertEqual(db.packages, (test_package_0,))
 
     def test_new_multiple_packages(self):
         """
@@ -93,6 +133,11 @@ class CitrineEngineConstructor(TestCase):
         a new filesystem db and return a ``CitrineEngine`` object
         with multiple packages loaded
         """
+        path = self.temp_directory.name
+        db = ce.CitrineEngine.new(path + 'tmp.db',
+                                  packages=(test_package_0, test_package_1))
+
+        self.assertEqual(db.packages, (test_package_0, test_package_1))
 
 
 class CitrineEngineConnectionConstructor(TestCase):
@@ -108,23 +153,49 @@ class CitrineEngineConnectionConstructor(TestCase):
     created connection that receive priority over the previous packages
     """
 
+    def setUp(self):
+        """
+        Creates a temporary database for each test
+        """
+        self.temp_directory = TemporaryDirectory()
+        self.temp_db_file = NamedTemporaryFile(dir=self.temp_directory.name)
+        temp_db = CitrineDB.new(self.temp_db_file.name).close()
+
+    def tearDown(self):
+        """
+        Deletes the temporary database
+        """
+        self.temp_db_file.close()
+        self.temp_directory.cleanup()
+
     def test_connect_to_db_no_packages(self):
         """
         Tests that a new ``CitrineEngineConnection`` object can be created
         by providing a database object and no packages
         """
+        with self.assertRaises(NoPackagesProvidedError):
+            db = ce.CitrineEngineConnection(
+                ce.CitrineEngine(self.temp_db_file.name)
+            )
 
     def test_connect_to_db_one_package(self):
         """
         Tests that a new ``CitrineEngineConnection`` object can be created
         by providing a database object and a single package
         """
+        db = ce.CitrineEngine.load(self.temp_db_file.name,
+                                   packages=(test_package_0,))
+        conn = ce.CitrineEngineConnection(db, packages=(test_package_0,))
 
     def test_connect_to_db_multiple_packages(self):
         """
         Tests that a new ``CitrineEngineConnection`` object can be created
         by providing a database object and multiple packages
         """
+        db = ce.CitrineEngine.load(self.temp_db_file.name,
+                                   packages=(test_package_0, test_package_1))
+        conn = ce.CitrineEngineConnection(db, packages=(
+        test_package_0, test_package_1))
 
     def test_connection_from_db_open_no_packages(self):
         """

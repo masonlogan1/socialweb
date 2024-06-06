@@ -10,3 +10,13 @@ class MissingContextError(Exception):
                (f" and is missing context '{context}'"
                 if context is not None else ''))
         super().__init__(msg)
+
+
+class NoPackagesProvidedError(Exception):
+    """
+    Exception thrown when attempting to create a JsonLdEngine without providing
+    any packages for it to load
+    """
+    def __init__(self):
+        msg = "No packages provided to engine"
+        super().__init__(msg)

@@ -45,7 +45,6 @@ class Pkg1TestObjectClass0(ApplicationActivityJson):
         return f'{TEST_NAMESPACE}#{cls.___type___}'
 
 
-
 class Pkg1TestObjectClass1(ApplicationActivityJson):
     """"""
     ___type___ = "Package1Class1"
@@ -253,17 +252,22 @@ class Pkg1Obj2Prop2(PropBase):
         setattr(self, '_pkg1obj2prop2', value)
 
 
-props = [Pkg0Obj0Prop0, Pkg0Obj0Prop1, Pkg0Obj0Prop2,
-         Pkg0Obj1Prop0, Pkg0Obj1Prop1, Pkg0Obj1Prop2,
-         Pkg0Obj2Prop0, Pkg0Obj2Prop1, Pkg0Obj2Prop2,
-         Pkg1Obj0Prop0, Pkg1Obj0Prop1, Pkg1Obj0Prop2,
-         Pkg1Obj1Prop0, Pkg1Obj1Prop1, Pkg1Obj1Prop2,
-         Pkg1Obj2Prop0, Pkg1Obj2Prop1, Pkg1Obj2Prop2,]
+props0 = [
+        Pkg0Obj0Prop0, Pkg0Obj0Prop1, Pkg0Obj0Prop2,
+        Pkg0Obj1Prop0, Pkg0Obj1Prop1, Pkg0Obj1Prop2,
+        Pkg0Obj2Prop0, Pkg0Obj2Prop1, Pkg0Obj2Prop2,
+        ]
 
-objs = [Pkg0TestObjectClass0, Pkg0TestObjectClass1, Pkg0TestObjectClass2,
-        Pkg1TestObjectClass0, Pkg1TestObjectClass1, Pkg1TestObjectClass2,]
+props1 = [
+        Pkg1Obj0Prop0, Pkg1Obj0Prop1, Pkg1Obj0Prop2,
+        Pkg1Obj1Prop0, Pkg1Obj1Prop1, Pkg1Obj1Prop2,
+        Pkg1Obj2Prop0, Pkg1Obj2Prop1, Pkg1Obj2Prop2,
+        ]
 
-mapping = {
+objs0 = [Pkg0TestObjectClass0, Pkg0TestObjectClass1, Pkg0TestObjectClass2]
+objs1 = [Pkg1TestObjectClass0, Pkg1TestObjectClass1, Pkg1TestObjectClass2,]
+
+pkg0_mapping = {
     Pkg0TestObjectClass0.__get_namespace__(): (
         Pkg0Obj0Prop0.__get_namespace__(),
         Pkg0Obj0Prop1.__get_namespace__(),
@@ -278,6 +282,10 @@ mapping = {
         Pkg0Obj2Prop0.__get_namespace__(),
         Pkg0Obj2Prop1.__get_namespace__(),
         Pkg0Obj2Prop2.__get_namespace__()),
+}
+
+
+pkg1_mapping = {
     Pkg1TestObjectClass0.__get_namespace__(): (
         Pkg1Obj0Prop0.__get_namespace__(),
         Pkg1Obj0Prop1.__get_namespace__(),
@@ -294,9 +302,5 @@ mapping = {
         Pkg1Obj2Prop2.__get_namespace__()),
 }
 
-
-def get_test_package():
-    return JsonLdPackage(namespace=TEST_NAMESPACE,
-                         objects=objs,
-                         properties=props,
-                         property_mapping=mapping)
+test_package_0 = JsonLdPackage(TEST_NAMESPACE, objs0, props0, pkg0_mapping)
+test_package_1 = JsonLdPackage(TEST_NAMESPACE, objs1, props1, pkg1_mapping)

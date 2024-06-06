@@ -277,7 +277,7 @@ class ContainerDb(DB):
             historical_cache_size_bytes: int = 0,
             historical_timeout: int = 300, database_name: str = 'unnamed',
             databases: dict = None, xrefs: bool = True,
-            large_record_size: int = 16777216):
+            large_record_size: int = 16777216, **kwargs):
         """
         Creates a new ContainerDb at the storage location and returns the object
 
@@ -374,7 +374,7 @@ class ContainerDb(DB):
                         historical_cache_size_bytes=historical_cache_size_bytes,
                         database_name=database_name,
                         databases=databases, xrefs=xrefs,
-                        large_record_size=large_record_size)
+                        large_record_size=large_record_size, **kwargs)
 
     def __enter__(self):
         """
